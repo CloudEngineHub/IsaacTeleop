@@ -483,7 +483,7 @@ pip<span class="w"> </span>install<span class="w"> </span>install/wheels/isaacte
 </section>
 <section id="installing-from-source-with-pip-scikit-build-core">
 <h2>Installing from source with pip (scikit-build-core)<a class="headerlink" href="#installing-from-source-with-pip-scikit-build-core" title="Link to this heading">#</a></h2>
-<p>In addition to the classic <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">-B</span> <span class="pre">build</span></code> flow above (which stages the package
+<p>In addition to the CMake <code class="docutils literal notranslate"><span class="pre">--preset</span></code> flow above (which stages the package
 and produces a wheel under <code class="docutils literal notranslate"><span class="pre">install/wheels/</span></code>), the repository ships a root
 <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/pyproject.toml" rel="noopener noreferrer" target="_blank">pyproject.toml</a> that exposes <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> through the
 <a class="reference external" href="https://scikit-build-core.readthedocs.io/" rel="noopener noreferrer" target="_blank">scikit-build-core</a> build backend,
@@ -553,17 +553,17 @@ cache. <code class="docutils literal notranslate"><span class="pre">build/</span
 </section>
 <section id="cmake-can-t-find-openxr">
 <h3>CMake can’t find OpenXR<a class="headerlink" href="#cmake-can-t-find-openxr" title="Link to this heading">#</a></h3>
-<p>OpenXR is fetched automatically; it is not a system package. If configuration fails, try a clean configure:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>-rf<span class="w"> </span>build
-cmake<span class="w"> </span>-B<span class="w"> </span>build
+<p>OpenXR is fetched automatically; it is not a system package. If configuration fails, try a clean configure
+(<code class="docutils literal notranslate"><span class="pre">--fresh</span></code> wipes the preset’s CMake cache and reconfigures):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>--preset<span class="w"> </span>py3.12<span class="w"> </span>--fresh
 </pre></div>
 </div>
 </section>
 <section id="examples-or-tests-can-t-find-the-library">
 <h3>Examples or tests can’t find the library<a class="headerlink" href="#examples-or-tests-can-t-find-the-library" title="Link to this heading">#</a></h3>
 <p>When building from the top-level, examples and tests use the build tree. Ensure you run
-<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span></code> from the project root and run executables from the build directory (or use
-<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--install</span> <span class="pre">build</span></code> and run from <code class="docutils literal notranslate"><span class="pre">install/</span></code>).</p>
+<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">--preset</span> <span class="pre">py3.12</span></code> from the project root and run executables from the build directory
+(<code class="docutils literal notranslate"><span class="pre">build/cmake-cpython-312/</span></code>, or use <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--install</span> <span class="pre">build/cmake-cpython-312</span></code> and run from <code class="docutils literal notranslate"><span class="pre">install/</span></code>).</p>
 </section>
 <section id="uv-or-python-version">
 <h3>uv or Python version<a class="headerlink" href="#uv-or-python-version" title="Link to this heading">#</a></h3>

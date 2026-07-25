@@ -69,7 +69,7 @@ After building, install the wheel with ``uv`` or ``pip``:
 Installing from source with pip (scikit-build-core)
 ---------------------------------------------------
 
-In addition to the classic ``cmake -B build`` flow above (which stages the package
+In addition to the CMake ``--preset`` flow above (which stages the package
 and produces a wheel under ``install/wheels/``), the repository ships a root
 :code-file:`pyproject.toml` that exposes ``isaacteleop`` through the
 `scikit-build-core <https://scikit-build-core.readthedocs.io/>`_ build backend,
@@ -145,19 +145,19 @@ You can inspect the ``_deps`` directory in your build tree for fetch logs.
 CMake can't find OpenXR
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-OpenXR is fetched automatically; it is not a system package. If configuration fails, try a clean configure:
+OpenXR is fetched automatically; it is not a system package. If configuration fails, try a clean configure
+(``--fresh`` wipes the preset's CMake cache and reconfigures):
 
 .. code-block:: bash
 
-   rm -rf build
-   cmake -B build
+   cmake --preset py3.12 --fresh
 
 Examples or tests can't find the library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When building from the top-level, examples and tests use the build tree. Ensure you run
-``cmake --build build`` from the project root and run executables from the build directory (or use
-``cmake --install build`` and run from ``install/``).
+``cmake --build --preset py3.12`` from the project root and run executables from the build directory
+(``build/cmake-cpython-312/``, or use ``cmake --install build/cmake-cpython-312`` and run from ``install/``).
 
 uv or Python version
 ~~~~~~~~~~~~~~~~~~~~
