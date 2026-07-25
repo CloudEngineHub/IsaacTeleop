@@ -107,10 +107,20 @@ See :ref:`dedicated-cloudxr-runtime`.
 2. CMake: Configure and build
 -----------------------------
 
-From the project root:
+From the project root, either use a **preset** (recommended — it selects the
+Python version and an isolated per-version build directory automatically) or a
+plain ``-B build``:
 
 .. code-block:: bash
 
+   # Recommended: presets for Python 3.10 / 3.11 / 3.12 / 3.13 (see CMakePresets.json).
+   # Each configures build/cmake-cpython-3<xx>/ and sets ISAAC_TELEOP_PYTHON_VERSION,
+   # so different versions never share (and clobber) one configured CMake cache.
+   cmake --preset py3.12
+   cmake --build --preset py3.12 --parallel
+   cmake --install build/cmake-cpython-312
+
+   # Or a single default build (Python from ISAAC_TELEOP_PYTHON_VERSION, default 3.11):
    cmake -B build
    cmake --build build --parallel
    cmake --install build
@@ -309,6 +319,15 @@ the released wheels) is unchanged, so the two coexist.
    pip install -e .         # editable / developer install
    python -m build --sdist  # produce a source distribution
 
+.. note::
+
+   The CMake build tree is kept under ``build/wheel-<cache-tag>/`` (e.g.
+   ``build/wheel-cpython-311/``) — one per Python version, so different
+   interpreters never share a configured CMake cache — instead of a temporary
+   directory. Re-installs are therefore incremental. The classic CMake path uses
+   sibling ``build/cmake-<cache-tag>/`` trees (via the presets below) with the same
+   per-version tag, so the two never collide; ``build/`` is gitignored.
+
 What this path does and how it differs from the classic flow:
 
 - **Scoped build.** The backend configures only what the wheel needs
@@ -323,10 +342,12 @@ What this path does and how it differs from the classic flow:
   and released wheels ship (stub generation shells out to ``uv``, which is not
   guaranteed inside pip's build isolation). Imports and runtime behavior are
   unaffected.
-- **Version.** The pip-facing version comes from ``[project].version`` in
-  ``pyproject.toml`` and is a plain ``MAJOR.MINOR.PATCH``; the git-aware release
-  version (with ``a1`` / ``rc1`` / ``.devN`` labels) is still computed by the
-  classic flow via :code-file:`cmake/IsaacTeleopVersion.cmake`.
+- **Version.** The pip-facing version is derived from the ``VERSION`` file as
+  ``MAJOR.MINOR+local`` — the same value the classic flow produces for a
+  non-CI/local build. The pip path is a from-source/dev build, so it is always
+  tagged ``+local``; the git-aware release versioning (tags, ``a1`` / ``rc1`` /
+  ``.devN`` labels) stays with the classic flow via
+  :code-file:`cmake/IsaacTeleopVersion.cmake`.
 
 .. admonition:: Editable installs and iterating on pure-Python subpackages
 
