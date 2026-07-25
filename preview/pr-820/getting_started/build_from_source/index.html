@@ -756,11 +756,23 @@ per-version tag, so the two never collide; <code class="docutils literal notrans
 </div>
 <p>What this path does and how it differs from the classic flow:</p>
 <ul class="simple">
-<li><p><strong>Scoped build.</strong> The backend configures only what the wheel needs
-(<code class="docutils literal notranslate"><span class="pre">BUILD_EXAMPLES</span></code>, <code class="docutils literal notranslate"><span class="pre">BUILD_TESTING</span></code>, <code class="docutils literal notranslate"><span class="pre">BUILD_PLUGINS</span></code> and the Linux
-clang-format gate are all turned OFF), then packages the staged <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code>
-package tree — the C++ library/header/example install rules do not leak into the
-wheel.</p></li>
+<li><p><strong>Full build, no overrides.</strong> The backend passes no <code class="docutils literal notranslate"><span class="pre">cmake.define</span></code> overrides,
+so <code class="docutils literal notranslate"><span class="pre">BUILD_EXAMPLES</span></code>, <code class="docutils literal notranslate"><span class="pre">BUILD_TESTING</span></code>, and <code class="docutils literal notranslate"><span class="pre">BUILD_PLUGINS</span></code> stay at their
+CMake defaults: a <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> builds the full default target — extensions,
+examples, C++ tests, and plugins (a plugin without its SDK skips gracefully). It
+installs only the <code class="docutils literal notranslate"><span class="pre">isaacteleop_wheel</span></code> and <code class="docutils literal notranslate"><span class="pre">isaacteleop_binaries</span></code> components,
+so C++ library/header install rules do not leak into the wheel.</p></li>
+<li><p><strong>clang-format is enforced.</strong> Because the gate is left on, the build <strong>fails</strong> if
+<code class="docutils literal notranslate"><span class="pre">clang-format-14</span></code> is not installed or any C++ file is unformatted — a
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> therefore requires <code class="docutils literal notranslate"><span class="pre">clang-format-14</span></code> on Linux.</p></li>
+<li><p><strong>All executables on PATH.</strong> Every executable built from <code class="docutils literal notranslate"><span class="pre">src/</span></code> and
+<code class="docutils literal notranslate"><span class="pre">examples/</span></code> — example programs, C++ test binaries, plugin tools
+(<code class="docutils literal notranslate"><span class="pre">oxr_simple_api_demo</span></code>, <code class="docutils literal notranslate"><span class="pre">se3_printer</span></code>, <code class="docutils literal notranslate"><span class="pre">schema_tests</span></code>, …) — is installed
+into the venv’s <code class="docutils literal notranslate"><span class="pre">bin/</span></code> (the wheel’s scripts scheme; see the executable-install
+loop in the root <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>), so they are on <code class="docutils literal notranslate"><span class="pre">PATH</span></code> once the venv is
+active. They statically link the teleop core libraries, so they are
+self-contained. Shared libraries (Python extension modules, plugin <code class="docutils literal notranslate"><span class="pre">.so</span></code>) are
+not executables and are <strong>not</strong> placed in <code class="docutils literal notranslate"><span class="pre">bin/</span></code>.</p></li>
 <li><p><strong>ABI.</strong> Extensions are compiled against the interpreter that runs the build
 (so the wheel’s ABI tag matches) and against NumPy 2.x, so a single wheel works
 with both NumPy 1.x and 2.x at runtime.</p></li>

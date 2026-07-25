@@ -330,11 +330,23 @@ the released wheels) is unchanged, so the two coexist.
 
 What this path does and how it differs from the classic flow:
 
-- **Scoped build.** The backend configures only what the wheel needs
-  (``BUILD_EXAMPLES``, ``BUILD_TESTING``, ``BUILD_PLUGINS`` and the Linux
-  clang-format gate are all turned OFF), then packages the staged ``isaacteleop``
-  package tree — the C++ library/header/example install rules do not leak into the
-  wheel.
+- **Full build, no overrides.** The backend passes no ``cmake.define`` overrides,
+  so ``BUILD_EXAMPLES``, ``BUILD_TESTING``, and ``BUILD_PLUGINS`` stay at their
+  CMake defaults: a ``pip install`` builds the full default target — extensions,
+  examples, C++ tests, and plugins (a plugin without its SDK skips gracefully). It
+  installs only the ``isaacteleop_wheel`` and ``isaacteleop_binaries`` components,
+  so C++ library/header install rules do not leak into the wheel.
+- **clang-format is enforced.** Because the gate is left on, the build **fails** if
+  ``clang-format-14`` is not installed or any C++ file is unformatted — a
+  ``pip install`` therefore requires ``clang-format-14`` on Linux.
+- **All executables on PATH.** Every executable built from ``src/`` and
+  ``examples/`` — example programs, C++ test binaries, plugin tools
+  (``oxr_simple_api_demo``, ``se3_printer``, ``schema_tests``, …) — is installed
+  into the venv's ``bin/`` (the wheel's scripts scheme; see the executable-install
+  loop in the root ``CMakeLists.txt``), so they are on ``PATH`` once the venv is
+  active. They statically link the teleop core libraries, so they are
+  self-contained. Shared libraries (Python extension modules, plugin ``.so``) are
+  not executables and are **not** placed in ``bin/``.
 - **ABI.** Extensions are compiled against the interpreter that runs the build
   (so the wheel's ABI tag matches) and against NumPy 2.x, so a single wheel works
   with both NumPy 1.x and 2.x at runtime.
