@@ -490,7 +490,6 @@ and produces a wheel under <code class="docutils literal notranslate"><span clas
 driving the <em>same</em> top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> (so the two paths coexist):</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.<span class="w">            </span><span class="c1"># build + install the compiled wheel from source</span>
 pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w">         </span><span class="c1"># editable / developer install</span>
-python<span class="w"> </span>-m<span class="w"> </span>build<span class="w"> </span>--sdist<span class="w">  </span><span class="c1"># produce a source distribution</span>
 </pre></div>
 </div>
 <p>For the walkthrough — how this scoped build differs from the classic flow (ABI,

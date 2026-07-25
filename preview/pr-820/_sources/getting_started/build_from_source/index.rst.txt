@@ -324,7 +324,6 @@ the released wheels) is unchanged, so the two coexist.
 
    pip install .            # build + install the compiled wheel from source
    pip install -e .         # editable / developer install
-   python -m build --sdist  # produce a source distribution
 
 .. note::
 

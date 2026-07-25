@@ -79,7 +79,6 @@ driving the *same* top-level ``CMakeLists.txt`` (so the two paths coexist):
 
    pip install .            # build + install the compiled wheel from source
    pip install -e .         # editable / developer install
-   python -m build --sdist  # produce a source distribution
 
 For the walkthrough — how this scoped build differs from the classic flow (ABI,
 omitted type stubs, versioning) and the caveat on iterating on pure-Python
