@@ -564,6 +564,11 @@ like <code class="docutils literal notranslate"><span class="pre">--host-client<
 </tbody>
 </table>
 </div>
+<p>On Jetson Orin the launcher selects the experimental CloudXR runtime and
+main-thread join automatically. You normally do not need to set
+<code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_EXP</span></code> or <code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_JOIN_MAIN</span></code>; those are
+overrides for debugging or forcing the stable path. See
+<a class="reference internal" href="../references/cloudxr.html"><span class="doc">Dedicated CloudXR Runtime</span></a>.</p>
 </section>
 <section id="whitelist-ports-for-firewall">
 <span id="whitelist-firewall-ports"></span><h2>4. Whitelist ports for Firewall<a class="headerlink" href="#whitelist-ports-for-firewall" title="Link to this heading">#</a></h2>
@@ -927,7 +932,7 @@ from source</p></li>
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 23, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 27, 2026.
       <br/>
     
   </p>
