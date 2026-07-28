@@ -45,7 +45,7 @@
 
 
 
-    <script src="../_static/documentation_options.js?v=7509b52b"></script>
+    <script src="../_static/documentation_options.js?v=04dcff72"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -64,7 +64,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.4.x" />
+  <meta name="docsearch:version" content="1.5.x" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -439,11 +439,11 @@ flags (<code class="docutils literal notranslate"><span class="pre">--setup-oob<
 <nav class="contents local" id="sections">
 <p class="topic-title">Sections</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#start-the-runtime" id="id4">Start the runtime</a></p></li>
-<li><p><a class="reference internal" href="#optional-launch-modes" id="id5">Optional launch modes</a></p></li>
-<li><p><a class="reference internal" href="#load-cloudxr-environment-variables" id="id6">Load CloudXR environment variables</a></p></li>
-<li><p><a class="reference internal" href="#run-teleop-examples-against-the-dedicated-runtime" id="id7">Run teleop examples against the dedicated runtime</a></p></li>
-<li><p><a class="reference internal" href="#configuration" id="id8">Configuration</a></p></li>
+<li><p><a class="reference internal" href="#start-the-runtime" id="id5">Start the runtime</a></p></li>
+<li><p><a class="reference internal" href="#optional-launch-modes" id="id6">Optional launch modes</a></p></li>
+<li><p><a class="reference internal" href="#load-cloudxr-environment-variables" id="id7">Load CloudXR environment variables</a></p></li>
+<li><p><a class="reference internal" href="#run-teleop-examples-against-the-dedicated-runtime" id="id8">Run teleop examples against the dedicated runtime</a></p></li>
+<li><p><a class="reference internal" href="#configuration" id="id9">Configuration</a></p></li>
 </ul>
 </nav>
 <section id="start-the-runtime">
@@ -549,7 +549,7 @@ python<span class="w"> </span>examples/teleop/python/gripper_retargeting_example
 </section>
 <section id="configuration">
 <h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a></h2>
-<p>The standalone launcher accepts the same configuration flags as the embedded
+<p>The standalone launcher accepts the same configuration options as the embedded
 one:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">--cloudxr-env-config</span> <span class="pre">&lt;PATH&gt;</span></code> — a <code class="docutils literal notranslate"><span class="pre">KEY=value</span></code> env file of CloudXR
@@ -559,6 +559,41 @@ environment variables.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--cloudxr-install-dir</span> <span class="pre">&lt;PATH&gt;</span></code> — CloudXR install directory
 (default: <code class="docutils literal notranslate"><span class="pre">~/.cloudxr</span></code>).</p></li>
 </ul>
+<p>On Jetson Orin the launcher already selects the experimental runtime package
+and main-thread join. The following are Isaac Teleop launcher overrides only
+(not CloudXR native settings). Export them in the process environment, or add
+them to <code class="docutils literal notranslate"><span class="pre">--cloudxr-env-config</span></code> if you need them:</p>
+<div class="pst-scrollable-table-container"><table class="table" id="id4">
+<caption><span class="caption-text">Launcher overrides</span><a class="headerlink" href="#id4" title="Link to this table">#</a></caption>
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_EXP</span></code></p></td>
+<td><p>unset (auto on Orin)</p></td>
+<td><p>Select the experimental package (<code class="docutils literal notranslate"><span class="pre">isaacteleop.cloudxr_exp</span></code>).
+<code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_EXP=0</span></code> forces the stable runtime on Orin;
+<code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_EXP=1</span></code> forces the experimental package elsewhere
+(launcher fails if it is missing).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_JOIN_MAIN</span></code></p></td>
+<td><p>unset (auto on Orin)</p></td>
+<td><p>Join the CloudXR service on the main thread (avoids a
+<code class="docutils literal notranslate"><span class="pre">Couldn't</span> <span class="pre">create</span> <span class="pre">autoTSSkey</span> <span class="pre">mapping</span></code> abort on some platforms).
+<code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_JOIN_MAIN=0</span></code> forces worker-thread join on Orin;
+<code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_JOIN_MAIN=1</span></code> forces main-thread join elsewhere.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <p>To inspect the active settings after startup:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>~/.cloudxr/run/cloudxr.env
 </pre></div>
@@ -702,7 +737,7 @@ environment variables.</p></li>
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 22, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 28, 2026.
       <br/>
     
   </p>
