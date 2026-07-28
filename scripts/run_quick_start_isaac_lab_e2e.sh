@@ -4,10 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Validate the Quick Start "Teleoperation in Isaac Lab" next step against a
-# pre-provisioned Isaac Lab checkout. The script installs the candidate
-# isaacteleop wheel into that Isaac Lab environment, launches CloudXR with the
-# hosted no-headset client path, then runs Isaac Lab's XR teleop app under a
-# bounded timeout.
+# pre-provisioned Isaac Lab checkout. The script installs the candidate and its
+# retargeters into Isaac Lab, keeps CloudXR-only dependencies in an isolated
+# harness, then runs Isaac Lab's XR teleop app under a bounded timeout.
 
 set -euo pipefail
 
@@ -15,6 +14,7 @@ ROOT_DIR=$(git rev-parse --show-toplevel)
 GUIDE_PATH="docs/source/getting_started/quick_start.rst"
 ISAAC_LAB_ROOT="${QUICK_START_ISAAC_LAB_ROOT:-${ISAAC_LAB_ROOT:-}}"
 ARTIFACT_DIR="${QUICK_START_ISAAC_LAB_ARTIFACT_DIR:-${RUNNER_TEMP:-/tmp}/isaacteleop-quick-start-isaac-lab-e2e}"
+HARNESS_VENV_DIR="${QUICK_START_ISAAC_LAB_HARNESS_VENV_DIR:-${ARTIFACT_DIR}/harness-venv}"
 CLOUDXR_INSTALL_DIR="${QUICK_START_ISAAC_LAB_CLOUDXR_INSTALL_DIR:-${ARTIFACT_DIR}/cloudxr}"
 WHEEL_DIR="${QUICK_START_ISAAC_LAB_WHEEL_DIR:-${ROOT_DIR}/install/wheels}"
 PIP_EXTRA_INDEX_URL="${QUICK_START_ISAAC_LAB_PIP_EXTRA_INDEX_URL:-https://pypi.nvidia.com}"
@@ -116,9 +116,16 @@ isaaclab_python() {
     (cd "${ISAAC_LAB_ROOT}" && ./isaaclab.sh -p "$@")
 }
 
-install_candidate_wheel() {
+harness_python() {
+    "${HARNESS_VENV_DIR}/bin/python" "$@"
+}
+
+install_candidate() {
     if [[ "${QUICK_START_ISAAC_LAB_SKIP_INSTALL:-0}" == "1" ]]; then
-        log "Skipping candidate wheel install because QUICK_START_ISAAC_LAB_SKIP_INSTALL=1"
+        log "Skipping candidate installs because QUICK_START_ISAAC_LAB_SKIP_INSTALL=1"
+        if [[ ! -x "${HARNESS_VENV_DIR}/bin/python" ]]; then
+            fail "pre-provision ${HARNESS_VENV_DIR}/bin/python when skipping installs"
+        fi
         return 0
     fi
 
@@ -134,12 +141,25 @@ install_candidate_wheel() {
     wheel_name=$(basename "${wheel}")
     wheel_version=$(sed -E 's/^isaacteleop-([^-]+)-.*/\1/' <<< "${wheel_name}" | tr '_' '-')
 
-    log "Installing candidate wheel ${wheel_name} into Isaac Lab"
+    log "Installing candidate wheel ${wheel_name} and retargeters into Isaac Lab"
     isaaclab_python -m pip install --no-cache-dir "${wheel}"
     isaaclab_python -m pip install \
         --no-cache-dir \
         --extra-index-url "${PIP_EXTRA_INDEX_URL}" \
-        "isaacteleop[cloudxr,retargeters]==${wheel_version}"
+        "isaacteleop[retargeters]==${wheel_version}"
+    isaaclab_python -m pip check
+
+    log "Creating isolated CloudXR harness with Isaac Lab's Python"
+    isaaclab_python -m venv "${HARNESS_VENV_DIR}"
+    harness_python -m pip install --upgrade pip
+
+    log "Installing candidate wheel ${wheel_name} into the CloudXR harness"
+    harness_python -m pip install --no-cache-dir "${wheel}"
+    harness_python -m pip install \
+        --no-cache-dir \
+        --extra-index-url "${PIP_EXTRA_INDEX_URL}" \
+        "isaacteleop[cloudxr]==${wheel_version}"
+    harness_python -m pip check
 }
 
 port_is_available() {
@@ -244,7 +264,7 @@ run_client_probe() {
     local probe_rc=0
 
     log "Connecting hosted desktop/IWER client"
-    isaaclab_python "${ROOT_DIR}/scripts/quick_start_client_probe.py" \
+    harness_python "${ROOT_DIR}/scripts/quick_start_client_probe.py" \
         --client-url "${client_url}" \
         --state-url "${state_url}" \
         --timeout "${CLIENT_PROBE_TIMEOUT_SEC}" \
@@ -261,6 +281,13 @@ run_client_probe() {
 run_isaac_lab_teleop() {
     local env_file="$1"
     local app_rc=0
+    local teleop_script="${ISAAC_LAB_ROOT}/scripts/environments/teleoperation/teleop_se3_agent.py"
+    local cloudxr_args=()
+
+    if grep -q -- '--no-auto_launch_cloudxr' "${teleop_script}"; then
+        cloudxr_args=(--cloudxr_env none --no-auto_launch_cloudxr)
+        log "Using the externally managed CloudXR runtime for Isaac Lab"
+    fi
 
     log "Running Isaac Lab XR teleop app under ${ISAAC_LAB_TIMEOUT_SEC}s timeout"
     (
@@ -273,7 +300,8 @@ run_isaac_lab_teleop() {
             --task IsaacContrib-Stack-Cube-Franka-IK-Abs \
             --viz kit \
             --num_envs 1 \
-            --xr
+            --xr \
+            "${cloudxr_args[@]}"
     ) > "${ISAAC_LAB_LOG}" 2>&1 || app_rc=$?
 
     if (( app_rc != 0 && app_rc != 124 )); then
@@ -292,7 +320,7 @@ main() {
 
     require_isaac_lab
     test -f "${ROOT_DIR}/${GUIDE_PATH}" || fail "Quick Start guide not found at ${GUIDE_PATH}"
-    install_candidate_wheel
+    install_candidate
 
     RUNTIME_PORT=$(resolve_port "${RUNTIME_PORT}" "${DEFAULT_CLOUDXR_SERVER_PORT}") || \
         fail "requested CloudXR runtime port ${RUNTIME_PORT} is not available"
@@ -308,7 +336,7 @@ main() {
     export TELEOP_CLIENT_CODEC
 
     log "Starting CloudXR server with hosted client/OOB hub"
-    PYTHONUNBUFFERED=1 isaaclab_python -u -m isaacteleop.cloudxr \
+    PYTHONUNBUFFERED=1 harness_python -u -m isaacteleop.cloudxr \
         --cloudxr-install-dir "${CLOUDXR_INSTALL_DIR}" \
         --accept-eula \
         --host-client \
