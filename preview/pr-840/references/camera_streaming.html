@@ -542,7 +542,7 @@ at it:</p>
 <p>In XR mode the viewer first brings up the CloudXR runtime (accept the EULA on first launch, or
 pass <code class="docutils literal notranslate"><span class="pre">--accept-eula</span></code>), then <strong>you should see</strong> the terminal report the session and the source
 coming up:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">camera_viz</span><span class="p">:</span> <span class="n">source</span><span class="o">=</span><span class="n">local</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">xr</span><span class="p">,</span> <span class="n">xr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">quad</span><span class="p">,</span> <span class="mi">1</span> <span class="n">layer</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">camera_viz</span><span class="p">:</span> <span class="n">source</span><span class="o">=</span><span class="n">local</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">xr</span><span class="p">,</span> <span class="n">xr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shapes</span><span class="o">=</span><span class="n">quad</span><span class="p">,</span> <span class="mi">1</span> <span class="n">layer</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
 <span class="p">[</span><span class="n">video</span><span class="p">]</span> <span class="n">opening</span><span class="o">...</span>
 <span class="p">[</span><span class="n">video</span><span class="p">]</span> <span class="n">connected</span>
 <span class="p">[</span><span class="n">video</span><span class="p">]</span> <span class="n">streaming</span>
@@ -756,7 +756,7 @@ its own plane (and, in split mode, its own RTP port). Abbreviated:</p>
 <span class="w">      </span><span class="nt">distance</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.5</span>
 <span class="w">      </span><span class="c1"># size: [w_m, h_m]</span>
 <span class="w">      </span><span class="c1"># stereo_baseline_mm: 0</span>
-<span class="w">      </span><span class="c1"># shape: quad           # quad | cylinder | equirect (native-only shapes)</span>
+<span class="w">      </span><span class="c1"># shape: quad           # quad | cylinder | equirect (cylinder/equirect are XR-only)</span>
 <span class="w">      </span><span class="c1"># native: true          # quads: native OpenXR layer (default) vs compositor</span>
 <span class="w">      </span><span class="c1"># cylinder_radius_m: 2.0</span>
 <span class="w">      </span><span class="c1"># cylinder_angle_deg: 90</span>

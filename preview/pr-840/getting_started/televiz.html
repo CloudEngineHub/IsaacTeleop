@@ -686,8 +686,8 @@ See <a class="reference internal" href="#id1">Native OpenXR composition layers</
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alpha_blend</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
-<td><p>Honor the texture’s alpha channel (translucent content). See
-<a class="reference internal" href="#id1">Native OpenXR composition layers</a>.</p></td>
+<td><p>Honor the texture’s alpha channel (translucent content). Native path only; ignored on
+the compositor path. See <a class="reference internal" href="#id1">Native OpenXR composition layers</a>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -762,7 +762,8 @@ per-layer streaming for the frame.</p></li>
 <code class="docutils literal notranslate"><span class="pre">stereo_baseline_mm</span></code> adds a per-eye pose shift on top; it has no effect on an
 infinite-radius equirect sphere.</p></li>
 </ul>
-<p><code class="docutils literal notranslate"><span class="pre">CylinderLayerConfig</span></code> — <code class="docutils literal notranslate"><span class="pre">name</span></code> / <code class="docutils literal notranslate"><span class="pre">resolution</span></code> / <code class="docutils literal notranslate"><span class="pre">stereo</span></code> as <code class="docutils literal notranslate"><span class="pre">QuadLayerConfig</span></code>, plus a
+<p><code class="docutils literal notranslate"><span class="pre">CylinderLayerConfig</span></code> — <code class="docutils literal notranslate"><span class="pre">name</span></code> / <code class="docutils literal notranslate"><span class="pre">resolution</span></code> / <code class="docutils literal notranslate"><span class="pre">stereo</span></code> / <code class="docutils literal notranslate"><span class="pre">stereo_baseline_mm</span></code> /
+<code class="docutils literal notranslate"><span class="pre">alpha_blend</span></code> as <code class="docutils literal notranslate"><span class="pre">QuadLayerConfig</span></code>, plus a
 <code class="docutils literal notranslate"><span class="pre">CylinderLayerPlacement</span></code>:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <colgroup>
