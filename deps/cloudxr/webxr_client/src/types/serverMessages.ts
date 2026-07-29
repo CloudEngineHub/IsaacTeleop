@@ -61,13 +61,45 @@ export interface SystemNoticeMessage {
 /** Any message the server may send. Widen this union as kinds are added. */
 export type ServerMessage = SystemNoticeMessage | { type: string; message?: unknown };
 
-/** Narrow an arbitrary parsed payload to a {@link SystemNoticeMessage}. */
+/** Narrow an unknown value to a {@link SystemNoticeItem}. */
+function isSystemNoticeItem(value: unknown): value is SystemNoticeItem {
+  if (typeof value !== 'object' || value === null) return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.name === 'string' &&
+    typeof item.actual === 'string' &&
+    typeof item.required === 'string' &&
+    (item.detail === undefined || typeof item.detail === 'string')
+  );
+}
+
+/**
+ * Narrow an arbitrary parsed payload to a {@link SystemNoticeMessage}.
+ *
+ * Every field is validated, not just the shape of the envelope. This runs on
+ * data straight off the wire, and an accepted notice is dereferenced field by
+ * field while rendering the XR panel -- so a payload with, say, `items: [null]`
+ * or a non-string title would throw inside the render loop rather than being
+ * rejected here. Anything that does not match is ignored like an unknown
+ * message type: the session keeps running without the notice.
+ */
 export function isSystemNoticeMessage(value: unknown): value is SystemNoticeMessage {
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as { type?: unknown; message?: unknown };
   if (candidate.type !== 'system_notice') return false;
-  const body = candidate.message as { items?: unknown } | undefined;
-  return typeof body === 'object' && body !== null && Array.isArray(body.items);
+
+  const body = candidate.message;
+  if (typeof body !== 'object' || body === null) return false;
+  const notice = body as Record<string, unknown>;
+
+  return (
+    (notice.level === 'warning' || notice.level === 'info') &&
+    typeof notice.title === 'string' &&
+    typeof notice.summary === 'string' &&
+    Array.isArray(notice.items) &&
+    notice.items.every(isSystemNoticeItem) &&
+    (notice.doc_url === undefined || typeof notice.doc_url === 'string')
+  );
 }
 
 /**
