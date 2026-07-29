@@ -499,8 +499,9 @@ RGBD layer for external renderers (gsplat, nvblox, neural reconstruction) that p
 <code class="docutils literal notranslate"><span class="pre">(color,</span> <span class="pre">depth)</span></code> buffers. Use it to present a rendered 3D scene from the current head pose.</p></li>
 </ul>
 <p>A session holds <strong>either</strong> one <code class="docutils literal notranslate"><span class="pre">ProjectionLayer</span></code> <strong>or</strong> any number of texture layers
-(<code class="docutils literal notranslate"><span class="pre">QuadLayer</span></code> / <code class="docutils literal notranslate"><span class="pre">CylinderLayer</span></code> / <code class="docutils literal notranslate"><span class="pre">EquirectLayer</span></code>), not both: quads composite into a shared
-render target, while a projection layer is presented directly (see <a class="reference internal" href="#projectionlayer">ProjectionLayer</a>).</p>
+(<code class="docutils literal notranslate"><span class="pre">QuadLayer</span></code> / <code class="docutils literal notranslate"><span class="pre">CylinderLayer</span></code> / <code class="docutils literal notranslate"><span class="pre">EquirectLayer</span></code>), not both. Texture layers are composited
+natively by the XR runtime (or by Televiz’s own compositor as the fallback and in window /
+offscreen modes), while a projection layer is presented directly (see <a class="reference internal" href="#projectionlayer">ProjectionLayer</a>).</p>
 <p>All symbols are imported from the top-level module:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">isaacteleop.viz</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">televiz</span>
 </pre></div>
@@ -680,8 +681,8 @@ the left buffer, view 1 (right) the right. Memory doubles.</p></td>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">native_composition</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">True</span></code></p></td>
 <td><p>In XR, submit as a native <code class="docutils literal notranslate"><span class="pre">XrCompositionLayerQuad</span></code>. <code class="docutils literal notranslate"><span class="pre">False</span></code> composites through
-Televiz — needed to z-compose with a <code class="docutils literal notranslate"><span class="pre">ProjectionLayer</span></code>. See
-<a class="reference internal" href="#id1">Native OpenXR composition layers</a>.</p></td>
+Televiz’s shared render target, where 3D-placed quads depth-test against each other.
+See <a class="reference internal" href="#id1">Native OpenXR composition layers</a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alpha_blend</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
@@ -734,8 +735,8 @@ composition from the layer geometry — lower bandwidth, sharper reprojection.</
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">QuadLayer</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">XrCompositionLayerQuad</span></code></p></td>
-<td><p>Default. <code class="docutils literal notranslate"><span class="pre">native_composition</span> <span class="pre">=</span> <span class="pre">False</span></code> composites through Televiz instead — needed to
-z-compose with a <code class="docutils literal notranslate"><span class="pre">ProjectionLayer</span></code>. Window / offscreen always composite.</p></td>
+<td><p>Default. <code class="docutils literal notranslate"><span class="pre">native_composition</span> <span class="pre">=</span> <span class="pre">False</span></code> composites through Televiz instead (quads then
+depth-test against each other). Window / offscreen always composite.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CylinderLayer</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">XrCompositionLayerCylinderKHR</span></code></p></td>
