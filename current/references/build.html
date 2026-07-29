@@ -45,11 +45,11 @@
 
 
 
-    <script src="../_static/documentation_options.js?v=7509b52b"></script>
+    <script src="../_static/documentation_options.js?v=04dcff72"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
-    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/copybutton.js?v=2c21a7a3"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'references/build';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
@@ -64,7 +64,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.4.x" />
+  <meta name="docsearch:version" content="1.5.x" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -355,6 +355,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../device/manus.html">MANUS Gloves</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../device/oak.html">OAK Camera Plugin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../device/oglo.html">OGLO Tactile Glove Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/wuji_glove.html">Wuji Glove</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../device/haptikos.html">Haptikos Exoskeletons</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
@@ -481,6 +482,48 @@ pip<span class="w"> </span>install<span class="w"> </span>install/wheels/isaacte
 </pre></div>
 </div>
 </section>
+<section id="installing-from-source-with-pip-scikit-build-core">
+<h2>Installing from source with pip (scikit-build-core)<a class="headerlink" href="#installing-from-source-with-pip-scikit-build-core" title="Link to this heading">#</a></h2>
+<p>In addition to the CMake <code class="docutils literal notranslate"><span class="pre">--preset</span></code> flow above (which stages the package
+and produces a wheel under <code class="docutils literal notranslate"><span class="pre">install/wheels/</span></code>), the repository ships a root
+<a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/pyproject.toml" rel="noopener noreferrer" target="_blank">pyproject.toml</a> that exposes <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> through the
+<a class="reference external" href="https://scikit-build-core.readthedocs.io/" rel="noopener noreferrer" target="_blank">scikit-build-core</a> build backend,
+driving the <em>same</em> top-level <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> (so the two paths coexist):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>.<span class="w">            </span><span class="c1"># build + install the compiled wheel from source</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w">         </span><span class="c1"># editable / developer install</span>
+</pre></div>
+</div>
+<p>For the walkthrough — how this scoped build differs from the classic flow (ABI,
+omitted type stubs, versioning) and the caveat on iterating on pure-Python
+subpackages under an editable install — see
+<a class="reference internal" href="../getting_started/build_from_source/index.html"><span class="doc">Build from Source</span></a>.</p>
+</section>
+<section id="build-directory-layout-and-per-python-version-builds">
+<h2>Build directory layout and per-Python-version builds<a class="headerlink" href="#build-directory-layout-and-per-python-version-builds" title="Link to this heading">#</a></h2>
+<p>A CMake binary directory holds exactly one configured Python version (the
+interpreter and ABI are baked into <code class="docutils literal notranslate"><span class="pre">CMakeCache.txt</span></code>), so the two build paths use
+distinct, per-version directories under <code class="docutils literal notranslate"><span class="pre">build/</span></code> — never a shared one. Both key
+the directory off the interpreter’s <code class="docutils literal notranslate"><span class="pre">cache_tag</span></code> (<code class="docutils literal notranslate"><span class="pre">sys.implementation.cache_tag</span></code>,
+e.g. <code class="docutils literal notranslate"><span class="pre">cpython-312</span></code>) so the per-version tag is consistent between them:</p>
+<ul>
+<li><p><strong>pip / scikit-build-core</strong> → <code class="docutils literal notranslate"><span class="pre">build/wheel-&lt;cache-tag&gt;/</span></code> (e.g.
+<code class="docutils literal notranslate"><span class="pre">build/wheel-cpython-312/</span></code>), set by <code class="docutils literal notranslate"><span class="pre">build-dir</span></code> in
+<a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/pyproject.toml" rel="noopener noreferrer" target="_blank">pyproject.toml</a> and chosen automatically per interpreter.</p></li>
+<li><p><strong>classic CMake</strong> → <code class="docutils literal notranslate"><span class="pre">build/cmake-&lt;cache-tag&gt;/</span></code>, via the presets in
+<a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/CMakePresets.json" rel="noopener noreferrer" target="_blank">CMakePresets.json</a> (<code class="docutils literal notranslate"><span class="pre">py3.10</span></code> … <code class="docutils literal notranslate"><span class="pre">py3.13</span></code>). Each preset sets
+<code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_PYTHON_VERSION</span></code> and its own <code class="docutils literal notranslate"><span class="pre">binaryDir</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>--preset<span class="w"> </span>py3.12<span class="w">                     </span><span class="c1"># configures build/cmake-cpython-312</span>
+cmake<span class="w"> </span>--build<span class="w"> </span>--preset<span class="w"> </span>py3.12<span class="w"> </span>--parallel
+cmake<span class="w"> </span>--install<span class="w"> </span>build/cmake-cpython-312
+</pre></div>
+</div>
+</li>
+</ul>
+<p>The wheel/ABI tag (<code class="docutils literal notranslate"><span class="pre">cp312-cp312-linux_aarch64</span></code>) can’t be expressed as a CMake
+preset, so <code class="docutils literal notranslate"><span class="pre">cache_tag</span></code> is the common tag both paths share. Because each Python
+version gets its own directory, switching versions never reuses a stale configured
+cache. <code class="docutils literal notranslate"><span class="pre">build/</span></code> is gitignored.</p>
+</section>
 <section id="output-locations">
 <h2>Output locations<a class="headerlink" href="#output-locations" title="Link to this heading">#</a></h2>
 <p>After a successful build and install:</p>
@@ -510,17 +553,17 @@ pip<span class="w"> </span>install<span class="w"> </span>install/wheels/isaacte
 </section>
 <section id="cmake-can-t-find-openxr">
 <h3>CMake can’t find OpenXR<a class="headerlink" href="#cmake-can-t-find-openxr" title="Link to this heading">#</a></h3>
-<p>OpenXR is fetched automatically; it is not a system package. If configuration fails, try a clean configure:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm<span class="w"> </span>-rf<span class="w"> </span>build
-cmake<span class="w"> </span>-B<span class="w"> </span>build
+<p>OpenXR is fetched automatically; it is not a system package. If configuration fails, try a clean configure
+(<code class="docutils literal notranslate"><span class="pre">--fresh</span></code> wipes the preset’s CMake cache and reconfigures):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>--preset<span class="w"> </span>py3.12<span class="w"> </span>--fresh
 </pre></div>
 </div>
 </section>
 <section id="examples-or-tests-can-t-find-the-library">
 <h3>Examples or tests can’t find the library<a class="headerlink" href="#examples-or-tests-can-t-find-the-library" title="Link to this heading">#</a></h3>
 <p>When building from the top-level, examples and tests use the build tree. Ensure you run
-<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span></code> from the project root and run executables from the build directory (or use
-<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--install</span> <span class="pre">build</span></code> and run from <code class="docutils literal notranslate"><span class="pre">install/</span></code>).</p>
+<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">--preset</span> <span class="pre">py3.12</span></code> from the project root and run executables from the build directory
+(<code class="docutils literal notranslate"><span class="pre">build/cmake-cpython-312/</span></code>, or use <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--install</span> <span class="pre">build/cmake-cpython-312</span></code> and run from <code class="docutils literal notranslate"><span class="pre">install/</span></code>).</p>
 </section>
 <section id="uv-or-python-version">
 <h3>uv or Python version<a class="headerlink" href="#uv-or-python-version" title="Link to this heading">#</a></h3>
@@ -594,6 +637,8 @@ in <a class="reference internal" href="../getting_started/build_from_source/inde
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#project-structure">Project structure</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cmake-integration">CMake integration</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-the-python-wheel">Using the Python wheel</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-from-source-with-pip-scikit-build-core">Installing from source with pip (scikit-build-core)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#build-directory-layout-and-per-python-version-builds">Build directory layout and per-Python-version builds</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#output-locations">Output locations</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dependencies-fail-to-download">Dependencies fail to download</a></li>
