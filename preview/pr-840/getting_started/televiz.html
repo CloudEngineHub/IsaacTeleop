@@ -678,11 +678,12 @@ the left buffer, view 1 (right) the right. Memory doubles.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">True</span></code></p></td>
 <td><p>Allocate + regenerate a capped mip chain each frame; sampler uses trilinear filtering.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">native_composition</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">openxr_composition</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">True</span></code></p></td>
-<td><p>In XR, submit as a native <code class="docutils literal notranslate"><span class="pre">XrCompositionLayerQuad</span></code>. <code class="docutils literal notranslate"><span class="pre">False</span></code> composites through
-Televiz’s shared render target, where 3D-placed quads depth-test against each other.
-See <a class="reference internal" href="#id1">Native OpenXR composition layers</a>.</p></td>
+<td><p>Who composites the quad in XR: <code class="docutils literal notranslate"><span class="pre">True</span></code> = the OpenXR runtime (submitted as an
+<code class="docutils literal notranslate"><span class="pre">XrCompositionLayerQuad</span></code>), <code class="docutils literal notranslate"><span class="pre">False</span></code> = Televiz’s built-in compositor (shared render
+target, where 3D-placed quads depth-test against each other). See
+<a class="reference internal" href="#id1">Native OpenXR composition layers</a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alpha_blend</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
@@ -735,8 +736,9 @@ composition from the layer geometry — lower bandwidth, sharper reprojection.</
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">QuadLayer</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">XrCompositionLayerQuad</span></code></p></td>
-<td><p>Default. <code class="docutils literal notranslate"><span class="pre">native_composition</span> <span class="pre">=</span> <span class="pre">False</span></code> composites through Televiz instead (quads then
-depth-test against each other). Window / offscreen always composite.</p></td>
+<td><p>Default. <code class="docutils literal notranslate"><span class="pre">openxr_composition</span> <span class="pre">=</span> <span class="pre">False</span></code> hands the quad to Televiz’s compositor instead
+(quads then depth-test against each other). Window / offscreen are always
+Televiz-composited.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CylinderLayer</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">XrCompositionLayerCylinderKHR</span></code></p></td>

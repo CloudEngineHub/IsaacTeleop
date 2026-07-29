@@ -480,7 +480,7 @@ run the sample’s one-time setup:</p>
 </pre></div>
 </div>
 <p>There is no need to install the <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> pip package yourself — <code class="docutils literal notranslate"><span class="pre">setup</span></code> creates the
-sample’s own environment: it installs <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> (which bundles Televiz) and every other
+sample’s own environment: it installs <code class="docutils literal notranslate"><span class="pre">isaacteleop&gt;=1.4</span></code> (which bundles Televiz) and every other
 Python dependency from PyPI into <code class="docutils literal notranslate"><span class="pre">.venv/</span></code> via <code class="docutils literal notranslate"><span class="pre">uv</span></code>, builds the native NVENC/NVDEC codec, and
 probes system packages (GStreamer plugins, cairo / girepository headers, JetPack <code class="docutils literal notranslate"><span class="pre">cuda-nvrtc</span></code> +
 <code class="docutils literal notranslate"><span class="pre">ld.so</span></code> wiring). When something is missing it prints the exact <code class="docutils literal notranslate"><span class="pre">apt-get</span></code> line and prompts
@@ -663,9 +663,10 @@ distance, <code class="docutils literal notranslate"><span class="pre">cylinder_
 <td><p>Full 360°×180° sphere, for equirectangular panorama / VR-video sources. Lock modes
 don’t apply.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">native:</span> <span class="pre">false</span></code></p></td>
-<td><p>Quads only: composite server-side through Televiz instead of submitting a native
-OpenXR layer.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">compositor:</span> <span class="pre">televiz</span></code></p></td>
+<td><p>Quads only: Televiz’s built-in compositor draws the quad server-side instead of
+handing it to the OpenXR runtime (the <code class="docutils literal notranslate"><span class="pre">openxr</span></code> default). Cylinder / equirect are
+runtime-composited always.</p></td>
 </tr>
 </tbody>
 </table>
@@ -757,7 +758,7 @@ its own plane (and, in split mode, its own RTP port). Abbreviated:</p>
 <span class="w">      </span><span class="c1"># size: [w_m, h_m]</span>
 <span class="w">      </span><span class="c1"># stereo_baseline_mm: 0</span>
 <span class="w">      </span><span class="c1"># shape: quad           # quad | cylinder | equirect (cylinder/equirect are XR-only)</span>
-<span class="w">      </span><span class="c1"># native: true          # quads: native OpenXR layer (default) vs compositor</span>
+<span class="w">      </span><span class="c1"># compositor: openxr    # openxr (default) | televiz — quads only</span>
 <span class="w">      </span><span class="c1"># cylinder_radius_m: 2.0</span>
 <span class="w">      </span><span class="c1"># cylinder_angle_deg: 90</span>
 </pre></div>
