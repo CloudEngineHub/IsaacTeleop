@@ -49,7 +49,7 @@
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
-    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/copybutton.js?v=2c21a7a3"></script>
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'getting_started/quick_start';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
@@ -489,12 +489,21 @@ to clone the repository for a couple quick samples to run.</p>
 </section>
 <section id="install-the-isaacteleop-pip-package">
 <span id="install-isaacteleop-pip-package"></span><h2>2. Install the <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> pip package<a class="headerlink" href="#install-the-isaacteleop-pip-package" title="Link to this heading">#</a></h2>
-<p>In a new terminal, activate your preferred virtual or conda environment, then install the package
-from PyPI (or from a local wheel if you built from source):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># From PyPI</span>
-pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;isaacteleop[cloudxr,retargeters]~=1.3.131&#39;</span><span class="w"> </span>--extra-index-url<span class="w"> </span>https://pypi.nvidia.com
+<p>In a new terminal, activate your preferred virtual or conda environment, then install the latest
+stable release from PyPI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;isaacteleop[cloudxr,retargeters]~=1.0&#39;</span>
 </pre></div>
 </div>
+<p>Pre-release builds are published between stable releases. Picking one up takes the NVIDIA index
+and an opt-in to pre-release versions — shown here with <a class="reference external" href="https://docs.astral.sh/uv/" rel="noopener noreferrer" target="_blank">uv</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;isaacteleop[cloudxr,retargeters]~=1.0&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">      </span>--extra-index-url<span class="w"> </span>https://pypi.nvidia.com<span class="w"> </span>--prerelease<span class="o">=</span>allow
+</pre></div>
+</div>
+<p>The two commands above track the newest 1.x release. To follow this version of the documentation
+(1.5.x) exactly, pin to the series it describes instead:</p>
+<pre class="literal-block">uv pip install 'isaacteleop[cloudxr,retargeters]~=1.5.0' \
+      --extra-index-url <a class="reference external" href="https://pypi.nvidia.com" rel="noopener noreferrer" target="_blank">https://pypi.nvidia.com</a> --prerelease=allow</pre>
 <p>Instead of installing the package from PyPI, you can build from source and install the local wheel.
 See <a class="reference internal" href="build_from_source/index.html"><span class="doc">Build from Source</span></a> for more details.</p>
 </section>
