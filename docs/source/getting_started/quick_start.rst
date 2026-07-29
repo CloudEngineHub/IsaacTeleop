@@ -76,7 +76,7 @@ from PyPI (or from a local wheel if you built from source):
 .. code-block:: bash
 
    # From PyPI
-   pip install 'isaacteleop[cloudxr,retargeters]~=1.0.0' --extra-index-url https://pypi.nvidia.com
+   pip install 'isaacteleop[cloudxr,retargeters]~=1.3.131' --extra-index-url https://pypi.nvidia.com
 
 Instead of installing the package from PyPI, you can build from source and install the local wheel.
 See :doc:`build_from_source/index` for more details.
@@ -92,6 +92,13 @@ need to start the runtime in a separate terminal or source any environment file.
 The first launch downloads the CloudXR Web Client SDK and asks you to review and
 accept the EULA on the terminal; answer the prompt once and the acceptance is
 remembered for subsequent runs.
+
+.. important::
+
+   Run only one CloudXR runtime at a time. When a teleop example auto-launches
+   CloudXR, do not also run ``python -m isaacteleop.cloudxr`` in another
+   terminal. Competing runtimes use the same backend port and interrupt the
+   active session.
 
 The CloudXR runtime uses the ``auto-webrtc`` device profile by default
 (Pico & Quest). For Apple Vision Pro it defaults to ``auto-native``. To
@@ -119,7 +126,8 @@ To inspect the resolved settings after startup:
    If you prefer to run the runtime yourself in its own terminal — e.g. to keep
    the headset connection alive across example restarts, or to use launch modes
    like ``--host-client`` and ``--setup-oob`` — see
-   :doc:`/references/cloudxr`.
+   :doc:`/references/cloudxr`. Stop the auto-launched runtime before switching
+   to the standalone launcher.
 
 .. list-table:: Environment variables
    :header-rows: 1
@@ -252,6 +260,12 @@ running the CloudXR runtime and wss proxy in containerized environment; or using
             :alt: Certificate accepted page
 
             **Figure:** Certificate accepted page
+
+   .. important::
+
+      Complete the certificate-acceptance step before clicking **Connect**.
+      Otherwise, the headset's secure WebSocket connection can fail without a
+      visible error.
 
    As illustrated in the figure above, there are 3 steps to connect to your headset:
 

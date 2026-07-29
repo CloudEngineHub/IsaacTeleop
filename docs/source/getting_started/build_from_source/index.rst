@@ -40,6 +40,10 @@ the list of dependencies. On **Ubuntu**, install build tools and clang-format:
 
 Runtime-only dependencies (needed to actually run teleop, not to build):
 
+The normal Wi-Fi workflow does not require either package below. Install
+``adb`` only for USB headset automation with ``--setup-oob``, and install
+``coturn`` only for the fully USB-local ``--setup-oob --usb-local`` mode.
+
 .. code-block:: bash
 
    # adb — required for OOB teleop (``--setup-oob``) to talk to the headset over USB.
