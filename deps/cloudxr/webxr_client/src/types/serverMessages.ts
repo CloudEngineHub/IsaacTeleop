@@ -1,0 +1,87 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * serverMessages.ts - Types for messages the server sends to this client.
+ *
+ * These travel over the `teleop_command` CloudXR MessageChannel, the same
+ * channel this client uses to send teleop commands the other way. Every message
+ * is UTF-8 JSON carrying a `type` discriminator.
+ *
+ * Unknown `type` values must be ignored rather than treated as errors: the
+ * server and client version independently, so a newer host may send message
+ * kinds this client does not know about.
+ */
+
+/** One unmet workstation requirement reported by the host. */
+export interface SystemNoticeItem {
+  /** Requirement name, e.g. `"CPU governor"`. */
+  name: string;
+  /** The measured value on the host, e.g. `"powersave"`. */
+  actual: string;
+  /** The threshold that was not met, e.g. `"performance"`. */
+  required: string;
+  /** Optional actionable hint, e.g. a command that resolves the item. */
+  detail?: string;
+}
+
+/**
+ * Advisory from the host that its workstation is below the recommended spec
+ * for teleoperation. Informational only -- the session still runs.
+ */
+export interface SystemNotice {
+  level: 'warning' | 'info';
+  title: string;
+  summary: string;
+  items: SystemNoticeItem[];
+  /** Link to the documented requirements. */
+  doc_url?: string;
+}
+
+/** A `system_notice` message as it appears on the wire. */
+export interface SystemNoticeMessage {
+  type: 'system_notice';
+  message: SystemNotice;
+}
+
+/** Any message the server may send. Widen this union as kinds are added. */
+export type ServerMessage = SystemNoticeMessage | { type: string; message?: unknown };
+
+/** Narrow an arbitrary parsed payload to a {@link SystemNoticeMessage}. */
+export function isSystemNoticeMessage(value: unknown): value is SystemNoticeMessage {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as { type?: unknown; message?: unknown };
+  if (candidate.type !== 'system_notice') return false;
+  const body = candidate.message as { items?: unknown } | undefined;
+  return typeof body === 'object' && body !== null && Array.isArray(body.items);
+}
+
+/**
+ * Render a notice as plain text for the 2D status banner.
+ *
+ * The banner sets `textContent`, so this uses newlines rather than markup; the
+ * `.error-message-box` style declares `white-space: pre-line` to preserve them.
+ */
+export function formatSystemNotice(notice: SystemNotice): string {
+  const lines = [notice.title, notice.summary];
+  for (const item of notice.items) {
+    lines.push(`• ${item.name}: ${item.actual} (need ${item.required})`);
+    if (item.detail) lines.push(`   ${item.detail}`);
+  }
+  if (notice.doc_url) lines.push(notice.doc_url);
+  return lines.join('\n');
+}

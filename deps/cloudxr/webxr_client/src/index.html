@@ -641,6 +641,10 @@ limitations under the License.
         font-size: 0.9rem;
         font-weight: 500;
         line-height: 1.4;
+        /* Messages are set via textContent and separate entries with newlines
+           (browser capability failures, host workstation notices), so newlines
+           must render while long lines still wrap. */
+        white-space: pre-line;
       }
 
       .error-message-box.show {

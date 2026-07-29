@@ -94,6 +94,70 @@ interface CloudXRUIProps {
   isXRMode?: boolean;
   /** Show input recording controls in the XR panel. */
   showRecordingControls?: boolean;
+  /** Computed signal for the workstation notice title; empty when no notice is active. */
+  systemNoticeTitleText?: ReadonlySignal<string>;
+  /** Computed signal for the workstation notice body (one unmet requirement per line). */
+  systemNoticeBodyText?: ReadonlySignal<string>;
+  /** Whether a workstation notice is currently active. */
+  systemNoticeVisible?: boolean;
+  /** Dismiss the workstation notice. */
+  onDismissSystemNotice?: () => void;
+}
+
+/**
+ * Warning banner shown in-headset when the host reports that its workstation is
+ * below the recommended teleop spec.
+ *
+ * Advisory only: it never blocks the session, so it is dismissible and also
+ * times out on its own. Text comes in as signals so updates bypass React,
+ * matching how the performance metrics are rendered.
+ */
+function SystemNoticeBanner({
+  titleText,
+  bodyText,
+  onDismiss,
+}: {
+  titleText?: ReadonlySignal<string>;
+  bodyText?: ReadonlySignal<string>;
+  onDismiss?: () => void;
+}) {
+  const xrButton = useXRButton();
+  return (
+    <Container
+      flexDirection="row"
+      gap={16}
+      alignItems="center"
+      justifyContent="space-between"
+      padding={16}
+      marginBottom={8}
+      borderRadius={12}
+      borderWidth={2}
+      borderColor="rgba(255, 193, 7, 0.9)"
+      backgroundColor="rgba(80, 60, 0, 0.85)"
+    >
+      <Container flexDirection="column" gap={6} flexGrow={1}>
+        <Text fontSize={34} fontWeight="bold" color="rgba(255, 213, 79, 1)">
+          {titleText}
+        </Text>
+        <Text fontSize={28} color="rgba(240, 240, 240, 1)">
+          {bodyText}
+        </Text>
+      </Container>
+      <Button
+        {...xrButton('system-notice-dismiss', onDismiss ?? (() => {}))}
+        variant="default"
+        width={80}
+        height={64}
+        borderRadius={16}
+        backgroundColor="rgba(220, 220, 220, 0.9)"
+        hover={{ backgroundColor: 'rgba(100, 150, 255, 1)', borderColor: 'white', borderWidth: 2 }}
+      >
+        <Text fontSize={32} color="black" fontWeight="bold">
+          X
+        </Text>
+      </Button>
+    </Container>
+  );
 }
 
 // Reusable objects for face-camera rotation (avoid allocations in render loop)
@@ -172,6 +236,10 @@ export default function CloudXR3DUI({
   panelHiddenAtStart = false,
   isXRMode = false,
   showRecordingControls = false,
+  systemNoticeTitleText,
+  systemNoticeBodyText,
+  systemNoticeVisible = false,
+  onDismissSystemNotice,
 }: CloudXRUIProps) {
   const recorder = useRecorder();
   const MINIMIZE_ON_PLAY_KEY = 'cxr.isaac.minimizeOnPlay';
@@ -556,6 +624,15 @@ export default function CloudXR3DUI({
                 <Text fontSize={72} fontWeight="bold" color="white" textAlign="center">
                   Controls
                 </Text>
+
+                {/* Workstation spec advisory pushed by the host */}
+                {systemNoticeVisible && (
+                  <SystemNoticeBanner
+                    titleText={systemNoticeTitleText}
+                    bodyText={systemNoticeBodyText}
+                    onDismiss={onDismissSystemNotice}
+                  />
+                )}
 
                 {/* Server Info */}
                 <Container
