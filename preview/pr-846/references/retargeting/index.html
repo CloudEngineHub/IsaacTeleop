@@ -482,9 +482,12 @@ and <code class="docutils literal notranslate"><span class="pre">controller_thre
 <summary class="sd-summary-title sd-card-header">
 <span class="sd-summary-text">SO101ClutchRetargeter / SO101GripperRetargeter</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
 <p class="sd-card-text">Retargeters for the SO-101 5-DOF arm under full-pose SE3 IK. <code class="docutils literal notranslate"><span class="pre">SO101ClutchRetargeter</span></code>
-outputs a 7-D <code class="docutils literal notranslate"><span class="pre">ee_pose</span></code> like <code class="docutils literal notranslate"><span class="pre">Se3AbsRetargeter</span></code> but clutch-rebases controller position
-around an origin captured on engage (no teleport) and composes a fixed orientation
-calibration offset onto the grip orientation so the gripper pose follows the controller pose.
+outputs a 7-D <code class="docutils literal notranslate"><span class="pre">ee_pose</span></code> like <code class="docutils literal notranslate"><span class="pre">Se3AbsRetargeter</span></code> but clutch-rebases the <strong>full pose</strong> around
+an origin captured on engage (no teleport): it re-latches both the home position and the home
+orientation on every engage and composes the orientation delta on the <strong>left</strong> (base frame),
+with no fixed calibration offset. It engages on <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> <strong>and</strong>
+<code class="docutils literal notranslate"><span class="pre">squeeze</span> <span class="pre">&gt;</span> <span class="pre">squeeze_threshold</span></code>, re-seeds its held pose from the configured home on <code class="docutils literal notranslate"><span class="pre">reset</span></code>,
+and can latch its home position from the arm’s measured EE pose.
 <code class="docutils literal notranslate"><span class="pre">SO101GripperRetargeter</span></code> maps the trigger to a proportional jaw closedness in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.
 See <a class="reference internal" href="so101.html"><span class="doc">Retargeters: SO-101 (5-DOF arm)</span></a> for the full setup.</p>
 </div>
