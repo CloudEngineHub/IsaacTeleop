@@ -626,7 +626,12 @@ instead — no headset or runtime needed; stereo shows the left eye.</p>
 rate, so it trails fast head motion by roughly a frame — expected for any head-locked
 OpenXR layer; prefer <code class="docutils literal notranslate"><span class="pre">lazy</span></code> unless you need a true HUD.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lazy</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gimbal</span></code></p></td>
+<td><p>Follows your position but not your rotation: the surface stays pointed where you first
+looked, walks with you, and turning your head looks around it. The natural mode for
+wide cylinder feeds (a “virtual gimbal”).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lazy</span></code></p></td>
 <td><p>World-locked, but re-snaps in front of you when you look away (default).</p></td>
 </tr>
 </tbody>
@@ -753,7 +758,7 @@ its own plane (and, in split mode, its own RTP port). Abbreviated:</p>
 <span class="w">  </span><span class="nt">clear_color</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">r</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">g</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">b</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">a</span><span class="p p-Indicator">]</span>
 <span class="w">  </span><span class="nt">placements</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">cam</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">lock_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lazy</span><span class="w">         </span><span class="c1"># world | head | lazy</span>
+<span class="w">      </span><span class="nt">lock_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lazy</span><span class="w">         </span><span class="c1"># world | head | lazy | gimbal</span>
 <span class="w">      </span><span class="nt">distance</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.5</span>
 <span class="w">      </span><span class="c1"># size: [w_m, h_m]</span>
 <span class="w">      </span><span class="c1"># stereo_baseline_mm: 0</span>
@@ -795,7 +800,7 @@ Televiz as the compositor at the end of the chain:</p>
 ├── camera_viz.py        — receiver / viewer (drives a Televiz VizSession)
 ├── camera_streamer.py   — robot-side RTP sender (per-camera supervisor)
 ├── pipeline/            — source ABC + threaded runner
-├── placements/          — XR lock-mode strategies (world / head / lazy)
+├── placements/          — XR lock-mode strategies (world / head / lazy / gimbal)
 ├── sources/             — V4L2 / OAK-D / ZED / video replay / synthetic / rtp_h264
 ├── transports/          — RTP sender + receiver (native + GStreamer)
 ├── codec/               — native NVENC / NVDEC pybind module

@@ -469,7 +469,7 @@ directly.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>isaacteleop
 </pre></div>
 </div>
-<p>The published wheels (Linux x86_64 / aarch64, CPython 3.10–3.13) bundle the compiled
+<p>The published wheels (Linux x86_64 / aarch64, CPython 3.11–3.13) bundle the compiled
 <code class="docutils literal notranslate"><span class="pre">isaacteleop.viz</span></code> module, so <strong>no source build is required</strong>. Verify with:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">isaacteleop.viz</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">televiz</span>
 </pre></div>
@@ -712,7 +712,7 @@ the compositor path. See <a class="reference internal" href="#id1">Native OpenXR
 <p><code class="docutils literal notranslate"><span class="pre">submit(left,</span> <span class="pre">right=None,</span> <span class="pre">stream=0)</span></code> accepts a <code class="docutils literal notranslate"><span class="pre">VizBuffer</span></code> or any
 <code class="docutils literal notranslate"><span class="pre">__cuda_array_interface__</span></code> object; the binding converts it and releases the GIL across the copy.
 For a stereo layer both buffers are copied on the same stream and signaled together, so the renderer
-never sees a half-matched pair. Lock-mode placement strategies (<code class="docutils literal notranslate"><span class="pre">world</span></code> / <code class="docutils literal notranslate"><span class="pre">head</span></code> / <code class="docutils literal notranslate"><span class="pre">lazy</span></code>) are
+never sees a half-matched pair. Lock-mode placement strategies (<code class="docutils literal notranslate"><span class="pre">world</span></code> / <code class="docutils literal notranslate"><span class="pre">head</span></code> / <code class="docutils literal notranslate"><span class="pre">lazy</span></code> / <code class="docutils literal notranslate"><span class="pre">gimbal</span></code>) are
 <strong>application policy</strong> and ship in the sample, not in the module.</p>
 </section>
 <section id="native-openxr-composition-layers">
