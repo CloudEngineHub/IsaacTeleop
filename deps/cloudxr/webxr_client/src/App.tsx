@@ -70,6 +70,12 @@ import { RecorderComponent } from './RecorderComponent';
 import { RecorderProvider, useRecorder } from './RecorderContext';
 import { SuppressWebGLRendererWhenHeadless } from './SuppressWebGLRendererWhenHeadless';
 import { TraceVisualization } from './TraceVisualization';
+import {
+  SystemNotice,
+  formatSystemNotice,
+  formatSystemNoticeBody,
+  isSystemNoticeMessage,
+} from './types/serverMessages';
 
 // Performance metrics signals - raw numeric data backing the in-XR HUD.
 // Signals update their value without triggering React re-renders.
@@ -123,6 +129,21 @@ function resolveStreamTestSeconds(configured: number | undefined): number {
   const seconds = configured ?? DEFAULT_STREAM_TEST_SECONDS;
   return Math.min(MAX_STREAM_TEST_SECONDS, Math.max(MIN_STREAM_TEST_SECONDS, seconds));
 }
+
+// Advisory pushed by the host when its workstation is below the recommended
+// teleop spec. Held in a signal so the in-XR banner updates without a React
+// re-render, matching the metrics signals above.
+const systemNotice = signal<SystemNotice | null>(null);
+const systemNoticeTitleText = computed(() => systemNotice.value?.title ?? '');
+// Shares formatSystemNoticeBody with the 2D banner rather than formatting here,
+// so the in-headset text cannot drift from what a desktop tester sees -- notably
+// the per-item remediation hint, which is the most actionable part of a notice.
+const systemNoticeBodyText = computed(() =>
+  systemNotice.value ? formatSystemNoticeBody(systemNotice.value) : ''
+);
+
+/** How long the in-XR notice stays up before dismissing itself [ms]. */
+const SYSTEM_NOTICE_AUTO_DISMISS_MS = 20000;
 
 const CONTROL_PANEL_LAYOUT = {
   distance: 1.8,
@@ -654,6 +675,90 @@ function AppContent() {
     setCloudXRSession(session);
   };
 
+  const systemNoticeTimerRef = useRef<number | null>(null);
+  // Signal writes deliberately bypass React, so the banner's *text* updates
+  // without a re-render -- but its presence must be React state, or mounting and
+  // unmounting it would never happen.
+  const [systemNoticeVisible, setSystemNoticeVisible] = useState(false);
+  // Level drives the XR banner palette. Kept as React state next to the
+  // visibility flag rather than read off the signal, because the banner picks
+  // static colors at render time rather than subscribing.
+  const [systemNoticeLevel, setSystemNoticeLevel] = useState<'warning' | 'info'>('warning');
+
+  /** Take the notice down, in both surfaces, and cancel any pending auto-dismiss. */
+  const dismissSystemNotice = () => {
+    systemNotice.value = null;
+    setSystemNoticeVisible(false);
+    // showStatus() sets .show and never clears itself, so without this the 2D
+    // status box keeps the notice after dismissal, after the timeout, and
+    // across a disconnect into the next connection.
+    cloudXR2DUI?.hideError();
+    if (systemNoticeTimerRef.current !== null) {
+      clearTimeout(systemNoticeTimerRef.current);
+      systemNoticeTimerRef.current = null;
+    }
+  };
+
+  // [4] Cancel a pending auto-dismiss if the app tears down first; otherwise the
+  // timeout fires setSystemNoticeVisible on an unmounted component.
+  useEffect(
+    () => () => {
+      if (systemNoticeTimerRef.current !== null) {
+        clearTimeout(systemNoticeTimerRef.current);
+      }
+    },
+    []
+  );
+
+  /**
+   * Dispatch a message received from the server on the teleop channel.
+   *
+   * Unknown `type` values are logged and ignored rather than treated as errors:
+   * the host and this client are versioned independently, so a newer host may
+   * send message kinds this build does not know about.
+   */
+  const handleServerMessage = (message: unknown) => {
+    if (isSystemNoticeMessage(message)) {
+      const notice = message.message;
+      // No unmet requirements: treat it as an all-clear so a host can retract a
+      // notice it raised earlier, rather than leaving a stale banner up.
+      if (notice.items.length === 0) {
+        dismissSystemNotice();
+        return;
+      }
+
+      systemNotice.value = notice;
+      setSystemNoticeVisible(true);
+      setSystemNoticeLevel(notice.level);
+      // Restart the countdown so a second notice gets its full dwell time.
+      if (systemNoticeTimerRef.current !== null) {
+        clearTimeout(systemNoticeTimerRef.current);
+      }
+      systemNoticeTimerRef.current = window.setTimeout(() => {
+        systemNotice.value = null;
+        setSystemNoticeVisible(false);
+        systemNoticeTimerRef.current = null;
+      }, SYSTEM_NOTICE_AUTO_DISMISS_MS);
+
+      // Mirror to the 2D banner so the notice is visible when testing from a
+      // desktop browser, where the in-XR panel never renders.
+      cloudXR2DUI?.showStatus(
+        formatSystemNotice(notice),
+        notice.level === 'warning' ? 'error' : 'info'
+      );
+      return;
+    }
+
+    const type = (message as { type?: unknown })?.type;
+    console.info(`Ignoring server message of unhandled type: ${String(type)}`);
+  };
+
+  // The receive loop below is created once per session and lives for its whole
+  // duration, so it must not capture this handler directly -- that would pin the
+  // first render's `cloudXR2DUI`. Route through a ref that each render refreshes.
+  const handleServerMessageRef = useRef(handleServerMessage);
+  handleServerMessageRef.current = handleServerMessage;
+
   /**
    * Helper to send a message using MessageChannel API (new) or legacy API (fallback).
    * Looks for the teleop_command channel by UUID, then falls back to legacy API.
@@ -806,6 +911,9 @@ function AppContent() {
     setIsCountingDown(false);
     setCountdownRemaining(0);
     setIsTeleopRunning(false);
+    // The notice describes the host we are leaving; it must not persist into a
+    // later connection to a different one.
+    dismissSystemNotice();
 
     // Close message channels before ending XR session to avoid
     // "Cannot send control message" errors during SDK cleanup.
@@ -974,7 +1082,7 @@ function AppContent() {
               try {
                 const message = JSON.parse(messageText);
                 console.info('Parsed message:', message);
-                // Handle message here if needed
+                handleServerMessageRef.current(message);
               } catch {
                 console.info('Non-JSON message:', messageText);
               }
@@ -1101,6 +1209,11 @@ function AppContent() {
                   streamTestText={streamTestText}
                   streamTestColor={streamTestColor}
                   showRecordingControls={config.showRecordingControls}
+                  systemNoticeTitleText={systemNoticeTitleText}
+                  systemNoticeBodyText={systemNoticeBodyText}
+                  systemNoticeVisible={systemNoticeVisible}
+                  systemNoticeLevel={systemNoticeLevel}
+                  onDismissSystemNotice={dismissSystemNotice}
                 />
               )}
             </>
