@@ -289,10 +289,13 @@ export default function CloudXR3DUI({
   const isMinimizedLayout = isCompact || panelHidden;
   const handleWidth = panelHidden ? 0.12 : isCompact ? 0.28 : 1.0;
   const handleY = panelHidden ? -0.065 : isCompact ? -0.15 : -0.42;
-  // Sit the workstation notice just above the panel's top edge. The panel is
-  // centred on the group, so its top is sizeY/2 and the clearance has to track
-  // whichever of the three sizes is showing.
-  const noticeY = panelHidden ? 0.42 : isCompact ? 0.6 : 1.5;
+  // The notice only floats when the panel is collapsed; the full panel renders
+  // it inline. Clearing the top edge of a 2.33-unit-tall panel would put the
+  // notice about a metre above the operator's head, out of view entirely --
+  // floating is what keeps it visible when the panel is small, not a layout
+  // that makes sense at full size.
+  const noticeFloats = panelHidden || isCompact;
+  const noticeY = panelHidden ? 0.42 : 0.6;
 
   // Face-camera rotation: smoothly rotate UI to face the user (Y-axis only)
   useFrame((state, dt) => {
@@ -633,6 +636,16 @@ export default function CloudXR3DUI({
                   Controls
                 </Text>
 
+                {/* Workstation advisory, inline while the panel is full size.
+                    See the floating copy below for the collapsed states. */}
+                {systemNoticeVisible && !noticeFloats && (
+                  <SystemNoticeBanner
+                    titleText={systemNoticeTitleText}
+                    bodyText={systemNoticeBodyText}
+                    onDismiss={onDismissSystemNotice}
+                  />
+                )}
+
                 {/* Server Info */}
                 <Container
                   flexDirection="column"
@@ -813,15 +826,18 @@ export default function CloudXR3DUI({
           )}
         </Container>
 
-        {/* Workstation advisory from the host.
-            Deliberately a sibling of the control panel rather than content
-            inside it: the panel collapses to compact when "minimize on play"
-            fires, and to a bare Show button when hidden, either of which would
-            swallow the warning at exactly the moment the operator is working.
-            As its own window it stays visible in all three panel states, while
-            still riding the panel's drag position and face-camera rotation so
-            it appears where the operator already put their UI. */}
-        {systemNoticeVisible && (
+        {/* Workstation advisory from the host, in its floating form.
+            The panel collapses to compact when "minimize on play" fires, and to
+            a bare Show button when hidden -- either would swallow the warning at
+            exactly the moment the operator is working. Rendering it as a sibling
+            of the panel keeps it visible in those states, while it still rides
+            the panel's drag position and face-camera rotation so it appears
+            where the operator already put their UI.
+
+            The full panel renders the notice inline instead: it is 2.33 units
+            tall, so a floating notice clearing its top edge would sit about a
+            metre above the operator's head. */}
+        {systemNoticeVisible && noticeFloats && (
           <group position={[0, noticeY, 0]}>
             <Container
               pixelSize={0.001}
