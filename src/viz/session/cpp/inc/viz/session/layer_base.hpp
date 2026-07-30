@@ -47,6 +47,80 @@ struct DirectPresentView
     Resolution extent{}; // must equal the swapchain per-view size
 };
 
+// Geometry a native OpenXR composition layer is sampled onto by the
+// runtime. Each shape maps 1:1 to an XrCompositionLayer* struct; the
+// backend gates non-quad shapes on the matching XR_KHR extension.
+enum class NativeLayerShape
+{
+    kQuad, // XrCompositionLayerQuad (core)
+    kCylinder, // XrCompositionLayerCylinderKHR (XR_KHR_composition_layer_cylinder)
+    kEquirect2, // XrCompositionLayerEquirect2KHR (XR_KHR_composition_layer_equirect2)
+};
+
+// Per-frame descriptor for a layer that composites as a native OpenXR
+// composition layer (quad / cylinder / equirect) instead of drawing into
+// the shared render target. The XR backend owns a color swapchain per
+// layer, copies ``color_left`` (and ``color_right`` for stereo) straight
+// in, and submits one XrCompositionLayer* per eye — no shared RT, no
+// projection draw. Only meaningful in kXr; non-XR backends never ask for
+// one.
+//
+// A native layer carries no depth: the XrCompositionLayer* structs have
+// no depth field, so the runtime composites them in submission order,
+// not z-tested against projection-layer 3D content. This is inherent to
+// OpenXR composition layers and is also what lets the runtime's layer
+// fast path / client-reconstructed streaming treat them cheaply.
+//
+// ``shape`` selects which of the per-shape parameter groups below is
+// meaningful; the others are ignored. A tagged flat struct (not a
+// variant) to keep this header light and the backend's consumption
+// simple.
+struct NativeLayerView
+{
+    // Source images (resting layout SHADER_READ_ONLY_OPTIMAL). Backend
+    // copies these into its own layer swapchain(s).
+    VkImage color_left = VK_NULL_HANDLE;
+    VkImage color_right = VK_NULL_HANDLE; // VK_NULL_HANDLE => mono (eyeVisibility BOTH)
+    Resolution extent{}; // per-eye source size; the layer swapchain matches it
+
+    // Placement origin in the session's reference space. Quad: center of
+    // the rectangle. Cylinder: center point of the cylinder (arc bows
+    // away from -z). Equirect: center of the sphere.
+    Pose3D pose{};
+
+    // Per-eye horizontal disparity along the placement's local +x axis
+    // (millimeters); the left eye's layer pose shifts −half, the right
+    // +half. Ignored mono. Any shape (a translated infinite-radius
+    // equirect sphere is unchanged by construction, so it's a no-op there).
+    float stereo_baseline_mm = 0.0f;
+
+    // Composite this layer honoring its texture's alpha channel
+    // (XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT). False =
+    // opaque within the layer's bounds — the right setting for camera
+    // feeds, and the one that keeps the layer eligible for the runtime's
+    // client-reconstructed streaming (which excludes source-alpha layers).
+    bool alpha_blend = false;
+
+    NativeLayerShape shape = NativeLayerShape::kQuad;
+
+    // ── kQuad ────────────────────────────────────────────────────────
+    glm::vec2 size_meters{ 0.0f, 0.0f }; // physical width × height
+
+    // ── kCylinder ────────────────────────────────────────────────────
+    float radius = 0.0f; // meters (kEquirect2 shares it: 0 / +inf = infinite sphere)
+    float central_angle = 0.0f; // visible arc, radians
+    float aspect_ratio = 0.0f; // arc-width / height of the visible portion
+
+    // ── kEquirect2 ───────────────────────────────────────────────────
+    float central_horizontal_angle = 0.0f; // radians, 2π = full 360°
+    float upper_vertical_angle = 0.0f; // radians from horizon, +π/2 = zenith
+    float lower_vertical_angle = 0.0f; // radians from horizon, −π/2 = nadir
+
+    // Stable identity the backend keys its persistent swapchain(s) on
+    // across frames (the layer's ``this``). Never dereferenced by the backend.
+    const void* source_id = nullptr;
+};
+
 // Abstract layer drawn into the compositor's render pass (RGBA8_SRGB
 // color + D32_SFLOAT depth, single-sample). record() issues draw calls;
 // it must NOT end the render pass or submit. Resource lifetime is the
@@ -144,6 +218,42 @@ public:
     virtual std::vector<DirectPresentView> acquire_direct_views(uint32_t /*in_flight_slot*/)
     {
         return {};
+    }
+
+    // Native OpenXR composition-layer support (see NativeLayerView). When
+    // true, the compositor — on a backend that supports_native_layers() —
+    // routes this layer through acquire_native_layer()/record_native_layers()
+    // instead of record(), and DROPS the shared projection layer for frames
+    // where every visible layer is native (unlocking the runtime's layer fast
+    // path). A layer WITH a composite fallback (QuadLayer) must return false
+    // unless it is in a kXr session, so the window/offscreen fallback still
+    // uses record(); native-only layers return true unconditionally and are
+    // rejected at add_layer on unsupported backends (required_native_shape).
+    // Default: not native.
+    virtual bool is_native_layer() const noexcept
+    {
+        return false;
+    }
+
+    // Promote this frame's content into ``in_flight_slot`` (same slot the
+    // compositor passes to get_wait_semaphores()) and return the native
+    // layer descriptor. nullopt = nothing fresh to composite this frame (no
+    // publish yet) — the backend submits no layer for this frame. Called
+    // instead of record_pre_render_pass()/record() on the native path.
+    virtual std::optional<NativeLayerView> acquire_native_layer(uint32_t /*in_flight_slot*/)
+    {
+        return std::nullopt;
+    }
+
+    // Shape this layer REQUIRES the backend to composite natively, or
+    // nullopt when the layer has a composite fallback (QuadLayer) / isn't
+    // native at all. add_layer rejects the layer up front when the backend
+    // can't composite the shape (non-XR session, or the runtime lacks the
+    // XR_KHR_composition_layer_* extension) — better than failing on the
+    // first frame.
+    virtual std::optional<NativeLayerShape> required_native_shape() const noexcept
+    {
+        return std::nullopt;
     }
 
     // Let a layer reject a backend it can't run on. Called once by add_layer
