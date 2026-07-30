@@ -70,7 +70,12 @@ import { RecorderComponent } from './RecorderComponent';
 import { RecorderProvider, useRecorder } from './RecorderContext';
 import { SuppressWebGLRendererWhenHeadless } from './SuppressWebGLRendererWhenHeadless';
 import { TraceVisualization } from './TraceVisualization';
-import { SystemNotice, formatSystemNotice, isSystemNoticeMessage } from './types/serverMessages';
+import {
+  SystemNotice,
+  formatSystemNotice,
+  formatSystemNoticeBody,
+  isSystemNoticeMessage,
+} from './types/serverMessages';
 
 // Performance metrics signals - raw numeric data backing the in-XR HUD.
 // Signals update their value without triggering React re-renders.
@@ -130,15 +135,11 @@ function resolveStreamTestSeconds(configured: number | undefined): number {
 // re-render, matching the metrics signals above.
 const systemNotice = signal<SystemNotice | null>(null);
 const systemNoticeTitleText = computed(() => systemNotice.value?.title ?? '');
+// Shares formatSystemNoticeBody with the 2D banner rather than formatting here,
+// so the in-headset text cannot drift from what a desktop tester sees -- notably
+// the per-item remediation hint, which is the most actionable part of a notice.
 const systemNoticeBodyText = computed(() =>
-  systemNotice.value
-    ? [
-        systemNotice.value.summary,
-        ...systemNotice.value.items.map(
-          item => `- ${item.name}: ${item.actual} (need ${item.required})`
-        ),
-      ].join('\n')
-    : ''
+  systemNotice.value ? formatSystemNoticeBody(systemNotice.value) : ''
 );
 
 /** How long the in-XR notice stays up before dismissing itself [ms]. */
