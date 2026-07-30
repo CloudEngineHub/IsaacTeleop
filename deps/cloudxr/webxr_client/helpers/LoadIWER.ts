@@ -23,8 +23,10 @@ declare global {
   }
 }
 
+// Both versions are loaded from CDN; bump them together when upgrading IWER.
 const IWER_version = '2.3.0';
 const IWER_DEVUI_version = '2.3.0';
+let pendingIWERLoad: Promise<IWERLoadResult> | null = null;
 
 export interface IWERLoadResult {
   supportsImmersive: boolean;
@@ -32,6 +34,19 @@ export interface IWERLoadResult {
 }
 
 export async function loadIWERIfNeeded(): Promise<IWERLoadResult> {
+  if (pendingIWERLoad) {
+    return pendingIWERLoad;
+  }
+  pendingIWERLoad = loadIWER();
+  const result = await pendingIWERLoad;
+  if (!result.supportsImmersive) {
+    // Clear so a later call can retry after a transient failure.
+    pendingIWERLoad = null;
+  }
+  return result;
+}
+
+async function loadIWER(): Promise<IWERLoadResult> {
   let supportsImmersive = false;
   let iwerLoaded = false;
 
@@ -95,7 +110,9 @@ export async function loadIWERIfNeeded(): Promise<IWERLoadResult> {
             console.warn('IWER DevUI not found after script load, continuing without DevUI.');
           }
 
-          await device.installRuntime();
+          // This fallback runs only after the native XRSystem reports no immersive
+          // support. IWER 2.3 otherwise preserves that unusable navigator.xr.
+          await device.installRuntime({ forceInstall: true });
           window.xrDevice = device;
           supportsImmersive = true;
           iwerLoaded = true;
