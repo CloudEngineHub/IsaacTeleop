@@ -103,17 +103,34 @@ export function isSystemNoticeMessage(value: unknown): value is SystemNoticeMess
 }
 
 /**
+ * Render everything below the title: the summary, one line per unmet
+ * requirement, each item's remediation hint, and the documentation link.
+ *
+ * Shared by both display surfaces. The XR panel styles the title separately
+ * from the body, so it needs the body on its own; the 2D banner appends this
+ * to the title via {@link formatSystemNotice}. Keeping one formatter is what
+ * stops the two surfaces from drifting -- the in-headset banner is the primary
+ * display, so it must not be the one missing the actionable hint.
+ *
+ * Bullets are plain ASCII on purpose: the XR text is rendered from an MSDF
+ * font atlas with no guaranteed glyph coverage for characters like `•`.
+ */
+export function formatSystemNoticeBody(notice: SystemNotice): string {
+  const lines = [notice.summary];
+  for (const item of notice.items) {
+    lines.push(`- ${item.name}: ${item.actual} (need ${item.required})`);
+    if (item.detail) lines.push(`   ${item.detail}`);
+  }
+  if (notice.doc_url) lines.push(notice.doc_url);
+  return lines.join('\n');
+}
+
+/**
  * Render a notice as plain text for the 2D status banner.
  *
  * The banner sets `textContent`, so this uses newlines rather than markup; the
  * `.error-message-box` style declares `white-space: pre-line` to preserve them.
  */
 export function formatSystemNotice(notice: SystemNotice): string {
-  const lines = [notice.title, notice.summary];
-  for (const item of notice.items) {
-    lines.push(`• ${item.name}: ${item.actual} (need ${item.required})`);
-    if (item.detail) lines.push(`   ${item.detail}`);
-  }
-  if (notice.doc_url) lines.push(notice.doc_url);
-  return lines.join('\n');
+  return `${notice.title}\n${formatSystemNoticeBody(notice)}`;
 }

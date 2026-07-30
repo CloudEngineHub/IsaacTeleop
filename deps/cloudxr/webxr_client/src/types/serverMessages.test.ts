@@ -15,7 +15,12 @@
  * limitations under the License.
  */
 
-import { formatSystemNotice, isSystemNoticeMessage, SystemNotice } from './serverMessages';
+import {
+  formatSystemNotice,
+  formatSystemNoticeBody,
+  isSystemNoticeMessage,
+  SystemNotice,
+} from './serverMessages';
 
 /** A well-formed notice, matching what the Isaac Lab host sends. */
 const validNotice = (): SystemNotice => ({
@@ -105,11 +110,49 @@ describe('isSystemNoticeMessage', () => {
   });
 });
 
+describe('formatSystemNoticeBody', () => {
+  // The XR panel styles the title separately and renders only this body, so
+  // anything missing here is invisible to the operator wearing the headset --
+  // the primary display surface for this feature.
+  it('includes the remediation hint for each item', () => {
+    expect(formatSystemNoticeBody(validNotice())).toContain(
+      'sudo cpupower frequency-set -g performance'
+    );
+  });
+
+  it('includes the documentation link', () => {
+    expect(formatSystemNoticeBody(validNotice())).toContain('https://example.invalid/docs');
+  });
+
+  it('omits the title, which the XR panel renders separately', () => {
+    expect(formatSystemNoticeBody(validNotice())).not.toContain(
+      'Workstation below recommended spec'
+    );
+  });
+
+  it('matches the body the 2D banner shows', () => {
+    // Guards against the two surfaces drifting apart again.
+    const notice = validNotice();
+    expect(formatSystemNotice(notice)).toBe(`${notice.title}\n${formatSystemNoticeBody(notice)}`);
+  });
+
+  it('uses ASCII bullets so the MSDF font atlas can render them', () => {
+    expect(formatSystemNoticeBody(validNotice())).not.toMatch(/[\u2022\u00b7\u25aa]/);
+  });
+
+  it('separates every line with a newline for pre-line rendering', () => {
+    // uikit collapses whitespace unless whiteSpace="pre-line"; the body relies
+    // on those newlines surviving to stay readable in the headset.
+    const lines = formatSystemNoticeBody(validNotice()).split('\n');
+    expect(lines.length).toBeGreaterThanOrEqual(4); // summary + item + detail + doc_url
+  });
+});
+
 describe('formatSystemNotice', () => {
   it('renders every accepted notice without throwing', () => {
     const text = formatSystemNotice(validNotice());
     expect(text).toContain('Workstation below recommended spec');
-    expect(text).toContain('CPU governor: powersave (need performance)');
+    expect(text).toContain('- CPU governor: powersave (need performance)');
     expect(text).toContain('sudo cpupower frequency-set -g performance');
     expect(text).toContain('https://example.invalid/docs');
   });
@@ -125,6 +168,6 @@ describe('formatSystemNotice', () => {
       summary: 's',
       items: [{ name: 'n', actual: 'a', required: 'r' }],
     };
-    expect(formatSystemNotice(notice)).toBe('t\ns\n• n: a (need r)');
+    expect(formatSystemNotice(notice)).toBe('t\ns\n- n: a (need r)');
   });
 });

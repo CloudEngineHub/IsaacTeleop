@@ -139,7 +139,11 @@ function SystemNoticeBanner({
         <Text fontSize={34} fontWeight="bold" color="rgba(255, 213, 79, 1)">
           {titleText}
         </Text>
-        <Text fontSize={28} color="rgba(240, 240, 240, 1)">
+        {/* whiteSpace="pre-line" is required, not cosmetic: uikit's default
+            normalization collapses every run of whitespace -- newlines
+            included -- into a single space, which would run the summary, each
+            unmet requirement, and its fix together on one unreadable line. */}
+        <Text fontSize={28} color="rgba(240, 240, 240, 1)" whiteSpace="pre-line">
           {bodyText}
         </Text>
       </Container>
