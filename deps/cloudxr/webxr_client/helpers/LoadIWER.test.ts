@@ -17,7 +17,7 @@
  * @jest-environment jsdom
  */
 
-import { loadIWERIfNeeded } from './LoadIWER';
+import type { IWERLoadResult } from './LoadIWER';
 
 type IWERTestWindow = Window &
   typeof globalThis & {
@@ -33,9 +33,13 @@ type IWERTestWindow = Window &
 describe('loadIWERIfNeeded', () => {
   const testWindow = window as IWERTestWindow;
   let originalXRDescriptor: PropertyDescriptor | undefined;
+  let loadIWERIfNeeded: () => Promise<IWERLoadResult>;
 
   beforeEach(() => {
     originalXRDescriptor = Object.getOwnPropertyDescriptor(navigator, 'xr');
+    jest.resetModules();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    ({ loadIWERIfNeeded } = require('./LoadIWER'));
   });
 
   afterEach(() => {
