@@ -285,6 +285,10 @@ export default function CloudXR3DUI({
   const isMinimizedLayout = isCompact || panelHidden;
   const handleWidth = panelHidden ? 0.12 : isCompact ? 0.28 : 1.0;
   const handleY = panelHidden ? -0.065 : isCompact ? -0.15 : -0.42;
+  // Sit the workstation notice just above the panel's top edge. The panel is
+  // centred on the group, so its top is sizeY/2 and the clearance has to track
+  // whichever of the three sizes is showing.
+  const noticeY = panelHidden ? 0.42 : isCompact ? 0.6 : 1.5;
 
   // Face-camera rotation: smoothly rotate UI to face the user (Y-axis only)
   useFrame((state, dt) => {
@@ -625,15 +629,6 @@ export default function CloudXR3DUI({
                   Controls
                 </Text>
 
-                {/* Workstation spec advisory pushed by the host */}
-                {systemNoticeVisible && (
-                  <SystemNoticeBanner
-                    titleText={systemNoticeTitleText}
-                    bodyText={systemNoticeBodyText}
-                    onDismiss={onDismissSystemNotice}
-                  />
-                )}
-
                 {/* Server Info */}
                 <Container
                   flexDirection="column"
@@ -813,6 +808,36 @@ export default function CloudXR3DUI({
             </Container>
           )}
         </Container>
+
+        {/* Workstation advisory from the host.
+            Deliberately a sibling of the control panel rather than content
+            inside it: the panel collapses to compact when "minimize on play"
+            fires, and to a bare Show button when hidden, either of which would
+            swallow the warning at exactly the moment the operator is working.
+            As its own window it stays visible in all three panel states, while
+            still riding the panel's drag position and face-camera rotation so
+            it appears where the operator already put their UI. */}
+        {systemNoticeVisible && (
+          <group position={[0, noticeY, 0]}>
+            <Container
+              pixelSize={0.001}
+              width={1400}
+              height={340}
+              alignItems="center"
+              justifyContent="center"
+              pointerEvents="auto"
+              sizeX={2.33}
+              sizeY={0.57}
+              flexDirection="column"
+            >
+              <SystemNoticeBanner
+                titleText={systemNoticeTitleText}
+                bodyText={systemNoticeBodyText}
+                onDismiss={onDismissSystemNotice}
+              />
+            </Container>
+          </group>
+        )}
       </group>
     </HandleTarget>
   );
