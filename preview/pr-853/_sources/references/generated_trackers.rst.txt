@@ -23,7 +23,9 @@ Three inputs drive the generator:
 - :code-file:`src/core/deviceio_trackers/defaults.toml` — the defaults, expressed with
   ``%placeholder%`` substitutions (``%name%``, ``%name_CamelCase%``, and so on).
 - :code-dir:`src/core/codegen` — ``manifest.py`` resolves the placeholders, ``templates.py``
-  derives type and file names, and ``generate_trackers.py`` renders the output.
+  derives type and file names, ``templates/`` holds the C++ bodies as ``*.hpp.template`` /
+  ``*.cpp.template`` (``@KEY@`` substitution via ``in_renderer.py``), and ``generate_trackers.py``
+  renders the output.
 
 :code-file:`cmake/GenerateTrackers.cmake` runs the generator through ``execute_process`` at
 **configure** time, not build time, because CMake needs the resulting source list before it can
@@ -32,8 +34,9 @@ into git, exactly like the ``flatc`` output. Two consequences worth knowing:
 
 - Grepping ``src/`` for a generated class such as ``Se3Tracker`` finds the manifest entry and the
   generator, not a ``.cpp``. Searching, debugging, and clangd all need a configured build tree.
-- The manifests and every ``.py`` under ``src/core/codegen`` are registered as
-  ``CMAKE_CONFIGURE_DEPENDS``, so editing any of them re-runs configure on the next build.
+- The manifests, every ``.py`` under ``src/core/codegen``, and every template under
+  ``templates/`` are registered as ``CMAKE_CONFIGURE_DEPENDS``, so editing any of them re-runs
+  configure on the next build.
 
 The generator owns its output directory: each run deletes files it did not emit, so a renamed
 tracker cannot leave a stale header behind on an include path.
@@ -90,9 +93,6 @@ Generated today
    * - ``haptic_command``
      - ``HapticCommandPushTracker``
      - ``direction = "out"``: a typed producer wrapping ``SchemaPusher``
-   * - ``haptic_command_reader``
-     - ``HapticCommandReaderTracker``
-     - ``shape = "multi_endpoint"``: buckets samples by ``HapticCommand.endpoint``
 
 Still hand-written
 ------------------
@@ -111,16 +111,26 @@ Still hand-written
      - Genuinely a passthrough, but a **vendor** of an existing facade — see below
    * - ``MessageChannelTracker``
      - ``XR_NV_opaque_data_channel`` with its own connection state machine
+   * - ``HapticCommandReaderTracker``
+     - Cross-process consumer: ``read_all_samples`` on one collection, buckets by
+       ``HapticCommand.endpoint`` (left/right). Paired with generated ``HapticCommandPushTracker``.
    * - ``FrameMetadataTrackerOak``
      - Holds N ``SchemaTracker`` s, one collection per stream — see below
    * - ``TensorPushTracker``
      - Deliberately kept as the untyped ``bytes`` escape hatch
 
 A quick way to tell the two groups apart: only passthrough impls mention ``SchemaTracker`` or
-``SchemaPusher``. Of the hand-written live impls, just three do, and each is listed above.
+``SchemaPusher``. Of the hand-written live impls that use those helpers, each is listed above.
 
 Future work
 -----------
+
+**Multi-endpoint reader (rejected generated shape).** We briefly generated
+``HapticCommandReaderTracker`` with a ``multi_endpoint`` template (bucket samples by
+``HapticCommand.endpoint`` on one push-tensor collection). That shape was removed: it made the
+codegen tree branchy for a single device, and a generic multi-endpoint reader does not fit
+``in/`` or ``out``. The hand-written reader remains the supported approach; a future redesign
+(split tensors/collections per endpoint, or a dedicated generator) is optional follow-up.
 
 **Multi-stream shape (OAK).** ``FrameMetadataTrackerOak`` owns one ``SchemaTracker`` per camera
 stream, with collection ids derived as ``{prefix}/{StreamName}``. It needs a template variant that
