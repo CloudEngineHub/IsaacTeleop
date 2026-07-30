@@ -39,7 +39,7 @@ jobs:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
         build_type: ["Debug", "Release"]
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.11', '3.12', '3.13']
         arch: ['x64', 'arm64']
 
     steps:
@@ -47,6 +47,16 @@ jobs:
       uses: actions/checkout@v6
       with:
         fetch-depth: 0 # Full history for accurate git describe
+
+    # CMakePresets.json defines one preset per supported Python (py3.11 … py3.13),
+    # each configuring an isolated build/cmake-cpython-3XX directory. Derive the
+    # preset name and its build directory once here; later steps (ctest, coverage,
+    # test packaging, install) need the directory the preset chose.
+    - name: Resolve CMake preset
+      run: |
+        py="${{ matrix.python_version }}"
+        echo "CMAKE_PRESET=py${py}" >> "$GITHUB_ENV"
+        echo "BUILD_DIR=build/cmake-cpython-${py//./}" >> "$GITHUB_ENV"
 
     - name: Install uv
       uses: ./.github/actions/setup-uv
@@ -105,10 +115,10 @@ jobs:
       with:
         path: |
           ~/vcpkg
-          build/vcpkg_installed
-        key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ env.VCPKG_COMMIT }}-${{ hashFiles('cmake/DepthAIVcpkgManifest.cmake') }}
+          ${{ env.BUILD_DIR }}/vcpkg_installed
+        key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ env.CMAKE_PRESET }}-${{ env.VCPKG_COMMIT }}-${{ hashFiles('cmake/DepthAIVcpkgManifest.cmake') }}
         restore-keys: |
-          vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ env.VCPKG_COMMIT }}-
+          vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ env.CMAKE_PRESET }}-${{ env.VCPKG_COMMIT }}-
 
     - name: Setup vcpkg
       run: |
@@ -145,9 +155,10 @@ jobs:
           )
         fi
 
-        cmake -B build \
+        # The preset supplies ISAAC_TELEOP_PYTHON_VERSION and the per-Python
+        # build directory; everything else is a command-line -D override.
+        cmake --preset "${CMAKE_PRESET}" \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DISAAC_TELEOP_PYTHON_VERSION=${{ matrix.python_version }} \
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -DBUILD_PLUGIN_OAK_CAMERA=ON \
@@ -158,13 +169,13 @@ jobs:
           "${coverage_args[@]}"
 
     - name: Build
-      run: cmake --build build --parallel 4
+      run: cmake --build --preset "${CMAKE_PRESET}" --parallel 4
 
     - name: ccache stats
       run: ccache --show-stats
 
     - name: Run All Tests
-      run: ctest --test-dir build --output-on-failure --parallel
+      run: ctest --test-dir "${BUILD_DIR}" --output-on-failure --parallel
 
     - name: Generate coverage report
       if: ${{ matrix.build_type == 'Debug' && matrix.python_version == '3.11' && matrix.arch == 'x64' }}
@@ -174,10 +185,10 @@ jobs:
 
         gcovr_args=(
           --root "${GITHUB_WORKSPACE}"
-          --object-directory build/src
+          --object-directory "${BUILD_DIR}/src"
           # CMake compiler-id probes are not test targets and produce noisy gcov warnings.
-          --gcov-exclude "build/CMakeFiles/.*/CompilerId.*/.*"
-          --exclude-directories "build/CMakeFiles"
+          --gcov-exclude "${BUILD_DIR}/CMakeFiles/.*/CompilerId.*/.*"
+          --exclude-directories "${BUILD_DIR}/CMakeFiles"
           --filter "src/"
           --exclude "src/.*/.*_tests/.*"
           --exclude "src/.*/tests/.*"
@@ -229,10 +240,10 @@ jobs:
         mkdir -p viz-tests-pkg
         # Glob all viz_*_tests executables (covers viz_core_tests today, and
         # viz_layers_tests / viz_session_tests / viz_xr_tests as they ship).
-        find build/src/viz -name 'viz_*_tests' -type f -executable \
+        find "${BUILD_DIR}/src/viz" -name 'viz_*_tests' -type f -executable \
           -exec cp -v {} viz-tests-pkg/ \;
         if ! ls viz-tests-pkg/viz_*_tests >/dev/null 2>&1; then
-          echo "No viz test binaries found under build/src/viz/"
+          echo "No viz test binaries found under ${BUILD_DIR}/src/viz/"
           exit 1
         fi
         tar -cvzf viz-tests.tar.gz -C viz-tests-pkg .
@@ -244,11 +255,11 @@ jobs:
         name: viz-tests-${{ matrix.arch }}
         path: viz-tests.tar.gz
         if-no-files-found: error
-        retention-days: 1
+        retention-days: 7
 
     - name: Install (Release only)
       if: matrix.build_type == 'Release'
-      run: cmake --install build
+      run: cmake --install "${BUILD_DIR}"
 
     - name: Repair wheel tags with auditwheel (Release only)
       if: matrix.build_type == 'Release'
@@ -285,7 +296,7 @@ jobs:
       with:
         name: isaacteleop-install-release-${{ matrix.arch }}-py${{ matrix.python_version }}
         path: isaacteleop-install.tar
-        retention-days: 1
+        retention-days: 7
     - name: Upload wheel artifacts
       if: matrix.build_type == 'Release'
       uses: actions/upload-artifact@v6
@@ -293,7 +304,96 @@ jobs:
         name: isaacteleop-wheels-${{ matrix.arch }}-py${{ matrix.python_version }}
         path: install/wheels/*.whl
         if-no-files-found: error
-        retention-days: 1
+        retention-days: 7
+
+  pip-editable-install:
+    # Validates the scikit-build-core (PEP 517/660) from-source install path added
+    # for issue #735: an sdist build and `pip install -e .` over the root
+    # pyproject.toml, which drives the same top-level CMake build as build-ubuntu.
+    # This guards the standards-based path so it does not rot. Single config
+    # (x64 / Python 3.11 / Release) is sufficient -- the backend just wraps CMake,
+    # already matrix-tested above. No CUDA/Vulkan here, so BUILD_VIZ stays auto-OFF.
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 1
+        persist-credentials: false
+
+    - name: Install uv
+      uses: ./.github/actions/setup-uv
+
+    - name: Install Apt dependencies
+      run: |
+        sudo apt-get update
+        # clang-format-14: the pip build enforces the clang-format gate (no
+        # cmake.define override), so the tool must be present or the build FATALs.
+        sudo apt-get install -y $CORE_APT_DEPS ccache patchelf clang-format-14
+
+    - name: Build sdist (validates backend config + metadata)
+      run: |
+        set -euo pipefail
+        uv build --sdist --python 3.11 --out-dir dist
+        ls -la dist
+
+    - name: Editable install
+      run: |
+        set -euo pipefail
+        uv venv --python 3.11 .venv-skbuild
+        # Editable install through scikit-build-core. It drives the same CMake
+        # build, scoped by pyproject.toml (no examples/tests/plugins/clang-format),
+        # and fetches C++ deps via FetchContent.
+        uv pip install --python .venv-skbuild -e .
+
+    - name: Import smoke test
+      run: |
+        set -euo pipefail
+        cat > "${RUNNER_TEMP}/skbuild_smoke.py" <<'PY'
+        import importlib.util
+
+        # (1) ABI check: actually import the compiled pybind11 extensions and the
+        # eager pure-Python packages. `import isaacteleop` also exercises the eager
+        # submodule chain (cloudxr, teleop_session_manager) that the base install
+        # must satisfy with only numpy+pyyaml.
+        import isaacteleop
+        for mod in (
+            "oxr",
+            "deviceio",
+            "deviceio_trackers",
+            "deviceio_session",
+            "schema",
+            "plugin_manager",
+        ):
+            importlib.import_module(f"isaacteleop.{mod}")
+
+        # (2) Completeness check: every top-level subpackage that the classic wheel
+        # ships (minus GPU-only `viz`, which is auto-OFF here) must be PACKAGED.
+        # find_spec locates the package without importing its optional third-party
+        # deps, so a subpackage silently dropped from the build fails loudly here
+        # even though the smoke env installs no extras.
+        expected = [
+            "isaacteleop.mcap",
+            "isaacteleop.rig",
+            "isaacteleop.cloudxr",
+            "isaacteleop.teleop_session_manager",
+            "isaacteleop.retargeters",
+            "isaacteleop.retargeting_engine",
+            "isaacteleop.retargeting_engine_ui",
+            "isaacteleop.haptic_devices",
+        ]
+        missing = [m for m in expected if importlib.util.find_spec(m) is None]
+        assert not missing, f"subpackages missing from the wheel: {missing}"
+
+        print("isaacteleop", isaacteleop.__version__, "imported OK;",
+              "all expected subpackages present")
+        PY
+        # Run the editable install directly with the venv's interpreter -- NOT via
+        # `uv run`, which (with [tool.uv] package = false) would use the project's
+        # own .venv without isaacteleop, rather than .venv-skbuild.
+        .venv-skbuild/bin/python "${RUNNER_TEMP}/skbuild_smoke.py"
 
   test-viz-gpu:
     # Runs [gpu]-tagged Catch2 tests for the Televiz module on a self-hosted
@@ -493,7 +593,7 @@ jobs:
     strategy:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.11', '3.12', '3.13']
         arch: ['x64', 'arm64']
 
     steps:
@@ -635,7 +735,7 @@ jobs:
     strategy:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
-        python_version: ['3.10', '3.12']
+        python_version: ['3.12']
         arch: ['x64', 'arm64']
 
     steps:
@@ -667,13 +767,17 @@ jobs:
       with:
         github-token: ${{ secrets.V2D_RETARGETER_TOKEN }}
 
+    # Each ROS distro is tied to its own system Python, so the distro follows
+    # from the matrix entry: Jazzy is 3.12. Humble would be 3.10, which is below
+    # the supported floor.
     - name: Set ROS Distro
       id: ros-distro
       run: |
-        if [ "${{ matrix.python_version }}" = "3.10" ]; then
-          echo "ROS_DISTRO=humble" >> $GITHUB_ENV
-        elif [ "${{ matrix.python_version }}" = "3.12" ]; then
+        if [ "${{ matrix.python_version }}" = "3.12" ]; then
           echo "ROS_DISTRO=jazzy" >> $GITHUB_ENV
+        else
+          echo "::error::No ROS distro mapped to Python ${{ matrix.python_version }}"
+          exit 1
         fi
 
     - name: Setup CloudXR SDK

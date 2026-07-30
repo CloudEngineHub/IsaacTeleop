@@ -70,13 +70,28 @@ to clone the repository for a couple quick samples to run.
 2. Install the ``isaacteleop`` pip package
 -------------------------------------------
 
-In a new terminal, activate your preferred virtual or conda environment, then install the package
-from PyPI (or from a local wheel if you built from source):
+In a new terminal, activate your preferred virtual or conda environment, then install the latest
+stable release from PyPI:
 
 .. code-block:: bash
 
-   # From PyPI
-   pip install 'isaacteleop[cloudxr,retargeters]~=1.0.0' --extra-index-url https://pypi.nvidia.com
+   pip install 'isaacteleop[cloudxr,retargeters]~=1.0'
+
+Pre-release builds are published between stable releases. Picking one up takes the NVIDIA index
+and an opt-in to pre-release versions — shown here with `uv <https://docs.astral.sh/uv/>`__:
+
+.. code-block:: bash
+
+   uv pip install 'isaacteleop[cloudxr,retargeters]~=1.0' \
+         --extra-index-url https://pypi.nvidia.com --prerelease=allow
+
+The two commands above track the newest 1.x release. To follow this version of the documentation
+(|version|) exactly, pin to the series it describes instead:
+
+.. parsed-literal::
+
+   uv pip install 'isaacteleop[cloudxr,retargeters]\ |pip_version_pin|\ ' \\
+         --extra-index-url https://pypi.nvidia.com --prerelease=allow
 
 Instead of installing the package from PyPI, you can build from source and install the local wheel.
 See :doc:`build_from_source/index` for more details.
@@ -177,6 +192,12 @@ To inspect the resolved settings after startup:
      - ``true``
      - File-based logging (disable to print to console)
      - ``true``, ``false``
+
+On Jetson Orin the launcher selects the experimental CloudXR runtime and
+main-thread join automatically. You normally do not need to set
+``ISAAC_TELEOP_CLOUDXR_EXP`` or ``ISAAC_TELEOP_CLOUDXR_JOIN_MAIN``; those are
+overrides for debugging or forcing the stable path. See
+:doc:`/references/cloudxr`.
 
 .. _whitelist-firewall-ports:
 

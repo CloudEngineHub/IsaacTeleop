@@ -94,6 +94,26 @@ headset connects and how the web client is delivered.
 ``--usb-local`` requires ``--setup-oob``. See
 :doc:`/references/oob_teleop_control` for full OOB documentation.
 
+Re-open the client on the headset
+---------------------------------
+
+If the headset browser is closed or navigated away, re-open the client from a
+second terminal without restarting the runtime:
+
+.. code-block:: bash
+
+   python -m isaacteleop.cloudxr.webclient
+
+This opens the versioned client over USB ``adb`` with this host's ``serverIP``
+and ``port`` pre-filled. Pass a URL to override the target — one already
+containing ``oobEnable=`` is opened verbatim, which is how to restore an OOB or
+USB-local session from the URL the launcher printed. ``--print-only`` resolves
+the URL without touching ``adb``. Run with ``--help`` for the full argument
+handling.
+
+It only *opens* the page; accepting the certificate and clicking CONNECT remain
+``--setup-oob``'s CDP automation.
+
 .. _load-cloudxr-environment-variables:
 
 Load CloudXR environment variables
@@ -133,7 +153,7 @@ uses the running runtime instead of starting another one:
 Configuration
 -------------
 
-The standalone launcher accepts the same configuration flags as the embedded
+The standalone launcher accepts the same configuration options as the embedded
 one:
 
 - ``--cloudxr-env-config <PATH>`` — a ``KEY=value`` env file of CloudXR
@@ -142,6 +162,31 @@ one:
   environment variables.
 - ``--cloudxr-install-dir <PATH>`` — CloudXR install directory
   (default: ``~/.cloudxr``).
+
+On Jetson Orin the launcher already selects the experimental runtime package
+and main-thread join. The following are Isaac Teleop launcher overrides only
+(not CloudXR native settings). Export them in the process environment, or add
+them to ``--cloudxr-env-config`` if you need them:
+
+.. list-table:: Launcher overrides
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Variable
+     - Default
+     - Description
+   * - ``ISAAC_TELEOP_CLOUDXR_EXP``
+     - unset (auto on Orin)
+     - Select the experimental package (``isaacteleop.cloudxr_exp``).
+       ``ISAAC_TELEOP_CLOUDXR_EXP=0`` forces the stable runtime on Orin;
+       ``ISAAC_TELEOP_CLOUDXR_EXP=1`` forces the experimental package elsewhere
+       (launcher fails if it is missing).
+   * - ``ISAAC_TELEOP_CLOUDXR_JOIN_MAIN``
+     - unset (auto on Orin)
+     - Join the CloudXR service on the main thread (avoids a
+       ``Couldn't create autoTSSkey mapping`` abort on some platforms).
+       ``ISAAC_TELEOP_CLOUDXR_JOIN_MAIN=0`` forces worker-thread join on Orin;
+       ``ISAAC_TELEOP_CLOUDXR_JOIN_MAIN=1`` forces main-thread join elsewhere.
 
 To inspect the active settings after startup:
 

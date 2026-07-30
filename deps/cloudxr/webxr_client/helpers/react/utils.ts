@@ -29,7 +29,7 @@ export function loadPerProject<T>(
   key: string,
   teleopPath: string,
   parse: (raw: string) => T | undefined,
-  fallback: T,
+  fallback: T
 ): T {
   try {
     const stored = localStorage.getItem(`cxr.isaac.${key}|${teleopPath}`);
@@ -48,7 +48,7 @@ export function savePerProject<T>(
   key: string,
   teleopPath: string,
   value: T,
-  serialize: (v: T) => string = String,
+  serialize: (v: T) => string = String
 ): void {
   try {
     localStorage.setItem(`cxr.isaac.${key}|${teleopPath}`, serialize(value));
@@ -86,6 +86,26 @@ export function parseAutoRefreshMode(
 ): AutoRefreshMode {
   if (AUTO_REFRESH_MODES.includes(unvalidatedValue as AutoRefreshMode)) {
     return unvalidatedValue as AutoRefreshMode;
+  }
+  return fallback;
+}
+
+/** Pre-stream network test mode: skip it, measure and report, or measure and gate on it. */
+export type StreamTestMode = 'off' | 'warn' | 'block';
+
+const STREAM_TEST_MODES: readonly StreamTestMode[] = ['off', 'warn', 'block'];
+
+/**
+ * Parses a string into a valid network test mode.
+ * @param unvalidatedValue - String to validate (e.g. from URL, config, or form). May be invalid or empty.
+ * @param fallback - Value to return when unvalidatedValue is not valid.
+ */
+export function parseStreamTestMode(
+  unvalidatedValue: string,
+  fallback: StreamTestMode
+): StreamTestMode {
+  if (STREAM_TEST_MODES.includes(unvalidatedValue as StreamTestMode)) {
+    return unvalidatedValue as StreamTestMode;
   }
   return fallback;
 }
