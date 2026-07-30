@@ -447,7 +447,7 @@ For the exact command surface and flags, see the
 <li><p><a class="reference internal" href="#supported-sources" id="id5">Supported sources</a></p></li>
 <li><p><a class="reference internal" href="#running-with-a-real-camera" id="id6">Running with a real camera</a></p></li>
 <li><p><a class="reference internal" href="#display-modes" id="id7">Display modes</a></p></li>
-<li><p><a class="reference internal" href="#surface-shapes-and-native-composition-layers" id="id8">Surface shapes and native composition layers</a></p></li>
+<li><p><a class="reference internal" href="#display-surfaces" id="id8">Display surfaces</a></p></li>
 <li><p><a class="reference internal" href="#cloudxr-runtime-flags" id="id9">CloudXR runtime flags</a></p></li>
 <li><p><a class="reference internal" href="#split-mode-robot-workstation-over-rtp" id="id10">Split mode — robot → workstation over RTP</a></p>
 <ul>
@@ -640,45 +640,45 @@ wide cylinder feeds (a “virtual gimbal”).</p></td>
 <p>Lazy-mode knobs live under <code class="docutils literal notranslate"><span class="pre">placements.&lt;name&gt;</span></code>: <code class="docutils literal notranslate"><span class="pre">look_away_angle_deg</span></code>,
 <code class="docutils literal notranslate"><span class="pre">reposition_distance</span></code>, <code class="docutils literal notranslate"><span class="pre">reposition_delay_s</span></code>, <code class="docutils literal notranslate"><span class="pre">transition_duration_s</span></code>.</p>
 </section>
-<section id="surface-shapes-and-native-composition-layers">
-<h2><a class="toc-backref" href="#id8" role="doc-backlink">Surface shapes and native composition layers</a><a class="headerlink" href="#surface-shapes-and-native-composition-layers" title="Link to this heading">#</a></h2>
-<p>Each camera renders on a flat plane by default. Per-camera keys under
-<code class="docutils literal notranslate"><span class="pre">display.placements.&lt;name&gt;</span></code> pick the surface (XR mode only; details in
-<a class="reference internal" href="../getting_started/televiz.html#native-openxr-composition-layers"><span class="std std-ref">Native OpenXR composition layers</span></a>):</p>
+<section id="display-surfaces">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Display surfaces</a><a class="headerlink" href="#display-surfaces" title="Link to this heading">#</a></h2>
+<p>By default each camera renders on a flat plane, which suits normal-FOV feeds. Wide-FOV and
+panoramic sources look better on a curved surface: set <code class="docutils literal notranslate"><span class="pre">shape</span></code> per camera under
+<code class="docutils literal notranslate"><span class="pre">display.placements.&lt;name&gt;</span></code>:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <colgroup>
 <col style="width: 30.0%" />
 <col style="width: 70.0%" />
 </colgroup>
 <thead>
-<tr class="row-odd"><th class="head"><p>Key</p></th>
-<th class="head"><p>Effect</p></th>
+<tr class="row-odd"><th class="head"><p>Shape</p></th>
+<th class="head"><p>Behavior</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">shape:</span> <span class="pre">quad</span></code> (default)</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">quad</span></code> (default)</p></td>
 <td><p>Flat plane. All lock modes apply.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">shape:</span> <span class="pre">cylinder</span></code></p></td>
-<td><p>Curved arc facing the operator; <code class="docutils literal notranslate"><span class="pre">cylinder_radius_m</span></code> (default 2.0) sets the viewing
-distance, <code class="docutils literal notranslate"><span class="pre">cylinder_angle_deg</span></code> (default 90) the arc width. All lock modes apply
-(<code class="docutils literal notranslate"><span class="pre">head</span></code> = gaze-tracking curved visor).</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cylinder</span></code></p></td>
+<td><p>Curved arc facing the operator, so the image stays at a constant viewing distance edge
+to edge. <code class="docutils literal notranslate"><span class="pre">cylinder_radius_m</span></code> (default 2.0) sets that distance, <code class="docutils literal notranslate"><span class="pre">cylinder_angle_deg</span></code>
+(default 90) the arc width. All lock modes apply (<code class="docutils literal notranslate"><span class="pre">head</span></code> = gaze-tracking curved
+visor).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">shape:</span> <span class="pre">equirect</span></code></p></td>
-<td><p>Full 360°×180° sphere, for equirectangular panorama / VR-video sources. Lock modes
-don’t apply.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">compositor:</span> <span class="pre">televiz</span></code></p></td>
-<td><p>Quads only: Televiz’s built-in compositor draws the quad server-side instead of
-handing it to the OpenXR runtime (the <code class="docutils literal notranslate"><span class="pre">openxr</span></code> default). Cylinder / equirect are
-runtime-composited always.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">equirect</span></code></p></td>
+<td><p>Full 360°×180° sphere around the operator, for equirectangular panorama / VR-video
+sources. Lock modes don’t apply.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">cylinder</span></code> and <code class="docutils literal notranslate"><span class="pre">equirect</span></code> require XR mode — the viewer exits with an error in window mode.
-Stereo sources render per-eye textures on the same surface; <code class="docutils literal notranslate"><span class="pre">stereo_baseline_mm</span></code> adds a
-per-eye pose shift (no effect on the equirect sphere at its default infinite radius).</p>
+<p>Curved shapes exist only in XR mode — the viewer exits with an error in window mode. Stereo
+sources render per-eye textures on the same surface, and <code class="docutils literal notranslate"><span class="pre">stereo_baseline_mm</span></code> adds a per-eye
+pose shift (no effect on the equirect sphere at its default infinite radius).</p>
+<p>Surfaces are composited by the OpenXR runtime, which keeps them sharp under head motion and lets
+CloudXR stream them efficiently (see
+<a class="reference internal" href="../getting_started/televiz.html#openxr-composition-layers"><span class="std std-ref">OpenXR composition layers</span></a>). For flat planes only,
+<code class="docutils literal notranslate"><span class="pre">compositor:</span> <span class="pre">televiz</span></code> opts a camera back into Televiz’s built-in compositor.</p>
 </section>
 <section id="cloudxr-runtime-flags">
 <h2><a class="toc-backref" href="#id9" role="doc-backlink">CloudXR runtime flags</a><a class="headerlink" href="#cloudxr-runtime-flags" title="Link to this heading">#</a></h2>
@@ -902,7 +902,7 @@ extensions and forwards the handles through <code class="docutils literal notran
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#supported-sources">Supported sources</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-with-a-real-camera">Running with a real camera</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#display-modes">Display modes</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#surface-shapes-and-native-composition-layers">Surface shapes and native composition layers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#display-surfaces">Display surfaces</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cloudxr-runtime-flags">CloudXR runtime flags</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#split-mode-robot-workstation-over-rtp">Split mode — robot → workstation over RTP</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loopback">Loopback</a></li>
@@ -994,7 +994,7 @@ extensions and forwards the handles through <code class="docutils literal notran
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 29, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 30, 2026.
       <br/>
     
   </p>

@@ -442,9 +442,10 @@ flags (<code class="docutils literal notranslate"><span class="pre">--setup-oob<
 <ul class="simple">
 <li><p><a class="reference internal" href="#start-the-runtime" id="id5">Start the runtime</a></p></li>
 <li><p><a class="reference internal" href="#optional-launch-modes" id="id6">Optional launch modes</a></p></li>
-<li><p><a class="reference internal" href="#load-cloudxr-environment-variables" id="id7">Load CloudXR environment variables</a></p></li>
-<li><p><a class="reference internal" href="#run-teleop-examples-against-the-dedicated-runtime" id="id8">Run teleop examples against the dedicated runtime</a></p></li>
-<li><p><a class="reference internal" href="#configuration" id="id9">Configuration</a></p></li>
+<li><p><a class="reference internal" href="#re-open-the-client-on-the-headset" id="id7">Re-open the client on the headset</a></p></li>
+<li><p><a class="reference internal" href="#load-cloudxr-environment-variables" id="id8">Load CloudXR environment variables</a></p></li>
+<li><p><a class="reference internal" href="#run-teleop-examples-against-the-dedicated-runtime" id="id9">Run teleop examples against the dedicated runtime</a></p></li>
+<li><p><a class="reference internal" href="#configuration" id="id10">Configuration</a></p></li>
 </ul>
 </nav>
 <section id="start-the-runtime">
@@ -518,6 +519,22 @@ HTTPS. Requires <code class="docutils literal notranslate"><span class="pre">cot
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">--usb-local</span></code> requires <code class="docutils literal notranslate"><span class="pre">--setup-oob</span></code>. See
 <a class="reference internal" href="oob_teleop_control.html"><span class="doc">Out-of-Band Teleop Control</span></a> for full OOB documentation.</p>
+</section>
+<section id="re-open-the-client-on-the-headset">
+<h2>Re-open the client on the headset<a class="headerlink" href="#re-open-the-client-on-the-headset" title="Link to this heading">#</a></h2>
+<p>If the headset browser is closed or navigated away, re-open the client from a
+second terminal without restarting the runtime:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr.webclient
+</pre></div>
+</div>
+<p>This opens the versioned client over USB <code class="docutils literal notranslate"><span class="pre">adb</span></code> with this host’s <code class="docutils literal notranslate"><span class="pre">serverIP</span></code>
+and <code class="docutils literal notranslate"><span class="pre">port</span></code> pre-filled. Pass a URL to override the target — one already
+containing <code class="docutils literal notranslate"><span class="pre">oobEnable=</span></code> is opened verbatim, which is how to restore an OOB or
+USB-local session from the URL the launcher printed. <code class="docutils literal notranslate"><span class="pre">--print-only</span></code> resolves
+the URL without touching <code class="docutils literal notranslate"><span class="pre">adb</span></code>. Run with <code class="docutils literal notranslate"><span class="pre">--help</span></code> for the full argument
+handling.</p>
+<p>It only <em>opens</em> the page; accepting the certificate and clicking CONNECT remain
+<code class="docutils literal notranslate"><span class="pre">--setup-oob</span></code>’s CDP automation.</p>
 </section>
 <section id="load-cloudxr-environment-variables">
 <span id="id2"></span><h2>Load CloudXR environment variables<a class="headerlink" href="#load-cloudxr-environment-variables" title="Link to this heading">#</a></h2>
@@ -653,6 +670,7 @@ them to <code class="docutils literal notranslate"><span class="pre">--cloudxr-e
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#start-the-runtime">Start the runtime</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-launch-modes">Optional launch modes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#re-open-the-client-on-the-headset">Re-open the client on the headset</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#load-cloudxr-environment-variables">Load CloudXR environment variables</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#run-teleop-examples-against-the-dedicated-runtime">Run teleop examples against the dedicated runtime</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a></li>
@@ -738,7 +756,7 @@ them to <code class="docutils literal notranslate"><span class="pre">--cloudxr-e
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 29, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 30, 2026.
       <br/>
     
   </p>
