@@ -675,37 +675,61 @@ function AppContent() {
     setCloudXRSession(session);
   };
 
-  /**
-   * Dispatch a message received from the server on the teleop channel.
-   *
-   * Unknown `type` values are logged and ignored rather than treated as errors:
-   * the host and this client version independently, so a newer host may send
-   * message kinds this build does not know about.
-   */
   const systemNoticeTimerRef = useRef<number | null>(null);
   // Signal writes deliberately bypass React, so the banner's *text* updates
   // without a re-render -- but its presence must be React state, or mounting and
   // unmounting it would never happen.
   const [systemNoticeVisible, setSystemNoticeVisible] = useState(false);
+  // Level drives the XR banner palette. Kept as React state next to the
+  // visibility flag rather than read off the signal, because the banner picks
+  // static colors at render time rather than subscribing.
+  const [systemNoticeLevel, setSystemNoticeLevel] = useState<'warning' | 'info'>('warning');
 
-  /** Take the notice down and cancel any pending auto-dismiss. */
+  /** Take the notice down, in both surfaces, and cancel any pending auto-dismiss. */
   const dismissSystemNotice = () => {
     systemNotice.value = null;
     setSystemNoticeVisible(false);
+    // showStatus() sets .show and never clears itself, so without this the 2D
+    // status box keeps the notice after dismissal, after the timeout, and
+    // across a disconnect into the next connection.
+    cloudXR2DUI?.hideError();
     if (systemNoticeTimerRef.current !== null) {
       clearTimeout(systemNoticeTimerRef.current);
       systemNoticeTimerRef.current = null;
     }
   };
 
+  // [4] Cancel a pending auto-dismiss if the app tears down first; otherwise the
+  // timeout fires setSystemNoticeVisible on an unmounted component.
+  useEffect(
+    () => () => {
+      if (systemNoticeTimerRef.current !== null) {
+        clearTimeout(systemNoticeTimerRef.current);
+      }
+    },
+    []
+  );
+
+  /**
+   * Dispatch a message received from the server on the teleop channel.
+   *
+   * Unknown `type` values are logged and ignored rather than treated as errors:
+   * the host and this client are versioned independently, so a newer host may
+   * send message kinds this build does not know about.
+   */
   const handleServerMessage = (message: unknown) => {
     if (isSystemNoticeMessage(message)) {
       const notice = message.message;
-      // Nothing to show if the host reported no unmet requirements.
-      if (notice.items.length === 0) return;
+      // No unmet requirements: treat it as an all-clear so a host can retract a
+      // notice it raised earlier, rather than leaving a stale banner up.
+      if (notice.items.length === 0) {
+        dismissSystemNotice();
+        return;
+      }
 
       systemNotice.value = notice;
       setSystemNoticeVisible(true);
+      setSystemNoticeLevel(notice.level);
       // Restart the countdown so a second notice gets its full dwell time.
       if (systemNoticeTimerRef.current !== null) {
         clearTimeout(systemNoticeTimerRef.current);
@@ -1188,6 +1212,7 @@ function AppContent() {
                   systemNoticeTitleText={systemNoticeTitleText}
                   systemNoticeBodyText={systemNoticeBodyText}
                   systemNoticeVisible={systemNoticeVisible}
+                  systemNoticeLevel={systemNoticeLevel}
                   onDismissSystemNotice={dismissSystemNotice}
                 />
               )}

@@ -100,6 +100,8 @@ interface CloudXRUIProps {
   systemNoticeBodyText?: ReadonlySignal<string>;
   /** Whether a workstation notice is currently active. */
   systemNoticeVisible?: boolean;
+  /** Severity of the active notice; selects the banner palette. */
+  systemNoticeLevel?: 'warning' | 'info';
   /** Dismiss the workstation notice. */
   onDismissSystemNotice?: () => void;
 }
@@ -112,15 +114,32 @@ interface CloudXRUIProps {
  * times out on its own. Text comes in as signals so updates bypass React,
  * matching how the performance metrics are rendered.
  */
+/** Palette per notice level, so an informational notice does not read as a warning. */
+const SYSTEM_NOTICE_PALETTE = {
+  warning: {
+    border: 'rgba(255, 193, 7, 0.9)',
+    background: 'rgba(80, 60, 0, 0.85)',
+    title: 'rgba(255, 213, 79, 1)',
+  },
+  info: {
+    border: 'rgba(66, 165, 245, 0.9)',
+    background: 'rgba(10, 45, 80, 0.85)',
+    title: 'rgba(144, 202, 249, 1)',
+  },
+} as const;
+
 function SystemNoticeBanner({
   titleText,
   bodyText,
+  level = 'warning',
   onDismiss,
 }: {
   titleText?: ReadonlySignal<string>;
   bodyText?: ReadonlySignal<string>;
+  level?: 'warning' | 'info';
   onDismiss?: () => void;
 }) {
+  const palette = SYSTEM_NOTICE_PALETTE[level];
   const xrButton = useXRButton();
   return (
     <Container
@@ -132,11 +151,11 @@ function SystemNoticeBanner({
       marginBottom={8}
       borderRadius={12}
       borderWidth={2}
-      borderColor="rgba(255, 193, 7, 0.9)"
-      backgroundColor="rgba(80, 60, 0, 0.85)"
+      borderColor={palette.border}
+      backgroundColor={palette.background}
     >
       <Container flexDirection="column" gap={6} flexGrow={1}>
-        <Text fontSize={34} fontWeight="bold" color="rgba(255, 213, 79, 1)">
+        <Text fontSize={34} fontWeight="bold" color={palette.title}>
           {titleText}
         </Text>
         {/* whiteSpace="pre-line" is required, not cosmetic: uikit's default
@@ -243,6 +262,7 @@ export default function CloudXR3DUI({
   systemNoticeTitleText,
   systemNoticeBodyText,
   systemNoticeVisible = false,
+  systemNoticeLevel = 'warning',
   onDismissSystemNotice,
 }: CloudXRUIProps) {
   const recorder = useRecorder();
@@ -642,6 +662,7 @@ export default function CloudXR3DUI({
                   <SystemNoticeBanner
                     titleText={systemNoticeTitleText}
                     bodyText={systemNoticeBodyText}
+                    level={systemNoticeLevel}
                     onDismiss={onDismissSystemNotice}
                   />
                 )}
@@ -853,6 +874,7 @@ export default function CloudXR3DUI({
               <SystemNoticeBanner
                 titleText={systemNoticeTitleText}
                 bodyText={systemNoticeBodyText}
+                level={systemNoticeLevel}
                 onDismiss={onDismissSystemNotice}
               />
             </Container>
