@@ -23,7 +23,7 @@
  * is UTF-8 JSON carrying a `type` discriminator.
  *
  * Unknown `type` values must be ignored rather than treated as errors: the
- * server and client version independently, so a newer host may send message
+ * server and client are versioned independently, so a newer host may send message
  * kinds this client does not know about.
  */
 
@@ -57,9 +57,6 @@ export interface SystemNoticeMessage {
   type: 'system_notice';
   message: SystemNotice;
 }
-
-/** Any message the server may send. Widen this union as kinds are added. */
-export type ServerMessage = SystemNoticeMessage | { type: string; message?: unknown };
 
 /** Narrow an unknown value to a {@link SystemNoticeItem}. */
 function isSystemNoticeItem(value: unknown): value is SystemNoticeItem {
