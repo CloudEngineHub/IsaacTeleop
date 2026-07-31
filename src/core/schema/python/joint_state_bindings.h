@@ -72,11 +72,7 @@ inline void bind_joint_state(py::module& m)
                     bool has_effort, const Pose* ee_pose, bool ee_pose_valid)
                  {
                      JointStateOutputT native;
-                     native.joints.reserve(joints.size());
-                     for (const auto& joint : joints)
-                     {
-                         native.joints.push_back(to_native(joint));
-                     }
+                     native.joints = to_native_vector(joints, "joints");
                      native.device_id = device_id;
                      native.has_velocity = has_velocity;
                      native.has_effort = has_effort;

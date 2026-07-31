@@ -19,7 +19,7 @@ namespace core
  * (``--collection-prefix``). One tracker per hand: construct with the matching
  * ``collection_id`` (e.g. ``"oglo/left"`` / ``"oglo/right"``). After each
  * ``ITrackerSession::update()`` that includes this tracker, ``get_data(session)``
- * reflects the latest decoded sample; ``data`` is null until the first sample
+ * reflects the latest decoded sample; the handle is empty until the first sample
  * arrives or when the collection is unavailable.
  *
  * Usage:

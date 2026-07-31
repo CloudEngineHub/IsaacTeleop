@@ -29,6 +29,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace py = pybind11;
 
@@ -49,21 +50,33 @@ py::class_<Serialized<T>> serialized_class(py::module& m, const char* name, cons
 }
 
 /*!
- * @brief Re-encodes a view's contents so it can be nested inside another table.
+ * @brief Converts handles into the native element vector a table's vector field takes.
  *
- * FlatBuffers cannot splice one finished buffer into another, so composing a wrapper
- * around a payload the caller already built goes through the object API. This is the
- * one place that happens, and it is a construction-time cost only -- the read path
- * never unpacks.
+ * FlatBuffers cannot splice a finished buffer into another one, so a constructor composing
+ * a table around payloads the caller already built has to go back through the object API.
+ * A construction-time cost only -- the read path never unpacks.
+ *
+ * A vector field is the one place a null element is fatal: the generated `Pack` null-checks
+ * an optional table field but dereferences every vector element unconditionally. `field`
+ * names the vector in the message.
  */
 template <typename DataT>
-std::shared_ptr<typename DataT::NativeTableType> to_native(const Serialized<DataT>& data)
+std::vector<std::shared_ptr<typename DataT::NativeTableType>> to_native_vector(const std::vector<Serialized<DataT>>& handles,
+                                                                               const char* field)
 {
-    if (!data)
+    std::vector<std::shared_ptr<typename DataT::NativeTableType>> natives;
+    natives.reserve(handles.size());
+    for (const auto& handle : handles)
     {
-        return nullptr;
+        if (!handle)
+        {
+            throw py::value_error(std::string(field) + ": entries must be non-empty");
+        }
+        auto native = std::make_shared<typename DataT::NativeTableType>();
+        handle->UnPackTo(native.get());
+        natives.push_back(std::move(native));
     }
-    return std::shared_ptr<typename DataT::NativeTableType>(data->UnPack());
+    return natives;
 }
 
 //! Binds a `Record` wrapper (an MCAP payload: data plus its capture timestamp).
@@ -76,7 +89,11 @@ void bind_record(py::module& m, const char* name, const char* data_name)
                  [](const Serialized<DataT>* data, const DeviceDataTimestamp& timestamp)
                  {
                      typename RecordT::NativeTableType native;
-                     native.data = data != nullptr ? to_native(*data) : nullptr;
+                     if (data != nullptr && *data)
+                     {
+                         native.data = std::make_shared<typename DataT::NativeTableType>();
+                         (*data)->UnPackTo(native.data.get());
+                     }
                      native.timestamp = std::make_shared<DeviceDataTimestamp>(timestamp);
                      return pack<RecordT>(native);
                  }),

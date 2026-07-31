@@ -26,8 +26,8 @@ namespace core
  * // ... create session with tracker ...
  * session->update();
  * const auto& color = tracker->get_stream_data(*session, 0);
- * if (color.data)
- *     std::cout << EnumNameStreamType(color.data->stream) << " seq=" << color.data->sequence_number << std::endl;
+ * if (color)
+ *     std::cout << EnumNameStreamType(color->stream()) << " seq=" << color->sequence_number() << std::endl;
  * @endcode
  */
 class FrameMetadataTrackerOak : public ITracker

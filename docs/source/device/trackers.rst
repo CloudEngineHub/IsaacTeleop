@@ -82,7 +82,7 @@ unpack step and joint arrays come back as zero-copy NumPy views.
 
 An **empty handle is the absent payload**: the device is inactive, no sample has
 arrived yet, or replay hit a gap. Test it with ``if (handle)`` in C++; in Python
-the accessor returns ``None``. There is no second null check inside the payload.
+the accessor returns ``None``.
 
 Each ``session.update()`` publishes a *new* buffer rather than refilling the
 previous one, so a handle read this frame keeps its values after the next update.
@@ -92,10 +92,10 @@ views are immutable, so there are no setters.
 
 .. note::
 
-   ``MessageChannelMessagesTracked`` is the one wrapper table that remains,
-   because its payload is a **list** and something has to hold the vector.
-   ``get_messages()`` always returns a non-empty handle; an absent ``data``
-   vector means no messages arrived this frame.
+   ``MessageChannelMessagesTracked`` wraps its payload in a table, because that
+   payload is a **list** and something has to hold the vector. ``get_messages()``
+   always returns a non-empty handle; an absent ``data`` vector means no messages
+   arrived this frame.
 
 Shared Types
 ~~~~~~~~~~~~

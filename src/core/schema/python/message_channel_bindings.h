@@ -58,11 +58,7 @@ inline void bind_message_channel(py::module& m)
                  [](const std::vector<Serialized<MessageChannelMessages>>& data)
                  {
                      MessageChannelMessagesTrackedT native;
-                     native.data.reserve(data.size());
-                     for (const auto& message : data)
-                     {
-                         native.data.push_back(to_native(message));
-                     }
+                     native.data = to_native_vector(data, "data");
                      return pack<MessageChannelMessagesTracked>(native);
                  }),
              py::arg("data") = std::vector<Serialized<MessageChannelMessages>>{},
