@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "pose_bindings.h"
 #include "schema_serialized.h"
 
 #include <pybind11/pybind11.h>
@@ -58,15 +59,8 @@ inline void bind_controller(py::module& m)
         .def("__repr__",
              [](const ControllerPose& self)
              {
-                 std::string pose_str = "Pose(position=Point(x=" + std::to_string(self.pose().position().x()) +
-                                        ", y=" + std::to_string(self.pose().position().y()) +
-                                        ", z=" + std::to_string(self.pose().position().z()) +
-                                        "), orientation=Quaternion(x=" + std::to_string(self.pose().orientation().x()) +
-                                        ", y=" + std::to_string(self.pose().orientation().y()) +
-                                        ", z=" + std::to_string(self.pose().orientation().z()) +
-                                        ", w=" + std::to_string(self.pose().orientation().w()) + "))";
-
-                 return "ControllerPose(pose=" + pose_str + ", is_valid=" + (self.is_valid() ? "True" : "False") + ")";
+                 return "ControllerPose(pose=" + pose_repr(self.pose()) +
+                        ", is_valid=" + (self.is_valid() ? "True" : "False") + ")";
              });
 
     serialized_class<ControllerSnapshot>(

@@ -21,8 +21,8 @@ public:
     }
 
     // Query methods:
-    // - tracked->data() is null when the controller is inactive.
-    // - when tracked->data() is non-null, nested fields in ControllerSnapshot are safe to read.
+    // - the handle is empty when the controller is inactive.
+    // - when it is non-empty, nested fields in ControllerSnapshot are safe to read.
     const Serialized<ControllerSnapshot>& get_left_controller(const ITrackerSession& session) const;
     const Serialized<ControllerSnapshot>& get_right_controller(const ITrackerSession& session) const;
 

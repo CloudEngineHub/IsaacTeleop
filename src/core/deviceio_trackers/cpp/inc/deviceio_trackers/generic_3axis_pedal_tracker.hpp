@@ -59,10 +59,10 @@ public:
     /*!
      * @brief Pedal snapshot from the session’s implementation.
      *
-     * ``tracked->data()`` is null when there is no valid last-known sample (source never provided data or
-     * implementation cleared state when the collection is gone). When non-null, values may still be **unchanged**
-     * from the previous ``update()`` if that tick produced no new samples (see ``LiveGeneric3AxisPedalTrackerImpl``
-     * and ``m_pending_records``). When ``tracked->data()`` is non-null, nested fields in
+     * The handle is empty when there is no valid last-known sample (source never provided data or
+     * implementation cleared state when the collection is gone). When non-empty, values may still be
+     * **unchanged** from the previous ``update()`` if that tick produced no new samples (see
+     * ``LiveGeneric3AxisPedalTrackerImpl`` and ``m_pending_records``); nested fields in
      * ``Generic3AxisPedalOutput`` are safe to read.
      */
     const Serialized<Generic3AxisPedalOutput>& get_data(const ITrackerSession& session) const;

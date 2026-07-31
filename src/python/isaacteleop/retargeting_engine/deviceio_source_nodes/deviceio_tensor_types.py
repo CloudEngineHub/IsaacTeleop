@@ -5,8 +5,8 @@
 DeviceIO Tensor Types - Tracked wrapper objects from DeviceIO.
 
 These tensor types represent the encoded payloads returned by DeviceIO trackers.
-Each is a handle over the encoded payload: falsy when the device is inactive,
-and otherwise read directly through the schema accessors.
+Each carries a handle over the encoded payload, read directly through the schema
+accessors. An inactive device arrives as None rather than as an empty handle.
 """
 
 import warnings
@@ -25,151 +25,79 @@ from isaacteleop.schema import (
 )
 
 
-class HeadPoseTrackedType(TensorType):
-    """HeadPose wrapper type from DeviceIO HeadTracker."""
+def _payload_tensor_type(class_name: str, payload_cls: type, doc: str) -> type:
+    """Build the ``TensorType`` subclass carrying one DeviceIO payload handle.
 
-    def __init__(self, name: str) -> None:
-        super().__init__(name)
+    Every payload validates the same way, so the class name and the payload class
+    are the only things that vary between them.
+    """
 
     def _check_instance_compatibility(self, other: TensorType) -> bool:
-        if not isinstance(other, HeadPoseTrackedType):
-            raise TypeError(f"Expected HeadPoseTrackedType, got {type(other).__name__}")
+        if not isinstance(other, cls):
+            raise TypeError(f"Expected {class_name}, got {type(other).__name__}")
         return True
 
     def validate_value(self, value: Any) -> None:
         # None is how an inactive device arrives; only a wrong type is an error.
-        if value is not None and not isinstance(value, HeadPose):
+        if value is not None and not isinstance(value, payload_cls):
             raise TypeError(
-                f"Expected HeadPose for '{self.name}', got {type(value).__name__}"
+                f"Expected {payload_cls.__name__} for '{self.name}', got {type(value).__name__}"
             )
 
-
-class HandPoseTrackedType(TensorType):
-    """HandPose wrapper type from DeviceIO HandTracker."""
-
-    def __init__(self, name: str) -> None:
-        super().__init__(name)
-
-    def _check_instance_compatibility(self, other: TensorType) -> bool:
-        if not isinstance(other, HandPoseTrackedType):
-            raise TypeError(f"Expected HandPoseTrackedType, got {type(other).__name__}")
-        return True
-
-    def validate_value(self, value: Any) -> None:
-        # None is how an inactive device arrives; only a wrong type is an error.
-        if value is not None and not isinstance(value, HandPose):
-            raise TypeError(
-                f"Expected HandPose for '{self.name}', got {type(value).__name__}"
-            )
+    cls = type(
+        class_name,
+        (TensorType,),
+        {
+            "__doc__": doc,
+            "__module__": __name__,
+            "_check_instance_compatibility": _check_instance_compatibility,
+            "validate_value": validate_value,
+        },
+    )
+    return cls
 
 
-class ControllerSnapshotTrackedType(TensorType):
-    """ControllerSnapshot wrapper type from DeviceIO ControllerTracker."""
+HeadPoseTrackedType = _payload_tensor_type(
+    "HeadPoseTrackedType", HeadPose, "HeadPose wrapper type from DeviceIO HeadTracker."
+)
 
-    def __init__(self, name: str) -> None:
-        super().__init__(name)
+HandPoseTrackedType = _payload_tensor_type(
+    "HandPoseTrackedType", HandPose, "HandPose wrapper type from DeviceIO HandTracker."
+)
 
-    def _check_instance_compatibility(self, other: TensorType) -> bool:
-        if not isinstance(other, ControllerSnapshotTrackedType):
-            raise TypeError(
-                f"Expected ControllerSnapshotTrackedType, got {type(other).__name__}"
-            )
-        return True
+ControllerSnapshotTrackedType = _payload_tensor_type(
+    "ControllerSnapshotTrackedType",
+    ControllerSnapshot,
+    "ControllerSnapshot wrapper type from DeviceIO ControllerTracker.",
+)
 
-    def validate_value(self, value: Any) -> None:
-        # None is how an inactive device arrives; only a wrong type is an error.
-        if value is not None and not isinstance(value, ControllerSnapshot):
-            raise TypeError(
-                f"Expected ControllerSnapshot for '{self.name}', got {type(value).__name__}"
-            )
+Generic3AxisPedalOutputTrackedType = _payload_tensor_type(
+    "Generic3AxisPedalOutputTrackedType",
+    Generic3AxisPedalOutput,
+    "Generic3AxisPedalOutput wrapper type from DeviceIO Generic3AxisPedalTracker.",
+)
 
+JointStateOutputTrackedType = _payload_tensor_type(
+    "JointStateOutputTrackedType",
+    JointStateOutput,
+    "JointStateOutput wrapper type from DeviceIO JointStateTracker.",
+)
 
-class Generic3AxisPedalOutputTrackedType(TensorType):
-    """Generic3AxisPedalOutput wrapper type from DeviceIO Generic3AxisPedalTracker."""
-
-    def __init__(self, name: str) -> None:
-        super().__init__(name)
-
-    def _check_instance_compatibility(self, other: TensorType) -> bool:
-        if not isinstance(other, Generic3AxisPedalOutputTrackedType):
-            raise TypeError(
-                f"Expected Generic3AxisPedalOutputTrackedType, got {type(other).__name__}"
-            )
-        return True
-
-    def validate_value(self, value: Any) -> None:
-        # None is how an inactive device arrives; only a wrong type is an error.
-        if value is not None and not isinstance(value, Generic3AxisPedalOutput):
-            raise TypeError(
-                f"Expected Generic3AxisPedalOutput for '{self.name}', got {type(value).__name__}"
-            )
-
-
-class JointStateOutputTrackedType(TensorType):
-    """JointStateOutput wrapper type from DeviceIO JointStateTracker."""
-
-    def __init__(self, name: str) -> None:
-        super().__init__(name)
-
-    def _check_instance_compatibility(self, other: TensorType) -> bool:
-        if not isinstance(other, JointStateOutputTrackedType):
-            raise TypeError(
-                f"Expected JointStateOutputTrackedType, got {type(other).__name__}"
-            )
-        return True
-
-    def validate_value(self, value: Any) -> None:
-        # None is how an inactive device arrives; only a wrong type is an error.
-        if value is not None and not isinstance(value, JointStateOutput):
-            raise TypeError(
-                f"Expected JointStateOutput for '{self.name}', got {type(value).__name__}"
-            )
-
-
-class FullBodyPoseTrackedType(TensorType):
+FullBodyPoseTrackedType = _payload_tensor_type(
+    "FullBodyPoseTrackedType",
+    FullBodyPose,
     """FullBodyPose wrapper type from DeviceIO FullBodyTracker.
 
     Vendor-agnostic: the full-body tracker produces the same FullBodyPose
     payload regardless of the live vendor (native XR, pushed tensor, ...).
-    """
+    """,
+)
 
-    def __init__(self, name: str) -> None:
-        super().__init__(name)
-
-    def _check_instance_compatibility(self, other: TensorType) -> bool:
-        if not isinstance(other, FullBodyPoseTrackedType):
-            raise TypeError(
-                f"Expected FullBodyPoseTrackedType, got {type(other).__name__}"
-            )
-        return True
-
-    def validate_value(self, value: Any) -> None:
-        # None is how an inactive device arrives; only a wrong type is an error.
-        if value is not None and not isinstance(value, FullBodyPose):
-            raise TypeError(
-                f"Expected FullBodyPose for '{self.name}', got {type(value).__name__}"
-            )
-
-
-class MessageChannelMessagesTrackedType(TensorType):
-    """MessageChannelMessagesTracked wrapper type from DeviceIO MessageChannelTracker."""
-
-    def __init__(self, name: str) -> None:
-        super().__init__(name)
-
-    def _check_instance_compatibility(self, other: TensorType) -> bool:
-        if not isinstance(other, MessageChannelMessagesTrackedType):
-            raise TypeError(
-                f"Expected MessageChannelMessagesTrackedType, got {type(other).__name__}"
-            )
-        return True
-
-    def validate_value(self, value: Any) -> None:
-        # None is how an inactive device arrives; only a wrong type is an error.
-        if value is not None and not isinstance(value, MessageChannelMessagesTracked):
-            raise TypeError(
-                f"Expected MessageChannelMessagesTracked for '{self.name}', got {type(value).__name__}"
-            )
+MessageChannelMessagesTrackedType = _payload_tensor_type(
+    "MessageChannelMessagesTrackedType",
+    MessageChannelMessagesTracked,
+    "MessageChannelMessagesTracked wrapper type from DeviceIO MessageChannelTracker.",
+)
 
 
 class MessageChannelConnectionStatus(IntEnum):
@@ -196,7 +124,8 @@ class MessageChannelStatusType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        # None is how an inactive device arrives; only a wrong type is an error.
+        # Not a device payload: MessageChannelSource always assigns a status. None is
+        # tolerated only so an unset slot validates like the payload types above.
         if value is not None and not isinstance(value, MessageChannelConnectionStatus):
             raise TypeError(
                 f"Expected MessageChannelConnectionStatus for '{self.name}', got {type(value).__name__}"
@@ -207,7 +136,7 @@ def DeviceIOHeadPoseTracked() -> TensorGroupType:
     """Tracked head pose from DeviceIO HeadTracker.
 
     Contains:
-        head_tracked: HeadPose handle (empty when inactive)
+        head_tracked: HeadPose handle, or None when inactive
     """
     return TensorGroupType("deviceio_head_pose", [HeadPoseTrackedType("head_tracked")])
 
@@ -216,7 +145,7 @@ def DeviceIOHandPoseTracked() -> TensorGroupType:
     """Tracked hand pose from DeviceIO HandTracker.
 
     Contains:
-        hand_tracked: HandPose handle (empty when inactive)
+        hand_tracked: HandPose handle, or None when inactive
     """
     return TensorGroupType("deviceio_hand_pose", [HandPoseTrackedType("hand_tracked")])
 
@@ -225,7 +154,7 @@ def DeviceIOControllerSnapshotTracked() -> TensorGroupType:
     """Tracked controller snapshot from DeviceIO ControllerTracker.
 
     Contains:
-        controller_tracked: ControllerSnapshot handle (empty when inactive)
+        controller_tracked: ControllerSnapshot handle, or None when inactive
     """
     return TensorGroupType(
         "deviceio_controller_snapshot",
@@ -237,7 +166,7 @@ def DeviceIOGeneric3AxisPedalOutputTracked() -> TensorGroupType:
     """Tracked pedal data from DeviceIO Generic3AxisPedalTracker.
 
     Contains:
-        pedal_tracked: Generic3AxisPedalOutput handle (empty when inactive)
+        pedal_tracked: Generic3AxisPedalOutput handle, or None when inactive
     """
     return TensorGroupType(
         "deviceio_generic_3axis_pedal_output",
@@ -249,7 +178,7 @@ def DeviceIOJointStateOutputTracked() -> TensorGroupType:
     """Tracked joint-state data from DeviceIO JointStateTracker.
 
     Contains:
-        joint_state_tracked: JointStateOutput handle (empty when inactive)
+        joint_state_tracked: JointStateOutput handle, or None when inactive
     """
     return TensorGroupType(
         "deviceio_joint_state_output",
@@ -261,7 +190,7 @@ def DeviceIOFullBodyPoseTracked() -> TensorGroupType:
     """Tracked full body pose data from DeviceIO FullBodyTracker.
 
     Contains:
-        full_body_tracked: FullBodyPose handle (empty when inactive)
+        full_body_tracked: FullBodyPose handle, or None when inactive
     """
     return TensorGroupType(
         "deviceio_full_body_pose",

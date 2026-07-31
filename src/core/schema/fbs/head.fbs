@@ -16,7 +16,6 @@ table HeadPose {
     is_valid: bool (id: 1);
 }
 
-
 // MCAP recording wrapper for HeadPose.
 //
 // Record types are the root types written to MCAP channels by the McapRecorder.

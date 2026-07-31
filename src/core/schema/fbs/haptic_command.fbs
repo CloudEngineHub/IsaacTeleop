@@ -17,7 +17,6 @@ table HapticCommand {
     values: [float] (id: 1);
 }
 
-
 // MCAP recording wrapper required by the SchemaTracker<RecordT, DataTableT>
 // template. Recording is disabled here -- the live reader passes
 // mcap_channels=nullptr.

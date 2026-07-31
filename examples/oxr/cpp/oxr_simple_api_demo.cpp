@@ -87,13 +87,11 @@ try
         std::cout << "Frame " << i << ":" << std::endl;
         std::cout << "  Left hand:  " << (left_tracked ? "ACTIVE" : "INACTIVE") << std::endl;
         std::cout << "  Right hand: " << (right_tracked ? "ACTIVE" : "INACTIVE") << std::endl;
-        std::cout << "  Head pose:  "
-                  << ((head_tracked.get() != nullptr && head_tracked.get()->is_valid()) ? "VALID" : "INVALID")
-                  << std::endl;
+        std::cout << "  Head pose:  " << ((head_tracked && head_tracked->is_valid()) ? "VALID" : "INVALID") << std::endl;
 
-        if (head_tracked.get() != nullptr && head_tracked.get()->is_valid())
+        if (head_tracked && head_tracked->is_valid())
         {
-            const auto& pos = head_tracked.get()->pose()->position();
+            const auto& pos = head_tracked->pose()->position();
             std::cout << "    Position: [" << pos.x() << ", " << pos.y() << ", " << pos.z() << "]" << std::endl;
         }
         std::cout << std::endl;

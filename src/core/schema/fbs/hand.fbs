@@ -70,7 +70,6 @@ table HandPose {
     joints: HandJoints (id: 0);
 }
 
-
 // MCAP recording wrapper for HandPose.
 //
 // Record types are the root types written to MCAP channels by the McapRecorder.

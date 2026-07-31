@@ -30,6 +30,11 @@ if TYPE_CHECKING:
         MessageChannelMessagesTracked,
     )
 
+# Stands in for a frame that drained nothing. Encoding it is a full FlatBuffers build for
+# a handful of constant bytes, and the buffer is immutable, so one instance serves every
+# frame and every source.
+_EMPTY_BATCH = MessageChannelMessagesTracked()
+
 
 class MessageChannelSource(IDeviceIOSource):
     """Source node for reading message channel payloads from DeviceIO."""
@@ -91,10 +96,11 @@ class MessageChannelSource(IDeviceIOSource):
         result: RetargeterIO = {}
         for input_name, group_type in source_inputs.items():
             tg = TensorGroup(group_type)
-            if self._last_drained_messages_tracked is None:
-                tg[0] = MessageChannelMessagesTracked()
-            else:
-                tg[0] = self._last_drained_messages_tracked
+            tg[0] = (
+                _EMPTY_BATCH
+                if self._last_drained_messages_tracked is None
+                else self._last_drained_messages_tracked
+            )
             result[input_name] = tg
         return result
 
@@ -110,8 +116,9 @@ class MessageChannelSource(IDeviceIOSource):
         }
 
     def _compute_fn(self, inputs: RetargeterIO, outputs: RetargeterIO, context) -> None:
-        if self._last_drained_messages_tracked is None:
-            outputs["messages_tracked"][0] = MessageChannelMessagesTracked()
-        else:
-            outputs["messages_tracked"][0] = self._last_drained_messages_tracked
+        outputs["messages_tracked"][0] = (
+            _EMPTY_BATCH
+            if self._last_drained_messages_tracked is None
+            else self._last_drained_messages_tracked
+        )
         outputs["status"][0] = self._last_status

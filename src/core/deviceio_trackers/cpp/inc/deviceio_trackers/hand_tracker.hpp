@@ -19,8 +19,8 @@ public:
     }
 
     // Query methods:
-    // - tracked->data() is null when the hand is inactive.
-    // - when tracked->data() is non-null, nested fields in HandPose are safe to read.
+    // - the handle is empty when the hand is inactive.
+    // - when it is non-empty, nested fields in HandPose are safe to read.
     const Serialized<HandPose>& get_left_hand(const ITrackerSession& session) const;
     const Serialized<HandPose>& get_right_hand(const ITrackerSession& session) const;
 

@@ -28,7 +28,7 @@ namespace core
  * // ... register with a session, then each tick: ...
  * session->update();
  * const auto& tracked = glove->get_data(*session);
- * if (tracked->data()) { auto& taxels = tracked->data()->taxels(); ... }
+ * if (tracked) { const auto* taxels = tracked->taxels(); ... }
  * @endcode
  */
 class OgloTactileTracker : public ITracker
@@ -54,8 +54,8 @@ public:
 
     /*!
      * @brief Glove snapshot from the session's implementation.
-     * @c tracked->data() is null when no valid sample is available; when non-null,
-     * @c data->taxels (80 values) and the IMU fields are safe to read.
+     * The handle is empty when no valid sample is available; when non-empty,
+     * @c taxels() (80 values) and the IMU fields are safe to read.
      */
     const Serialized<OgloGloveSample>& get_data(const ITrackerSession& session) const;
 

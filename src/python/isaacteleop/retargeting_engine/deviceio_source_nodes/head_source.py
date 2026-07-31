@@ -101,8 +101,7 @@ class HeadSource(IDeviceIOSource):
             outputs: Dict with "head" OptionalTensorGroup
             context: ComputeContext (unused by this converter node).
         """
-        tracked: "HeadPose | None" = inputs["deviceio_head"][0]
-        head_pose: "HeadPose | None" = tracked
+        head_pose: "HeadPose | None" = inputs["deviceio_head"][0]
 
         output = outputs["head"]
         if head_pose is None:

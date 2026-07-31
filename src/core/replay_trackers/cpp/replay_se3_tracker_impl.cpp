@@ -51,7 +51,7 @@ void ReplaySe3TrackerImpl::update(int64_t /*monotonic_time_ns*/)
             std::cerr << no_data_message_ << std::endl;
             warned_no_data_ = true;
         }
-        tracked_ = Serialized<Se3TrackerPose>();
+        tracked_.reset();
     }
 }
 

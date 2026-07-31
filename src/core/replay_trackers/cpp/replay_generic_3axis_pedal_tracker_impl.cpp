@@ -44,7 +44,7 @@ void ReplayGeneric3AxisPedalTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     else
     {
         std::cerr << "ReplayGeneric3AxisPedalTrackerImpl: pedal data not found" << std::endl;
-        tracked_ = Serialized<Generic3AxisPedalOutput>();
+        tracked_.reset();
     }
 }
 

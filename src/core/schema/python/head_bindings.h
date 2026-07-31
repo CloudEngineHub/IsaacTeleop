@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "pose_bindings.h"
 #include "schema_serialized.h"
 
 #include <pybind11/pybind11.h>
@@ -45,17 +46,7 @@ inline void bind_head(py::module& m)
                      return std::string("HeadPose(<empty>)");
                  }
                  const Pose* pose = self->pose();
-                 std::string pose_str = "None";
-                 if (pose != nullptr)
-                 {
-                     pose_str = "Pose(position=Point(x=" + std::to_string(pose->position().x()) +
-                                ", y=" + std::to_string(pose->position().y()) +
-                                ", z=" + std::to_string(pose->position().z()) +
-                                "), orientation=Quaternion(x=" + std::to_string(pose->orientation().x()) +
-                                ", y=" + std::to_string(pose->orientation().y()) +
-                                ", z=" + std::to_string(pose->orientation().z()) +
-                                ", w=" + std::to_string(pose->orientation().w()) + "))";
-                 }
+                 const std::string pose_str = pose != nullptr ? pose_repr(*pose) : "None";
                  return "HeadPose(pose=" + pose_str + ", is_valid=" + (self->is_valid() ? "True" : "False") + ")";
              });
 

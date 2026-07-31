@@ -62,18 +62,19 @@ void LiveHapticCommandReaderTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     // collection interleaves all endpoints, so bucket by HapticCommand.endpoint
     // instead of collapsing to one latest sample (which would drop every endpoint
     // but the last one pushed each frame).
-    for (const auto& sample : samples_)
+    for (auto& sample : samples_)
     {
         const auto* fb = flatbuffers::GetRoot<HapticCommand>(sample.buffer.data());
         if (fb == nullptr)
         {
             continue;
         }
-        const std::string endpoint = fb->endpoint() != nullptr ? fb->endpoint()->str() : std::string{};
-        auto data = std::make_shared<HapticCommandT>();
-        fb->UnPackTo(data.get());
-        tracked_by_endpoint_[endpoint] = pack_optional<HapticCommand>(std::move(data));
-        latest_endpoint_ = endpoint;
+        std::string endpoint = fb->endpoint() != nullptr ? fb->endpoint()->str() : std::string{};
+        // The wire already carries HapticCommand, so adopt the sample's bytes instead of
+        // unpacking and re-encoding them. `fb` dangles past this point; read the endpoint
+        // out first.
+        tracked_by_endpoint_[endpoint] = Serialized<HapticCommand>::adopt(std::move(sample.buffer));
+        latest_endpoint_ = std::move(endpoint);
     }
 }
 

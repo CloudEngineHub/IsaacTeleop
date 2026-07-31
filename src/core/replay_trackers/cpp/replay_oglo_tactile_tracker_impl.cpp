@@ -44,7 +44,7 @@ void ReplayOgloTactileTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     else
     {
         std::cerr << "ReplayOgloTactileTrackerImpl: glove data not found" << std::endl;
-        tracked_ = Serialized<OgloGloveSample>();
+        tracked_.reset();
     }
 }
 

@@ -360,8 +360,8 @@ void LiveControllerTrackerImpl::update(int64_t monotonic_time_ns)
         // Ensure callers do not observe stale controller data after sync failure.
         left_native_.reset();
         right_native_.reset();
-        left_tracked_ = Serialized<ControllerSnapshot>();
-        right_tracked_ = Serialized<ControllerSnapshot>();
+        left_tracked_.reset();
+        right_tracked_.reset();
         throw std::runtime_error("[ControllerTracker] xrSyncActions2NV failed: " + std::to_string(result));
     }
 

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "pose_bindings.h"
 #include "schema_array_views.h"
 #include "schema_serialized.h"
 
@@ -19,6 +20,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace py = pybind11;
@@ -80,14 +82,8 @@ inline void bind_full_body(py::module& m)
         .def("__repr__",
              [](const BodyJointPose& self)
              {
-                 return "BodyJointPose(pose=Pose(position=Point(x=" + std::to_string(self.pose().position().x()) +
-                        ", y=" + std::to_string(self.pose().position().y()) +
-                        ", z=" + std::to_string(self.pose().position().z()) +
-                        "), orientation=Quaternion(x=" + std::to_string(self.pose().orientation().x()) +
-                        ", y=" + std::to_string(self.pose().orientation().y()) +
-                        ", z=" + std::to_string(self.pose().orientation().z()) +
-                        ", w=" + std::to_string(self.pose().orientation().w()) +
-                        ")), is_valid=" + (self.is_valid() ? "True" : "False") + ")";
+                 return "BodyJointPose(pose=" + pose_repr(self.pose()) +
+                        ", is_valid=" + (self.is_valid() ? "True" : "False") + ")";
              });
 
     // Bind BodyJoints struct (fixed-size array of 24 BodyJointPose).

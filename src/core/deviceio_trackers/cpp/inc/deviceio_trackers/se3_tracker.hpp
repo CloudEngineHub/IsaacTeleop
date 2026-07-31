@@ -69,8 +69,8 @@ public:
     /*!
      * @brief SE3 tracker snapshot from the session's implementation.
      *
-     * ``tracked->data()`` is null when no sample has arrived yet or the collection is unavailable.
-     * When non-null, gate on ``data->is_valid`` before consuming ``data->pose`` — the pose is
+     * The handle is empty when no sample has arrived yet or the collection is unavailable.
+     * When non-empty, gate on ``is_valid()`` before consuming ``pose()`` — the pose is
      * unspecified while tracking is lost.
      */
     const Serialized<Se3TrackerPose>& get_data(const ITrackerSession& session) const;

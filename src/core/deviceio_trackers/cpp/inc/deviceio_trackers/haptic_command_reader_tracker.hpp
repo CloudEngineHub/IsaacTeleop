@@ -38,8 +38,8 @@ public:
     // overload, as this returns whichever endpoint was pushed last.
     const Serialized<HapticCommand>& get_data(const ITrackerSession& session) const;
 
-    // Latest command for `endpoint`; `tracked->data()` is null until a sample for
-    // that endpoint arrives, or after the producer collection disappears.
+    // Latest command for `endpoint`; the handle is empty until a sample for that
+    // endpoint arrives, or after the producer collection disappears.
     const Serialized<HapticCommand>& get_data(const ITrackerSession& session, std::string_view endpoint) const;
 
     const std::string& collection_id() const

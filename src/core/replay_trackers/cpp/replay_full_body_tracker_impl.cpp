@@ -43,7 +43,7 @@ void ReplayFullBodyTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     else
     {
         std::cerr << "ReplayFullBodyTrackerImpl: body data not found" << std::endl;
-        tracked_ = Serialized<FullBodyPose>();
+        tracked_.reset();
     }
 }
 

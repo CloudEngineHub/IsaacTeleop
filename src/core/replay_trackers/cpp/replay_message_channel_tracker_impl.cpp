@@ -51,27 +51,25 @@ void ReplayMessageChannelTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     {
         pending_record_ = mcap_viewers_->read(0);
     }
-    if (!pending_record_)
-    {
-        // Always encode, including for an empty batch: `data` is a list here, so "no
-        // messages this frame" is an empty batch rather than an absent one.
-        messages_ = pack<MessageChannelMessagesTracked>(native_);
-        return;
-    }
 
-    const int64_t frame_ns = record_monotonic_ns(*pending_record_);
-    while (pending_record_ && record_monotonic_ns(*pending_record_) == frame_ns)
+    if (pending_record_)
     {
-        // Sentinel records carry no data and only exist to mark a
-        // frame boundary; skip them but still advance the iterator so
-        // the next update reads the following frame.
-        if (pending_record_->data)
+        const int64_t frame_ns = record_monotonic_ns(*pending_record_);
+        while (pending_record_ && record_monotonic_ns(*pending_record_) == frame_ns)
         {
-            native_.data.push_back(std::move(pending_record_->data));
+            // Sentinel records carry no data and only exist to mark a
+            // frame boundary; skip them but still advance the iterator so
+            // the next update reads the following frame.
+            if (pending_record_->data)
+            {
+                native_.data.push_back(std::move(pending_record_->data));
+            }
+            pending_record_ = mcap_viewers_->read(0);
         }
-        pending_record_ = mcap_viewers_->read(0);
     }
 
+    // Always encode, including for an empty batch: `data` is a list here, so "no
+    // messages this frame" is an empty batch rather than an absent one.
     messages_ = pack<MessageChannelMessagesTracked>(native_);
 }
 

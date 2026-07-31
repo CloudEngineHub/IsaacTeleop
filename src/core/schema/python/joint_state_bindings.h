@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Python bindings for the JointState FlatBuffer schema.
-// Types: JointState (table), JointStateOutput (table), and the Tracked / Record wrappers,
+// Types: JointState (table), JointStateOutput (table) and JointStateOutputRecord,
 // all exposed as encoded views.
 
 #pragma once

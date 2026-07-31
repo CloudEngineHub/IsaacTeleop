@@ -95,8 +95,7 @@ class JointStateSource(IDeviceIOSource):
 
         Calls ``set_none()`` on the output when the device is inactive.
         """
-        tracked: "JointStateOutput | None" = inputs["deviceio_joint_state"][0]
-        data = tracked
+        data: "JointStateOutput | None" = inputs["deviceio_joint_state"][0]
 
         out = outputs[self.JOINTS]
         if data is None:

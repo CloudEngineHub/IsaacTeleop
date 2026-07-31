@@ -43,7 +43,7 @@ void ReplayHeadTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     else
     {
         std::cerr << "ReplayHeadTrackerImpl: head data not found" << std::endl;
-        tracked_ = Serialized<HeadPose>();
+        tracked_.reset();
     }
 }
 

@@ -59,8 +59,8 @@ public:
     /*!
      * @brief Joint-state snapshot from the session's implementation.
      *
-     * ``tracked->data()`` is null when no valid sample exists. When non-null, the nested
-     * ``JointStateOutput`` (joints, device_id, optional ee_pose) is safe to read.
+     * The handle is empty when no valid sample exists. When non-empty, the nested
+     * ``JointStateOutput`` fields (joints, device_id, optional ee_pose) are safe to read.
      */
     const Serialized<JointStateOutput>& get_data(const ITrackerSession& session) const;
 

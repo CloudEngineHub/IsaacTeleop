@@ -79,7 +79,7 @@ public:
         {
             if (!present)
             {
-                out = Serialized<DataTableT>();
+                out.reset();
             }
             return;
         }
@@ -116,8 +116,7 @@ public:
         // Adopt the final sample's bytes rather than copying them: the wire type is the
         // published type. Each tick owns its own buffer, so a consumer still holding last
         // tick's handle keeps last tick's values.
-        auto owner = std::make_shared<const std::vector<uint8_t>>(std::move(samples_.back().buffer));
-        out = Serialized<DataTableT>(owner, flatbuffers::GetRoot<DataTableT>(owner->data()));
+        out = Serialized<DataTableT>::adopt(std::move(samples_.back().buffer));
     }
 
 private:

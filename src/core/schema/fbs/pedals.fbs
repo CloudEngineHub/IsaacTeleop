@@ -19,7 +19,6 @@ table Generic3AxisPedalOutput {
   rudder: float (id: 2);
 }
 
-
 // MCAP recording wrapper for Generic3AxisPedalOutput.
 //
 // Record types are the root types written to MCAP channels by the McapRecorder.

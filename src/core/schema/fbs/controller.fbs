@@ -43,7 +43,6 @@ table ControllerSnapshot {
     inputs: ControllerInputState (id: 2);
 }
 
-
 // MCAP recording wrapper for ControllerSnapshot.
 //
 // Record types are the root types written to MCAP channels by the McapRecorder.

@@ -57,9 +57,8 @@ public:
      * @param session Active ITrackerSession.
      * @param stream_index Index into the streams vector passed at construction.
      * @return Reference to the Serialized<FrameMetadataOak> for that stream.
-     *         The inner @c data pointer is null until the first frame arrives.
-     *         When @c data is non-null, nested fields in FrameMetadataOak are
-     *         safe to read.
+     *         The handle is empty until the first frame arrives. When non-empty,
+     *         nested fields in FrameMetadataOak are safe to read.
      */
     const Serialized<FrameMetadataOak>& get_stream_data(const ITrackerSession& session, size_t stream_index) const;
 

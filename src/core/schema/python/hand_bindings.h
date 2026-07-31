@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "pose_bindings.h"
 #include "schema_array_views.h"
 #include "schema_serialized.h"
 
@@ -85,14 +86,8 @@ inline void bind_hand(py::module& m)
         .def("__repr__",
              [](const HandJointPose& self)
              {
-                 return "HandJointPose(pose=Pose(position=Point(x=" + std::to_string(self.pose().position().x()) +
-                        ", y=" + std::to_string(self.pose().position().y()) +
-                        ", z=" + std::to_string(self.pose().position().z()) +
-                        "), orientation=Quaternion(x=" + std::to_string(self.pose().orientation().x()) +
-                        ", y=" + std::to_string(self.pose().orientation().y()) +
-                        ", z=" + std::to_string(self.pose().orientation().z()) +
-                        ", w=" + std::to_string(self.pose().orientation().w()) +
-                        ")), is_valid=" + (self.is_valid() ? "True" : "False") +
+                 return "HandJointPose(pose=" + pose_repr(self.pose()) +
+                        ", is_valid=" + (self.is_valid() ? "True" : "False") +
                         ", radius=" + std::to_string(self.radius()) + ")";
              });
 

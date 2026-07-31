@@ -49,7 +49,7 @@ void ReplayHandTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     else
     {
         std::cerr << "ReplayHandTrackerImpl: left hand data not found" << std::endl;
-        left_tracked_ = Serialized<HandPose>();
+        left_tracked_.reset();
     }
 
     if (right_record)
@@ -59,7 +59,7 @@ void ReplayHandTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     else
     {
         std::cerr << "ReplayHandTrackerImpl: right hand data not found" << std::endl;
-        right_tracked_ = Serialized<HandPose>();
+        right_tracked_.reset();
     }
 }
 

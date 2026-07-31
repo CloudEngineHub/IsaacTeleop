@@ -39,7 +39,6 @@ table OgloGloveSample {
   gyro_z: int16 (id: 8);
 }
 
-
 // MCAP recording wrapper. Record types are the root types written to MCAP
 // channels; trackers serialize into Record types in serialize_all().
 table OgloGloveSampleRecord {

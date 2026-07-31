@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Python bindings for the vendor-neutral HapticCommand FlatBuffer schema.
-// Types: HapticCommand (table) and its Tracked wrapper, plus a pack helper that
+// Types: HapticCommand (table) and HapticCommandRecord, plus a pack helper that
 // serialises a command to the bytes a TensorPushTracker pushes to a peer-process
 // device plugin.
 

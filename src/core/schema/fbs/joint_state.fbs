@@ -55,7 +55,6 @@ table JointStateOutput {
   ee_pose_valid: bool (id: 5);
 }
 
-
 // MCAP recording wrapper for JointStateOutput.
 //
 // Record types are the root types written to MCAP channels by the McapRecorder.

@@ -32,7 +32,6 @@ table Se3TrackerPose {
     is_valid: bool (id: 1);
 }
 
-
 // MCAP recording wrapper for Se3TrackerPose.
 //
 // Record types are the root types written to MCAP channels by the McapRecorder.

@@ -51,7 +51,7 @@ void ReplayJointStateTrackerImpl::update(int64_t /*monotonic_time_ns*/)
             std::cerr << "ReplayJointStateTrackerImpl: joint state data not found" << std::endl;
             warned_no_data_ = true;
         }
-        tracked_ = Serialized<JointStateOutput>();
+        tracked_.reset();
     }
 }
 

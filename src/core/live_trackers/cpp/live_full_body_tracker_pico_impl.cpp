@@ -107,7 +107,7 @@ void LiveFullBodyTrackerPicoImpl::update(int64_t monotonic_time_ns)
     {
         // Policy: limp mode (feature unsupported/unavailable) is non-fatal.
         native_.reset();
-        tracked_ = Serialized<FullBodyPose>();
+        tracked_.reset();
         return;
     }
 
@@ -129,7 +129,7 @@ void LiveFullBodyTrackerPicoImpl::update(int64_t monotonic_time_ns)
     if (XR_FAILED(result))
     {
         native_.reset();
-        tracked_ = Serialized<FullBodyPose>();
+        tracked_.reset();
         throw std::runtime_error("[FullBodyTracker] xrLocateBodyJointsBD failed: " + std::to_string(result));
     }
 
@@ -154,7 +154,7 @@ void LiveFullBodyTrackerPicoImpl::update(int64_t monotonic_time_ns)
     }
 
     native_ = std::move(data);
-    tracked_ = pack_optional<FullBodyPose>(native_);
+    tracked_ = pack<FullBodyPose>(*native_);
 
     if (mcap_channels_)
     {

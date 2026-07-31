@@ -44,6 +44,7 @@
 #include <cassert>
 #include <memory>
 #include <utility>
+#include <vector>
 
 namespace core
 {
@@ -80,6 +81,19 @@ public:
         return Serialized(owner, flatbuffers::GetRoot<T>(owner->data()));
     }
 
+    /*!
+     * @brief Takes ownership of encoded bytes rooted at `T`, as read off the wire.
+     *
+     * The counterpart to the builder overload for the other owner kind named above: a
+     * buffer that arrived already encoded, so there is nothing to build and nothing to
+     * copy. `bytes` must hold a complete buffer whose root table is `T`.
+     */
+    static Serialized adopt(std::vector<uint8_t>&& bytes)
+    {
+        auto owner = std::make_shared<const std::vector<uint8_t>>(std::move(bytes));
+        return Serialized(owner, flatbuffers::GetRoot<T>(owner->data()));
+    }
+
     //! Narrows to a table nested inside this buffer, sharing the owner. Null `ptr`
     //! yields an empty handle, so `narrow(parent->child())` maps an unset nested-table
     //! field onto an absent handle without a branch at the call site.
@@ -113,6 +127,14 @@ public:
     explicit operator bool() const noexcept
     {
         return ptr_ != nullptr;
+    }
+
+    //! Drops the table and releases this handle's claim on the buffer. Spells "the payload
+    //! went away" without naming the table type, which the assignment form has to repeat.
+    void reset() noexcept
+    {
+        owner_.reset();
+        ptr_ = nullptr;
     }
 
 private:

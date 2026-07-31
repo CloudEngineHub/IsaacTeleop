@@ -55,7 +55,7 @@ void LiveHeadTrackerImpl::update(int64_t monotonic_time_ns)
     if (XR_FAILED(result))
     {
         native_.reset();
-        tracked_ = Serialized<HeadPose>();
+        tracked_.reset();
         throw std::runtime_error("[HeadTracker] xrLocateSpace failed: " + std::to_string(result));
     }
 
@@ -82,7 +82,7 @@ void LiveHeadTrackerImpl::update(int64_t monotonic_time_ns)
         native_->pose = std::make_shared<Pose>();
     }
 
-    tracked_ = pack_optional<HeadPose>(native_);
+    tracked_ = pack<HeadPose>(*native_);
 
     if (mcap_channels_)
     {
