@@ -7,6 +7,8 @@
 
 #include <flatbuffers/flatbuffers.h>
 #include <mcap/tracker_channels.hpp>
+#include <schema/serialized.hpp>
+#include <schema/tracked.hpp>
 
 #include <memory>
 #include <optional>
@@ -22,8 +24,10 @@ namespace core
  *
  * @tparam RecordT    FlatBuffer record wrapper (e.g. Generic3AxisPedalOutputRecord).
  * @tparam DataTableT FlatBuffer data table (e.g. Generic3AxisPedalOutput).
+ * @tparam TrackedT   FlatBuffer Tracked wrapper (e.g. Generic3AxisPedalOutputTracked),
+ *                    the type published to consumers.
  */
-template <typename RecordT, typename DataTableT>
+template <typename RecordT, typename DataTableT, typename TrackedT>
 class SchemaTracker : public SchemaTrackerBase
 {
 public:
@@ -55,19 +59,20 @@ public:
     /**
      * @brief Read all pending samples; write each to MCAP if channels are set.
      *
-     * Each sample is unpacked, repacked into a Record with its timestamp,
-     * and written to the MCAP channel. The last sample's unpacked data is
-     * returned via out_latest (if non-null and samples were read).
+     * Each sample is unpacked, repacked into a Record with its timestamp, and written
+     * to the MCAP channel. When any sample was read, the last one is re-encoded as a
+     * Tracked buffer and published through out_tracked.
      *
-     * @param out_latest If non-null and samples were read, receives the unpacked
-     *                   data from the last sample. Cleared when the tensor collection
-     *                   is absent.
+     * @param out_tracked Receives a freshly encoded snapshot of the final sample when
+     *                    samples were read; left untouched when the collection is
+     *                    present but produced nothing this tick (last-known sample is
+     *                    retained); emptied when the collection is absent.
      * @throws std::runtime_error On critical OpenXR/tensor API failures propagated
      *         from SchemaTrackerBase.
      * @note Missing collection, temporary collection loss, and "no new sample"
      *       are treated as common non-fatal conditions and do not throw.
      */
-    void update(std::shared_ptr<NativeDataT>& out_latest)
+    void update(Serialized<TrackedT>& out_tracked)
     {
         samples_.clear();
         bool present = read_all_samples(samples_);
@@ -76,7 +81,8 @@ public:
         {
             if (!present)
             {
-                out_latest.reset();
+                latest_.reset();
+                out_tracked = Serialized<TrackedT>();
             }
             return;
         }
@@ -90,25 +96,30 @@ public:
                 continue;
             }
 
-            if (!out_latest)
+            if (!latest_)
             {
-                out_latest = std::make_shared<NativeDataT>();
+                latest_ = std::make_shared<NativeDataT>();
             }
-            fb->UnPackTo(out_latest.get());
+            fb->UnPackTo(latest_.get());
             last_timestamp = sample.timestamp;
 
             // write() serializes synchronously and does not retain the shared_ptr,
-            // so reusing out_latest across loop iterations is safe.
+            // so reusing latest_ across loop iterations is safe.
             if (mcap_channels_)
             {
-                mcap_channels_->write(mcap_channel_index_, sample.timestamp, out_latest);
+                mcap_channels_->write(mcap_channel_index_, sample.timestamp, latest_);
             }
         }
 
-        if (mcap_channel_tracked_index_ && mcap_channels_ && out_latest)
+        if (mcap_channel_tracked_index_ && mcap_channels_ && latest_)
         {
-            mcap_channels_->write(*mcap_channel_tracked_index_, last_timestamp, out_latest);
+            mcap_channels_->write(*mcap_channel_tracked_index_, last_timestamp, latest_);
         }
+
+        // Encode into a new buffer rather than over the previous one: consumers hold
+        // Serialized snapshots, and a caller that read last frame must keep seeing last
+        // frame's values.
+        out_tracked = pack_tracked<TrackedT>(latest_);
     }
 
 private:
@@ -116,6 +127,9 @@ private:
     size_t mcap_channel_index_;
     std::optional<size_t> mcap_channel_tracked_index_;
     std::vector<SampleResult> samples_;
+    // Last-known sample, reused as the unpack target across ticks. Internal scratch:
+    // it feeds MCAP and the encoder, and never escapes this class.
+    std::shared_ptr<NativeDataT> latest_;
 };
 
 } // namespace core

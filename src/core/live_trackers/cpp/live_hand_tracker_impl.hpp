@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 #pragma once
@@ -37,8 +37,8 @@ public:
     LiveHandTrackerImpl& operator=(LiveHandTrackerImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const HandPoseTrackedT& get_left_hand() const override;
-    const HandPoseTrackedT& get_right_hand() const override;
+    const Serialized<HandPoseTracked>& get_left_hand() const override;
+    const Serialized<HandPoseTracked>& get_right_hand() const override;
 
 private:
     void initialize_xdev_hand_trackers(const OpenXRSessionHandles& handles);
@@ -59,8 +59,12 @@ private:
     std::vector<XrHandTrackerEXT> right_hand_trackers_;
     XrXDevListMNDX xdev_list_;
 
-    HandPoseTrackedT left_tracked_;
-    HandPoseTrackedT right_tracked_;
+    // Assembly scratch for the OpenXR query, and the encoded snapshots published from
+    // it each frame. Only the latter leave this class.
+    HandPoseTrackedT left_native_;
+    HandPoseTrackedT right_native_;
+    Serialized<HandPoseTracked> left_tracked_;
+    Serialized<HandPoseTracked> right_tracked_;
     int64_t last_update_time_ = 0;
 
     PFN_xrCreateHandTrackerEXT pfn_create_hand_tracker_;

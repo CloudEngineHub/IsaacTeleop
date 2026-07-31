@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from isaacteleop.deviceio import ITracker
     from isaacteleop.schema import (
         Generic3AxisPedalOutput,
-        Generic3AxisPedalOutputTrackedT,
+        Generic3AxisPedalOutputTracked,
     )
 
 # Default collection_id matching foot_pedal_reader / pedal_pusher and Generic3AxisPedalTracker.
@@ -79,7 +79,7 @@ class Generic3AxisPedalSource(IDeviceIOSource):
             deviceio_session: The active DeviceIO session.
 
         Returns:
-            Dict with "deviceio_pedals" TensorGroup containing Generic3AxisPedalOutputTrackedT.
+            Dict with "deviceio_pedals" TensorGroup containing Generic3AxisPedalOutputTracked.
         """
         tracked = self._pedal_tracker.get_pedal_data(deviceio_session)
         tg = TensorGroup(DeviceIOGeneric3AxisPedalOutputTracked())
@@ -100,16 +100,16 @@ class Generic3AxisPedalSource(IDeviceIOSource):
 
     def _compute_fn(self, inputs: RetargeterIO, outputs: RetargeterIO, context) -> None:
         """
-        Convert DeviceIO Generic3AxisPedalOutputTrackedT to standard Generic3AxisPedalInput tensor.
+        Convert DeviceIO Generic3AxisPedalOutputTracked to standard Generic3AxisPedalInput tensor.
 
         Calls ``set_none()`` on the output when pedal data is inactive.
 
         Args:
-            inputs: Dict with "deviceio_pedals" containing Generic3AxisPedalOutputTrackedT wrapper
+            inputs: Dict with "deviceio_pedals" containing Generic3AxisPedalOutputTracked wrapper
             outputs: Dict with "pedals" OptionalTensorGroup
             context: Shared ComputeContext for the current step (carries GraphTime).
         """
-        tracked: "Generic3AxisPedalOutputTrackedT" = inputs["deviceio_pedals"][0]
+        tracked: "Generic3AxisPedalOutputTracked" = inputs["deviceio_pedals"][0]
         pedal: Generic3AxisPedalOutput | None = tracked.data
 
         out = outputs["pedals"]

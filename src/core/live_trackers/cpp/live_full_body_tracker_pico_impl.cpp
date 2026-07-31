@@ -7,6 +7,7 @@
 #include <oxr_utils/oxr_funcs.hpp>
 #include <schema/full_body_bfbs_generated.h>
 #include <schema/timestamp_generated.h>
+#include <schema/tracked.hpp>
 
 #include <cassert>
 #include <cstring>
@@ -105,7 +106,8 @@ void LiveFullBodyTrackerPicoImpl::update(int64_t monotonic_time_ns)
     if (body_tracker_ == XR_NULL_HANDLE)
     {
         // Policy: limp mode (feature unsupported/unavailable) is non-fatal.
-        tracked_.data.reset();
+        native_.data.reset();
+        tracked_ = Serialized<FullBodyPoseTracked>();
         return;
     }
 
@@ -126,13 +128,11 @@ void LiveFullBodyTrackerPicoImpl::update(int64_t monotonic_time_ns)
     XrResult result = pfn_locate_body_joints_(body_tracker_, &locate_info, &locations);
     if (XR_FAILED(result))
     {
-        tracked_.data.reset();
+        native_.data.reset();
+        tracked_ = Serialized<FullBodyPoseTracked>();
         throw std::runtime_error("[FullBodyTracker] xrLocateBodyJointsBD failed: " + std::to_string(result));
     }
 
-    // Publish freshly allocated joint storage each frame instead of refilling the previous
-    // frame's. The query API hands the pose out by reference and callers may still hold an
-    // earlier frame's joints, so an in-place refill would change data already handed out.
     auto data = std::make_shared<FullBodyPoseT>();
     data->all_joint_poses_tracked = locations.allJointPosesTracked;
     data->joints = std::make_shared<BodyJoints>();
@@ -153,16 +153,17 @@ void LiveFullBodyTrackerPicoImpl::update(int64_t monotonic_time_ns)
         data->joints->mutable_joints()->Mutate(i, joint_pose);
     }
 
-    tracked_.data = std::move(data);
+    native_.data = std::move(data);
+    tracked_ = pack_tracked<FullBodyPoseTracked>(native_.data);
 
     if (mcap_channels_)
     {
         DeviceDataTimestamp timestamp(last_update_time_, last_update_time_, xr_time);
-        mcap_channels_->write(0, timestamp, tracked_.data);
+        mcap_channels_->write(0, timestamp, native_.data);
     }
 }
 
-const FullBodyPoseTrackedT& LiveFullBodyTrackerPicoImpl::get_body_pose() const
+const Serialized<FullBodyPoseTracked>& LiveFullBodyTrackerPicoImpl::get_body_pose() const
 {
     return tracked_;
 }

@@ -19,7 +19,7 @@ namespace core
 {
 
 using JointStateMcapChannels = McapTrackerChannels<JointStateOutputRecord, JointStateOutput>;
-using JointStateSchemaTracker = SchemaTracker<JointStateOutputRecord, JointStateOutput>;
+using JointStateSchemaTracker = SchemaTracker<JointStateOutputRecord, JointStateOutput, JointStateOutputTracked>;
 
 class LiveJointStateTrackerImpl : public IJointStateTrackerImpl
 {
@@ -41,12 +41,12 @@ public:
     LiveJointStateTrackerImpl& operator=(LiveJointStateTrackerImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const JointStateOutputTrackedT& get_data() const override;
+    const Serialized<JointStateOutputTracked>& get_data() const override;
 
 private:
     std::unique_ptr<JointStateMcapChannels> mcap_channels_;
     JointStateSchemaTracker m_schema_reader;
-    JointStateOutputTrackedT m_tracked;
+    Serialized<JointStateOutputTracked> m_tracked;
 };
 
 } // namespace core

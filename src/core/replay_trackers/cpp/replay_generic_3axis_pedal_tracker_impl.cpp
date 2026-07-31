@@ -6,6 +6,7 @@
 #include <mcap/recording_traits.hpp>
 #include <schema/pedals_bfbs_generated.h>
 #include <schema/timestamp_generated.h>
+#include <schema/tracked.hpp>
 
 #include <cassert>
 #include <cstring>
@@ -28,7 +29,7 @@ ReplayGeneric3AxisPedalTrackerImpl::ReplayGeneric3AxisPedalTrackerImpl(std::uniq
 {
 }
 
-const Generic3AxisPedalOutputTrackedT& ReplayGeneric3AxisPedalTrackerImpl::get_data() const
+const Serialized<Generic3AxisPedalOutputTracked>& ReplayGeneric3AxisPedalTrackerImpl::get_data() const
 {
     return tracked_;
 }
@@ -38,12 +39,12 @@ void ReplayGeneric3AxisPedalTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     auto record = mcap_viewers_->read(0);
     if (record)
     {
-        tracked_.data = std::move(record->data);
+        tracked_ = pack_tracked<Generic3AxisPedalOutputTracked>(std::move(record->data));
     }
     else
     {
         std::cerr << "ReplayGeneric3AxisPedalTrackerImpl: pedal data not found" << std::endl;
-        tracked_.data.reset();
+        tracked_ = Serialized<Generic3AxisPedalOutputTracked>();
     }
 }
 

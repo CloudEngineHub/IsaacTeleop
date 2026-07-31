@@ -7,6 +7,7 @@
 #include <oxr_utils/oxr_funcs.hpp>
 #include <schema/controller_bfbs_generated.h>
 #include <schema/timestamp_generated.h>
+#include <schema/tracked.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -357,8 +358,10 @@ void LiveControllerTrackerImpl::update(int64_t monotonic_time_ns)
     {
         // Policy: action sync failure is a critical tracker/runtime error.
         // Ensure callers do not observe stale controller data after sync failure.
-        left_tracked_.data.reset();
-        right_tracked_.data.reset();
+        left_native_.data.reset();
+        right_native_.data.reset();
+        left_tracked_ = Serialized<ControllerSnapshotTracked>();
+        right_tracked_ = Serialized<ControllerSnapshotTracked>();
         throw std::runtime_error("[ControllerTracker] xrSyncActions2NV failed: " + std::to_string(result));
     }
 
@@ -439,23 +442,26 @@ void LiveControllerTrackerImpl::update(int64_t monotonic_time_ns)
         tracked.data->inputs = std::make_shared<ControllerInputState>(inputs);
     };
 
-    update_controller(left_hand_path_, left_grip_space_, left_aim_space_, left_tracked_);
-    update_controller(right_hand_path_, right_grip_space_, right_aim_space_, right_tracked_);
+    update_controller(left_hand_path_, left_grip_space_, left_aim_space_, left_native_);
+    update_controller(right_hand_path_, right_grip_space_, right_aim_space_, right_native_);
+
+    left_tracked_ = pack_tracked<ControllerSnapshotTracked>(left_native_.data);
+    right_tracked_ = pack_tracked<ControllerSnapshotTracked>(right_native_.data);
 
     if (mcap_channels_)
     {
         DeviceDataTimestamp timestamp(last_update_time_, last_update_time_, xr_time);
-        mcap_channels_->write(0, timestamp, left_tracked_.data);
-        mcap_channels_->write(1, timestamp, right_tracked_.data);
+        mcap_channels_->write(0, timestamp, left_native_.data);
+        mcap_channels_->write(1, timestamp, right_native_.data);
     }
 }
 
-const ControllerSnapshotTrackedT& LiveControllerTrackerImpl::get_left_controller() const
+const Serialized<ControllerSnapshotTracked>& LiveControllerTrackerImpl::get_left_controller() const
 {
     return left_tracked_;
 }
 
-const ControllerSnapshotTrackedT& LiveControllerTrackerImpl::get_right_controller() const
+const Serialized<ControllerSnapshotTracked>& LiveControllerTrackerImpl::get_right_controller() const
 {
     return right_tracked_;
 }

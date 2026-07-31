@@ -120,13 +120,13 @@ def main():
                         session.update()
 
                         # Get hand data
-                        left_tracked: schema.HandPoseTrackedT = (
+                        left_tracked: schema.HandPoseTracked = (
                             hand_tracker.get_left_hand(session)
                         )
-                        right_tracked: schema.HandPoseTrackedT = (
+                        right_tracked: schema.HandPoseTracked = (
                             hand_tracker.get_right_hand(session)
                         )
-                        head_tracked: schema.HeadPoseTrackedT = head_tracker.get_head(
+                        head_tracked: schema.HeadPoseTracked = head_tracker.get_head(
                             session
                         )
 

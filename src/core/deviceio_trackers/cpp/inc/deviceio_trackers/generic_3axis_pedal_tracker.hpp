@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 #pragma once
@@ -13,7 +13,7 @@ namespace core
 {
 
 /*!
- * @brief Facade for three-axis pedal state exposed as ``Generic3AxisPedalOutputTrackedT``.
+ * @brief Facade for three-axis pedal state exposed as ``Serialized<Generic3AxisPedalOutputTracked>``.
  *
  * Semantic contract: ``left_pedal``, ``right_pedal``, and ``rudder`` are scalar floats matching the
  * ``Generic3AxisPedalOutput`` schema (axis semantics are left/right/rudder as named). Units, range,
@@ -59,13 +59,13 @@ public:
     /*!
      * @brief Pedal snapshot from the session’s implementation.
      *
-     * ``tracked.data`` is null when there is no valid last-known sample (source never provided data or
+     * ``tracked->data()`` is null when there is no valid last-known sample (source never provided data or
      * implementation cleared state when the collection is gone). When non-null, values may still be **unchanged**
      * from the previous ``update()`` if that tick produced no new samples (see ``LiveGeneric3AxisPedalTrackerImpl``
-     * and ``m_pending_records``). When ``tracked.data`` is non-null, nested fields in
-     * ``Generic3AxisPedalOutputT`` are safe to read.
+     * and ``m_pending_records``). When ``tracked->data()`` is non-null, nested fields in
+     * ``Generic3AxisPedalOutput`` are safe to read.
      */
-    const Generic3AxisPedalOutputTrackedT& get_data(const ITrackerSession& session) const;
+    const Serialized<Generic3AxisPedalOutputTracked>& get_data(const ITrackerSession& session) const;
 
     const std::string& collection_id() const
     {

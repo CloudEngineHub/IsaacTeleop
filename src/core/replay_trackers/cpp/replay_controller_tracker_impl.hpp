@@ -27,8 +27,8 @@ public:
     ReplayControllerTrackerImpl& operator=(ReplayControllerTrackerImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const ControllerSnapshotTrackedT& get_left_controller() const override;
-    const ControllerSnapshotTrackedT& get_right_controller() const override;
+    const Serialized<ControllerSnapshotTracked>& get_left_controller() const override;
+    const Serialized<ControllerSnapshotTracked>& get_right_controller() const override;
     // Replay sessions do not drive hardware — haptic feedback is a no-op here.
     void apply_left_haptic_feedback(float /*amplitude*/, float /*frequency_hz*/, float /*duration_s*/) const override
     {
@@ -38,8 +38,8 @@ public:
     }
 
 private:
-    ControllerSnapshotTrackedT left_tracked_;
-    ControllerSnapshotTrackedT right_tracked_;
+    Serialized<ControllerSnapshotTracked> left_tracked_;
+    Serialized<ControllerSnapshotTracked> right_tracked_;
     std::unique_ptr<ControllerMcapViewers> mcap_viewers_;
 };
 

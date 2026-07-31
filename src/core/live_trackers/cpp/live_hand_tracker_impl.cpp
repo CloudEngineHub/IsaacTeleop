@@ -7,6 +7,7 @@
 #include <oxr_utils/oxr_funcs.hpp>
 #include <schema/hand_bfbs_generated.h>
 #include <schema/timestamp_generated.h>
+#include <schema/tracked.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -176,23 +177,26 @@ void LiveHandTrackerImpl::update(int64_t monotonic_time_ns)
 {
     last_update_time_ = monotonic_time_ns;
     const XrTime xr_time = time_converter_.convert_monotonic_ns_to_xrtime(monotonic_time_ns);
-    update_hand(left_hand_trackers_, xr_time, left_tracked_);
-    update_hand(right_hand_trackers_, xr_time, right_tracked_);
+    update_hand(left_hand_trackers_, xr_time, left_native_);
+    update_hand(right_hand_trackers_, xr_time, right_native_);
+
+    left_tracked_ = pack_tracked<HandPoseTracked>(left_native_.data);
+    right_tracked_ = pack_tracked<HandPoseTracked>(right_native_.data);
 
     if (mcap_channels_)
     {
         DeviceDataTimestamp timestamp(last_update_time_, last_update_time_, xr_time);
-        mcap_channels_->write(0, timestamp, left_tracked_.data);
-        mcap_channels_->write(1, timestamp, right_tracked_.data);
+        mcap_channels_->write(0, timestamp, left_native_.data);
+        mcap_channels_->write(1, timestamp, right_native_.data);
     }
 }
 
-const HandPoseTrackedT& LiveHandTrackerImpl::get_left_hand() const
+const Serialized<HandPoseTracked>& LiveHandTrackerImpl::get_left_hand() const
 {
     return left_tracked_;
 }
 
-const HandPoseTrackedT& LiveHandTrackerImpl::get_right_hand() const
+const Serialized<HandPoseTracked>& LiveHandTrackerImpl::get_right_hand() const
 {
     return right_tracked_;
 }
@@ -408,9 +412,8 @@ bool LiveHandTrackerImpl::try_update_hand(XrHandTrackerEXT tracker, XrTime time,
         return false;
     }
 
-    // Publish freshly allocated joint storage each frame instead of refilling the previous
-    // frame's. The query API hands the pose out by reference and callers may still hold an
-    // earlier frame's joints, so an in-place refill would change data already handed out.
+    // Scratch storage for this candidate: update_hand() only commits it once the locate
+    // call succeeds, and update() encodes the winner into the published buffer.
     auto data = std::make_shared<HandPoseT>();
     data->joints = std::make_shared<HandJoints>();
 

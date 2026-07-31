@@ -1,0 +1,125 @@
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
+// Owning handle to any FlatBuffer table, used in place of the generated object-API
+// (`-T`) types.
+//
+// A `-T` type is a tree of std::vector / std::string / std::unique_ptr members that
+// only exists after an UnPack. Handing one out means a tracker either copies it per
+// read or lends out storage it will refill next frame. `Serialized<T>` instead points
+// straight at the encoded bytes: readers address the buffer, so there is no unpack
+// step, no per-field allocation, and no `-T` in any public signature.
+//
+// Two properties the rest of the tracker stack leans on:
+//
+//   - Copying is a refcount bump, and the bytes are immutable, so a copy taken this
+//     frame stays valid and unchanged after the tracker moves on. Consumers hold
+//     snapshots, not views into live tracker storage.
+//   - `ptr_` need not be the buffer root. Narrowing to a nested table shares the
+//     parent's owner and just re-points, so one allocation backs a whole tree of views.
+//
+// An empty handle (`get() == nullptr`, contextually false) means "no table here".
+//
+// Nullable on purpose, and for a format-level reason rather than a domain one: a
+// FlatBuffers table field is optional, so the generated accessor already returns null
+// when it is unset. A handle is that pointer plus its owner, so a non-nullable handle
+// could represent less than the pointer it wraps -- `narrow()` would have to hand back
+// an optional, which relocates the null rather than removing it, and costs the
+// by-reference returns and default-constructibility the tracker impls rely on.
+//
+// This type is deliberately schema-agnostic: it knows how to own and re-point a buffer
+// and nothing about any field. Helpers for this repo's Tracked/Record wrapper shape
+// live in <schema/tracked.hpp>.
+
+#pragma once
+
+#include <flatbuffers/flatbuffers.h>
+
+#include <cassert>
+#include <memory>
+#include <utility>
+
+namespace core
+{
+
+template <typename T>
+class Serialized
+{
+public:
+    //! No table: no buffer, `get()` is null. See the note on nullability above.
+    Serialized() = default;
+
+    /*!
+     * @brief Wraps `ptr` and keeps `owner` alive for as long as this handle (or any
+     *        copy, or any handle narrowed from it) exists.
+     *
+     * `owner` is type-erased because the bytes can be backed by a builder's
+     * `DetachedBuffer`, a `std::vector<uint8_t>` read off the wire, or the owner of a
+     * parent handle this one was narrowed from. Prefer `adopt()` / `narrow()` over
+     * calling this directly.
+     */
+    Serialized(std::shared_ptr<const void> owner, const T* ptr) : owner_(std::move(owner)), ptr_(ptr)
+    {
+    }
+
+    /*!
+     * @brief Takes ownership of a finished builder's buffer, rooted at `T`.
+     *
+     * The builder must have had `Finish()` called on an offset of type `T`; it is
+     * reset by the `Release()` and can be reused for the next frame.
+     */
+    static Serialized adopt(flatbuffers::FlatBufferBuilder& fbb)
+    {
+        auto owner = std::make_shared<const flatbuffers::DetachedBuffer>(fbb.Release());
+        return Serialized(owner, flatbuffers::GetRoot<T>(owner->data()));
+    }
+
+    //! Narrows to a table nested inside this buffer, sharing the owner. Null `ptr`
+    //! yields an empty handle, so `narrow(parent->child())` maps an unset nested-table
+    //! field onto an absent handle without a branch at the call site.
+    template <typename U>
+    Serialized<U> narrow(const U* ptr) const
+    {
+        return ptr != nullptr ? Serialized<U>(owner_, ptr) : Serialized<U>();
+    }
+
+    //! Encoded table, or null when this handle points at nothing.
+    const T* get() const noexcept
+    {
+        return ptr_;
+    }
+
+    //! Precondition: the handle is non-empty. Test with `operator bool` (or reach the
+    //! field through a null-safe accessor) before dereferencing.
+    const T* operator->() const noexcept
+    {
+        assert(ptr_ != nullptr && "dereferenced an empty Serialized handle");
+        return ptr_;
+    }
+
+    explicit operator bool() const noexcept
+    {
+        return ptr_ != nullptr;
+    }
+
+private:
+    std::shared_ptr<const void> owner_;
+    const T* ptr_ = nullptr;
+};
+
+/*!
+ * @brief Encodes a native (`-T`) value into a standalone `Serialized<T>`.
+ *
+ * The bridge for producers that still assemble a `-T` — a tracker impl filling one
+ * from an OpenXR query, or a Python binding constructor taking loose arguments. The
+ * `-T` stays a local of the caller; only the encoded buffer escapes.
+ */
+template <typename T>
+Serialized<T> pack(const typename T::NativeTableType& native)
+{
+    flatbuffers::FlatBufferBuilder fbb;
+    fbb.Finish(T::Pack(fbb, &native));
+    return Serialized<T>::adopt(fbb);
+}
+
+} // namespace core

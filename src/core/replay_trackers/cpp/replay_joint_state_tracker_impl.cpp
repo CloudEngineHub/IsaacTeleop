@@ -6,6 +6,7 @@
 #include <mcap/recording_traits.hpp>
 #include <schema/joint_state_bfbs_generated.h>
 #include <schema/timestamp_generated.h>
+#include <schema/tracked.hpp>
 
 #include <iostream>
 #include <string>
@@ -29,7 +30,7 @@ ReplayJointStateTrackerImpl::ReplayJointStateTrackerImpl(std::unique_ptr<mcap::M
 {
 }
 
-const JointStateOutputTrackedT& ReplayJointStateTrackerImpl::get_data() const
+const Serialized<JointStateOutputTracked>& ReplayJointStateTrackerImpl::get_data() const
 {
     return tracked_;
 }
@@ -39,7 +40,7 @@ void ReplayJointStateTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     auto record = mcap_viewers_->read(0);
     if (record)
     {
-        tracked_.data = std::move(record->data);
+        tracked_ = pack_tracked<JointStateOutputTracked>(std::move(record->data));
         warned_no_data_ = false;
     }
     else
@@ -50,7 +51,7 @@ void ReplayJointStateTrackerImpl::update(int64_t /*monotonic_time_ns*/)
             std::cerr << "ReplayJointStateTrackerImpl: joint state data not found" << std::endl;
             warned_no_data_ = true;
         }
-        tracked_.data.reset();
+        tracked_ = Serialized<JointStateOutputTracked>();
     }
 }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 """
@@ -75,10 +75,10 @@ def main():
                         print(f"[{elapsed:4.1f}s] Frame {frame_count}")
 
                         # Get hand data
-                        left_tracked: schema.HandPoseTrackedT = (
+                        left_tracked: schema.HandPoseTracked = (
                             hand_tracker.get_left_hand(session)
                         )
-                        right_tracked: schema.HandPoseTrackedT = (
+                        right_tracked: schema.HandPoseTracked = (
                             hand_tracker.get_right_hand(session)
                         )
 
@@ -103,7 +103,7 @@ def main():
                             print("  Right hand:  inactive")
 
                         # Get head data
-                        head_tracked: schema.HeadPoseTrackedT = head_tracker.get_head(
+                        head_tracked: schema.HeadPoseTracked = head_tracker.get_head(
                             session
                         )
                         if head_tracked.data is not None:

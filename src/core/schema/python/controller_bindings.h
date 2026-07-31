@@ -3,9 +3,11 @@
 
 // Python bindings for the Controller FlatBuffer schema.
 // ControllerInputState, ControllerPose are structs.
-// ControllerSnapshot is a table (exposed via ControllerSnapshotT native type).
+// ControllerSnapshot is a table, exposed as an encoded view.
 
 #pragma once
+
+#include "schema_serialized.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -13,6 +15,7 @@
 #include <schema/timestamp_generated.h>
 
 #include <memory>
+#include <string>
 
 namespace py = pybind11;
 
@@ -66,89 +69,48 @@ inline void bind_controller(py::module& m)
                  return "ControllerPose(pose=" + pose_str + ", is_valid=" + (self.is_valid() ? "True" : "False") + ")";
              });
 
-    // Bind ControllerSnapshot table (via ControllerSnapshotT native type)
-    py::class_<ControllerSnapshotT, std::shared_ptr<ControllerSnapshotT>>(m, "ControllerSnapshot")
-        .def(py::init(
-            []()
-            {
-                auto obj = std::make_shared<ControllerSnapshotT>();
-                obj->grip_pose = std::make_shared<ControllerPose>();
-                obj->aim_pose = std::make_shared<ControllerPose>();
-                obj->inputs = std::make_shared<ControllerInputState>();
-                return obj;
-            }))
+    serialized_class<ControllerSnapshot>(
+        m, "ControllerSnapshot", "Encoded controller snapshot: grip and aim poses plus the input state.")
         .def(py::init(
                  [](const ControllerPose& grip_pose, const ControllerPose& aim_pose, const ControllerInputState& inputs)
                  {
-                     auto obj = std::make_shared<ControllerSnapshotT>();
-                     obj->grip_pose = std::make_shared<ControllerPose>(grip_pose);
-                     obj->aim_pose = std::make_shared<ControllerPose>(aim_pose);
-                     obj->inputs = std::make_shared<ControllerInputState>(inputs);
-                     return obj;
+                     ControllerSnapshotT native;
+                     native.grip_pose = std::make_shared<ControllerPose>(grip_pose);
+                     native.aim_pose = std::make_shared<ControllerPose>(aim_pose);
+                     native.inputs = std::make_shared<ControllerInputState>(inputs);
+                     return pack<ControllerSnapshot>(native);
                  }),
-             py::arg("grip_pose"), py::arg("aim_pose"), py::arg("inputs"))
+             py::arg("grip_pose") = ControllerPose(), py::arg("aim_pose") = ControllerPose(),
+             py::arg("inputs") = ControllerInputState(),
+             "Encode a controller snapshot. Omitted poses are identity and not valid.")
         .def_property_readonly(
-            "grip_pose", [](const ControllerSnapshotT& self) -> const ControllerPose* { return self.grip_pose.get(); },
+            "grip_pose", [](const Serialized<ControllerSnapshot>& self) { return self ? self->grip_pose() : nullptr; },
             py::return_value_policy::reference_internal)
         .def_property_readonly(
-            "aim_pose", [](const ControllerSnapshotT& self) -> const ControllerPose* { return self.aim_pose.get(); },
+            "aim_pose", [](const Serialized<ControllerSnapshot>& self) { return self ? self->aim_pose() : nullptr; },
             py::return_value_policy::reference_internal)
         .def_property_readonly(
-            "inputs", [](const ControllerSnapshotT& self) -> const ControllerInputState* { return self.inputs.get(); },
+            "inputs", [](const Serialized<ControllerSnapshot>& self) { return self ? self->inputs() : nullptr; },
             py::return_value_policy::reference_internal)
         .def("__repr__",
-             [](const ControllerSnapshotT& self)
+             [](const Serialized<ControllerSnapshot>& self)
              {
-                 std::string grip_str =
-                     self.grip_pose ?
-                         "ControllerPose(is_valid=" + std::string(self.grip_pose->is_valid() ? "True" : "False") + ")" :
-                         "None";
-                 std::string aim_str =
-                     self.aim_pose ?
-                         "ControllerPose(is_valid=" + std::string(self.aim_pose->is_valid() ? "True" : "False") + ")" :
-                         "None";
-                 return "ControllerSnapshot(grip_pose=" + grip_str + ", aim_pose=" + aim_str + ")";
+                 if (!self)
+                 {
+                     return std::string("ControllerSnapshot(<empty>)");
+                 }
+                 auto pose_str = [](const ControllerPose* pose)
+                 {
+                     return pose != nullptr ?
+                                "ControllerPose(is_valid=" + std::string(pose->is_valid() ? "True" : "False") + ")" :
+                                std::string("None");
+                 };
+                 return "ControllerSnapshot(grip_pose=" + pose_str(self->grip_pose()) +
+                        ", aim_pose=" + pose_str(self->aim_pose()) + ")";
              });
 
-    py::class_<ControllerSnapshotRecordT, std::shared_ptr<ControllerSnapshotRecordT>>(m, "ControllerSnapshotRecord")
-        .def(py::init<>())
-        .def(py::init(
-                 [](const ControllerSnapshotT& data, const DeviceDataTimestamp& timestamp)
-                 {
-                     auto obj = std::make_shared<ControllerSnapshotRecordT>();
-                     obj->data = std::make_shared<ControllerSnapshotT>(data);
-                     obj->timestamp = std::make_shared<core::DeviceDataTimestamp>(timestamp);
-                     return obj;
-                 }),
-             py::arg("data"), py::arg("timestamp"))
-        .def_property_readonly("data",
-                               [](const ControllerSnapshotRecordT& self) -> std::shared_ptr<ControllerSnapshotT>
-                               { return self.data; })
-        .def_readonly("timestamp", &ControllerSnapshotRecordT::timestamp)
-        .def("__repr__",
-             [](const ControllerSnapshotRecordT& self) {
-                 return "ControllerSnapshotRecord(data=" + std::string(self.data ? "ControllerSnapshot(...)" : "None") +
-                        ")";
-             });
-
-    py::class_<ControllerSnapshotTrackedT, std::shared_ptr<ControllerSnapshotTrackedT>>(m, "ControllerSnapshotTrackedT")
-        .def(py::init<>())
-        .def(py::init(
-                 [](const ControllerSnapshotT& data)
-                 {
-                     auto obj = std::make_shared<ControllerSnapshotTrackedT>();
-                     obj->data = std::make_shared<ControllerSnapshotT>(data);
-                     return obj;
-                 }),
-             py::arg("data"))
-        .def_property_readonly("data",
-                               [](const ControllerSnapshotTrackedT& self) -> std::shared_ptr<ControllerSnapshotT>
-                               { return self.data; })
-        .def("__repr__",
-             [](const ControllerSnapshotTrackedT& self) {
-                 return std::string("ControllerSnapshotTrackedT(data=") +
-                        (self.data ? "ControllerSnapshot(...)" : "None") + ")";
-             });
+    bind_record<ControllerSnapshotRecord, ControllerSnapshot>(m, "ControllerSnapshotRecord", "ControllerSnapshot");
+    bind_tracked<ControllerSnapshotTracked, ControllerSnapshot>(m, "ControllerSnapshotTracked", "ControllerSnapshot");
 }
 
 } // namespace core

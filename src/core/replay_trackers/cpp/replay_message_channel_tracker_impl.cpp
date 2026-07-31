@@ -45,7 +45,7 @@ void ReplayMessageChannelTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     // sharing the first pending record's timestamp. See the class
     // docstring for the invariant this relies on (the live recorder
     // writes ≥1 record per session.update()).
-    messages_.data.clear();
+    native_.data.clear();
 
     if (!pending_record_)
     {
@@ -53,6 +53,9 @@ void ReplayMessageChannelTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     }
     if (!pending_record_)
     {
+        // Always encode, including for an empty batch: `data` is a list here, so "no
+        // messages this frame" is an empty batch rather than an absent one.
+        messages_ = pack<MessageChannelMessagesTracked>(native_);
         return;
     }
 
@@ -64,10 +67,12 @@ void ReplayMessageChannelTrackerImpl::update(int64_t /*monotonic_time_ns*/)
         // the next update reads the following frame.
         if (pending_record_->data)
         {
-            messages_.data.push_back(std::move(pending_record_->data));
+            native_.data.push_back(std::move(pending_record_->data));
         }
         pending_record_ = mcap_viewers_->read(0);
     }
+
+    messages_ = pack<MessageChannelMessagesTracked>(native_);
 }
 
 MessageChannelStatus ReplayMessageChannelTrackerImpl::get_status() const
@@ -78,7 +83,7 @@ MessageChannelStatus ReplayMessageChannelTrackerImpl::get_status() const
     return MessageChannelStatus::CONNECTED;
 }
 
-const MessageChannelMessagesTrackedT& ReplayMessageChannelTrackerImpl::get_messages() const
+const Serialized<MessageChannelMessagesTracked>& ReplayMessageChannelTrackerImpl::get_messages() const
 {
     return messages_;
 }

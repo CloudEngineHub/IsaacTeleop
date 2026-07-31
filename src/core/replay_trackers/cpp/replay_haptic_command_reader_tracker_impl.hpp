@@ -20,11 +20,11 @@ public:
     ReplayHapticCommandReaderTrackerImpl() = default;
 
     void update(int64_t monotonic_time_ns) override;
-    const HapticCommandTrackedT& get_data() const override;
-    const HapticCommandTrackedT& get_data(std::string_view endpoint) const override;
+    const Serialized<HapticCommandTracked>& get_data() const override;
+    const Serialized<HapticCommandTracked>& get_data(std::string_view endpoint) const override;
 
 private:
-    HapticCommandTrackedT tracked_;
+    Serialized<HapticCommandTracked> tracked_;
 };
 
 } // namespace core

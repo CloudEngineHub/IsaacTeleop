@@ -4,8 +4,8 @@
 """
 DeviceIO Tensor Types - Tracked wrapper objects from DeviceIO.
 
-These tensor types represent the TrackedT wrapper objects returned by DeviceIO trackers.
-Each TrackedT always exists (never None) and contains a `.data` property that holds
+These tensor types represent the Tracked wrapper objects returned by DeviceIO trackers.
+Each wrapper always exists (never None) and contains a `.data` property that holds
 the raw flatbuffer object (or None when the tracker is inactive).
 """
 
@@ -15,18 +15,18 @@ from typing import Any
 from ..interface.tensor_type import TensorType
 from ..interface.tensor_group_type import TensorGroupType
 from isaacteleop.schema import (
-    HeadPoseTrackedT,
-    HandPoseTrackedT,
-    ControllerSnapshotTrackedT,
-    Generic3AxisPedalOutputTrackedT,
-    JointStateOutputTrackedT,
-    FullBodyPoseTrackedT,
-    MessageChannelMessagesTrackedT,
+    HeadPoseTracked,
+    HandPoseTracked,
+    ControllerSnapshotTracked,
+    Generic3AxisPedalOutputTracked,
+    JointStateOutputTracked,
+    FullBodyPoseTracked,
+    MessageChannelMessagesTracked,
 )
 
 
 class HeadPoseTrackedType(TensorType):
-    """HeadPoseTrackedT wrapper type from DeviceIO HeadTracker."""
+    """HeadPoseTracked wrapper type from DeviceIO HeadTracker."""
 
     def __init__(self, name: str) -> None:
         super().__init__(name)
@@ -37,14 +37,14 @@ class HeadPoseTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, HeadPoseTrackedT):
+        if not isinstance(value, HeadPoseTracked):
             raise TypeError(
-                f"Expected HeadPoseTrackedT for '{self.name}', got {type(value).__name__}"
+                f"Expected HeadPoseTracked for '{self.name}', got {type(value).__name__}"
             )
 
 
 class HandPoseTrackedType(TensorType):
-    """HandPoseTrackedT wrapper type from DeviceIO HandTracker."""
+    """HandPoseTracked wrapper type from DeviceIO HandTracker."""
 
     def __init__(self, name: str) -> None:
         super().__init__(name)
@@ -55,14 +55,14 @@ class HandPoseTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, HandPoseTrackedT):
+        if not isinstance(value, HandPoseTracked):
             raise TypeError(
-                f"Expected HandPoseTrackedT for '{self.name}', got {type(value).__name__}"
+                f"Expected HandPoseTracked for '{self.name}', got {type(value).__name__}"
             )
 
 
 class ControllerSnapshotTrackedType(TensorType):
-    """ControllerSnapshotTrackedT wrapper type from DeviceIO ControllerTracker."""
+    """ControllerSnapshotTracked wrapper type from DeviceIO ControllerTracker."""
 
     def __init__(self, name: str) -> None:
         super().__init__(name)
@@ -75,14 +75,14 @@ class ControllerSnapshotTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, ControllerSnapshotTrackedT):
+        if not isinstance(value, ControllerSnapshotTracked):
             raise TypeError(
-                f"Expected ControllerSnapshotTrackedT for '{self.name}', got {type(value).__name__}"
+                f"Expected ControllerSnapshotTracked for '{self.name}', got {type(value).__name__}"
             )
 
 
 class Generic3AxisPedalOutputTrackedType(TensorType):
-    """Generic3AxisPedalOutputTrackedT wrapper type from DeviceIO Generic3AxisPedalTracker."""
+    """Generic3AxisPedalOutputTracked wrapper type from DeviceIO Generic3AxisPedalTracker."""
 
     def __init__(self, name: str) -> None:
         super().__init__(name)
@@ -95,14 +95,14 @@ class Generic3AxisPedalOutputTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, Generic3AxisPedalOutputTrackedT):
+        if not isinstance(value, Generic3AxisPedalOutputTracked):
             raise TypeError(
-                f"Expected Generic3AxisPedalOutputTrackedT for '{self.name}', got {type(value).__name__}"
+                f"Expected Generic3AxisPedalOutputTracked for '{self.name}', got {type(value).__name__}"
             )
 
 
 class JointStateOutputTrackedType(TensorType):
-    """JointStateOutputTrackedT wrapper type from DeviceIO JointStateTracker."""
+    """JointStateOutputTracked wrapper type from DeviceIO JointStateTracker."""
 
     def __init__(self, name: str) -> None:
         super().__init__(name)
@@ -115,16 +115,16 @@ class JointStateOutputTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, JointStateOutputTrackedT):
+        if not isinstance(value, JointStateOutputTracked):
             raise TypeError(
-                f"Expected JointStateOutputTrackedT for '{self.name}', got {type(value).__name__}"
+                f"Expected JointStateOutputTracked for '{self.name}', got {type(value).__name__}"
             )
 
 
 class FullBodyPoseTrackedType(TensorType):
-    """FullBodyPoseTrackedT wrapper type from DeviceIO FullBodyTracker.
+    """FullBodyPoseTracked wrapper type from DeviceIO FullBodyTracker.
 
-    Vendor-agnostic: the full-body tracker produces the same FullBodyPoseTrackedT
+    Vendor-agnostic: the full-body tracker produces the same FullBodyPoseTracked
     payload regardless of the live vendor (native XR, pushed tensor, ...).
     """
 
@@ -139,14 +139,14 @@ class FullBodyPoseTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, FullBodyPoseTrackedT):
+        if not isinstance(value, FullBodyPoseTracked):
             raise TypeError(
-                f"Expected FullBodyPoseTrackedT for '{self.name}', got {type(value).__name__}"
+                f"Expected FullBodyPoseTracked for '{self.name}', got {type(value).__name__}"
             )
 
 
 class MessageChannelMessagesTrackedType(TensorType):
-    """MessageChannelMessagesTrackedT wrapper type from DeviceIO MessageChannelTracker."""
+    """MessageChannelMessagesTracked wrapper type from DeviceIO MessageChannelTracker."""
 
     def __init__(self, name: str) -> None:
         super().__init__(name)
@@ -159,9 +159,9 @@ class MessageChannelMessagesTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, MessageChannelMessagesTrackedT):
+        if not isinstance(value, MessageChannelMessagesTracked):
             raise TypeError(
-                f"Expected MessageChannelMessagesTrackedT for '{self.name}', got {type(value).__name__}"
+                f"Expected MessageChannelMessagesTracked for '{self.name}', got {type(value).__name__}"
             )
 
 
@@ -199,7 +199,7 @@ def DeviceIOHeadPoseTracked() -> TensorGroupType:
     """Tracked head pose from DeviceIO HeadTracker.
 
     Contains:
-        head_tracked: HeadPoseTrackedT wrapper (always set; .data is None when inactive)
+        head_tracked: HeadPoseTracked wrapper (always set; .data is None when inactive)
     """
     return TensorGroupType("deviceio_head_pose", [HeadPoseTrackedType("head_tracked")])
 
@@ -208,7 +208,7 @@ def DeviceIOHandPoseTracked() -> TensorGroupType:
     """Tracked hand pose from DeviceIO HandTracker.
 
     Contains:
-        hand_tracked: HandPoseTrackedT wrapper (always set; .data is None when inactive)
+        hand_tracked: HandPoseTracked wrapper (always set; .data is None when inactive)
     """
     return TensorGroupType("deviceio_hand_pose", [HandPoseTrackedType("hand_tracked")])
 
@@ -217,7 +217,7 @@ def DeviceIOControllerSnapshotTracked() -> TensorGroupType:
     """Tracked controller snapshot from DeviceIO ControllerTracker.
 
     Contains:
-        controller_tracked: ControllerSnapshotTrackedT wrapper (always set; .data is None when inactive)
+        controller_tracked: ControllerSnapshotTracked wrapper (always set; .data is None when inactive)
     """
     return TensorGroupType(
         "deviceio_controller_snapshot",
@@ -229,7 +229,7 @@ def DeviceIOGeneric3AxisPedalOutputTracked() -> TensorGroupType:
     """Tracked pedal data from DeviceIO Generic3AxisPedalTracker.
 
     Contains:
-        pedal_tracked: Generic3AxisPedalOutputTrackedT wrapper (always set; .data is None when inactive)
+        pedal_tracked: Generic3AxisPedalOutputTracked wrapper (always set; .data is None when inactive)
     """
     return TensorGroupType(
         "deviceio_generic_3axis_pedal_output",
@@ -241,7 +241,7 @@ def DeviceIOJointStateOutputTracked() -> TensorGroupType:
     """Tracked joint-state data from DeviceIO JointStateTracker.
 
     Contains:
-        joint_state_tracked: JointStateOutputTrackedT wrapper (always set; .data is None when inactive)
+        joint_state_tracked: JointStateOutputTracked wrapper (always set; .data is None when inactive)
     """
     return TensorGroupType(
         "deviceio_joint_state_output",
@@ -253,7 +253,7 @@ def DeviceIOFullBodyPoseTracked() -> TensorGroupType:
     """Tracked full body pose data from DeviceIO FullBodyTracker.
 
     Contains:
-        full_body_tracked: FullBodyPoseTrackedT wrapper (always set; .data is None when inactive)
+        full_body_tracked: FullBodyPoseTracked wrapper (always set; .data is None when inactive)
     """
     return TensorGroupType(
         "deviceio_full_body_pose",

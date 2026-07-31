@@ -4,6 +4,7 @@
 #include "live_haptic_command_reader_tracker_impl.hpp"
 
 #include <flatbuffers/flatbuffers.h>
+#include <schema/tracked.hpp>
 
 #include <memory>
 #include <string>
@@ -69,26 +70,23 @@ void LiveHapticCommandReaderTrackerImpl::update(int64_t /*monotonic_time_ns*/)
             continue;
         }
         const std::string endpoint = fb->endpoint() != nullptr ? fb->endpoint()->str() : std::string{};
-        HapticCommandTrackedT& tracked = tracked_by_endpoint_[endpoint];
-        if (!tracked.data)
-        {
-            tracked.data = std::make_unique<HapticCommandT>();
-        }
-        fb->UnPackTo(tracked.data.get());
+        auto data = std::make_shared<HapticCommandT>();
+        fb->UnPackTo(data.get());
+        tracked_by_endpoint_[endpoint] = pack_tracked<HapticCommandTracked>(std::move(data));
         latest_endpoint_ = endpoint;
     }
 }
 
-const HapticCommandTrackedT& LiveHapticCommandReaderTrackerImpl::get_data() const
+const Serialized<HapticCommandTracked>& LiveHapticCommandReaderTrackerImpl::get_data() const
 {
     // Backward-compatible latest-across-all-endpoints view: the endpoint of the
     // most recently drained sample.
     return get_data(latest_endpoint_);
 }
 
-const HapticCommandTrackedT& LiveHapticCommandReaderTrackerImpl::get_data(std::string_view endpoint) const
+const Serialized<HapticCommandTracked>& LiveHapticCommandReaderTrackerImpl::get_data(std::string_view endpoint) const
 {
-    static const HapticCommandTrackedT kEmpty{};
+    static const Serialized<HapticCommandTracked> kEmpty{};
     const auto it = tracked_by_endpoint_.find(endpoint);
     return it != tracked_by_endpoint_.end() ? it->second : kEmpty;
 }

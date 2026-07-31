@@ -4,7 +4,7 @@
 """
 Message channel source node.
 
-Converts DeviceIO MessageChannelMessagesTrackedT wrapper data for graph use.
+Converts DeviceIO MessageChannelMessagesTracked wrapper data for graph use.
 """
 
 from collections import deque
@@ -13,7 +13,7 @@ from typing import Any, TYPE_CHECKING
 from .interface import IDeviceIOSource
 from ..interface.retargeter_core_types import RetargeterIO, RetargeterIOType
 from ..interface.tensor_group import TensorGroup
-from isaacteleop.schema import MessageChannelMessages, MessageChannelMessagesTrackedT
+from isaacteleop.schema import MessageChannelMessages, MessageChannelMessagesTracked
 from .deviceio_tensor_types import (
     DeviceIOMessageChannelMessagesTracked,
     MessageChannelMessagesTrackedGroup,
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
         MessageChannelTracker,
     )
     from isaacteleop.schema import (
-        MessageChannelMessagesTrackedT,
+        MessageChannelMessagesTracked,
     )
 
 
@@ -38,13 +38,11 @@ class MessageChannelSource(IDeviceIOSource):
         self,
         name: str,
         tracker: "MessageChannelTracker",
-        outbound_queue: "deque[MessageChannelMessagesTrackedT]",
+        outbound_queue: "deque[MessageChannelMessagesTracked]",
     ) -> None:
         self._tracker = tracker
         self._outbound_queue = outbound_queue
-        self._last_drained_messages_tracked: MessageChannelMessagesTrackedT | None = (
-            None
-        )
+        self._last_drained_messages_tracked: MessageChannelMessagesTracked | None = None
         self._last_status: MessageChannelConnectionStatus = (
             MessageChannelConnectionStatus.UNKNOWN
         )
@@ -77,7 +75,7 @@ class MessageChannelSource(IDeviceIOSource):
                         # Drop the delivered prefix so already-sent messages are
                         # not re-delivered on the next flush attempt.
                         if sent < len(batch.data):
-                            self._outbound_queue[0] = MessageChannelMessagesTrackedT(
+                            self._outbound_queue[0] = MessageChannelMessagesTracked(
                                 batch.data[sent:]
                             )
                         else:
@@ -94,7 +92,7 @@ class MessageChannelSource(IDeviceIOSource):
         for input_name, group_type in source_inputs.items():
             tg = TensorGroup(group_type)
             if self._last_drained_messages_tracked is None:
-                tg[0] = MessageChannelMessagesTrackedT()
+                tg[0] = MessageChannelMessagesTracked()
             else:
                 tg[0] = self._last_drained_messages_tracked
             result[input_name] = tg
@@ -113,7 +111,7 @@ class MessageChannelSource(IDeviceIOSource):
 
     def _compute_fn(self, inputs: RetargeterIO, outputs: RetargeterIO, context) -> None:
         if self._last_drained_messages_tracked is None:
-            outputs["messages_tracked"][0] = MessageChannelMessagesTrackedT()
+            outputs["messages_tracked"][0] = MessageChannelMessagesTracked()
         else:
             outputs["messages_tracked"][0] = self._last_drained_messages_tracked
         outputs["status"][0] = self._last_status
