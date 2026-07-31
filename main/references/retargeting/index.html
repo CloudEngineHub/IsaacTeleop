@@ -273,12 +273,12 @@
 <div class="version-switcher">
   <label for="version-select" class="version-switcher__label">Version</label>
   <select id="version-select" class="version-switcher__select" onchange="location = this.value;">
-    <option value="../../../release/1.4.x/references/retargeting/index.html" >release/1.4.x</option>
     <option value="index.html" selected>main</option>
     <option value="../../../release/1.0.x/index.html" >release/1.0.x</option>
     <option value="../../../release/1.1.x/index.html" >release/1.1.x</option>
     <option value="../../../release/1.2.x/index.html" >release/1.2.x</option>
     <option value="../../../release/1.3.x/references/retargeting/index.html" >release/1.3.x</option>
+    <option value="../../../release/1.4.x/references/retargeting/index.html" >release/1.4.x</option>
     <option value="../../../release/1.5.x/references/retargeting/index.html" >release/1.5.x</option>
     <option value="../../../v1.3.131/references/retargeting/index.html" >v1.3.131</option>
     <option value="../../../v1.1.8/index.html" >v1.1.8</option>
@@ -593,8 +593,34 @@ target joint names, type (e.g. <code class="docutils literal notranslate"><span 
 <p class="sd-card-text"><strong>DexBiManualRetargeter:</strong> Bimanual wrapper around two <code class="docutils literal notranslate"><span class="pre">DexHandRetargeter</span></code> instances. Create
 <code class="docutils literal notranslate"><span class="pre">DexHandRetargeterConfig</span></code> for left and right hands, then instantiate with
 <code class="docutils literal notranslate"><span class="pre">left_config</span></code>, <code class="docutils literal notranslate"><span class="pre">right_config</span></code>, and <code class="docutils literal notranslate"><span class="pre">target_joint_names</span></code> (combined left + right joint
-names). See the <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/retargeters/README.md" rel="noopener noreferrer" target="_blank">retargeters README</a>
-for a full code example.</p>
+names):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">isaacteleop.retargeters</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DexBiManualRetargeter</span><span class="p">,</span>
+    <span class="n">DexHandRetargeterConfig</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">left_config</span> <span class="o">=</span> <span class="n">DexHandRetargeterConfig</span><span class="p">(</span>
+    <span class="n">hand_joint_names</span><span class="o">=</span><span class="n">left_hand_joints</span><span class="p">,</span>
+    <span class="n">hand_retargeting_config</span><span class="o">=</span><span class="s2">&quot;/path/to/left_hand_config.yml&quot;</span><span class="p">,</span>
+    <span class="n">hand_urdf</span><span class="o">=</span><span class="s2">&quot;/path/to/left_hand.urdf&quot;</span><span class="p">,</span>
+    <span class="n">hand_side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">right_config</span> <span class="o">=</span> <span class="n">DexHandRetargeterConfig</span><span class="p">(</span>
+    <span class="n">hand_joint_names</span><span class="o">=</span><span class="n">right_hand_joints</span><span class="p">,</span>
+    <span class="n">hand_retargeting_config</span><span class="o">=</span><span class="s2">&quot;/path/to/right_hand_config.yml&quot;</span><span class="p">,</span>
+    <span class="n">hand_urdf</span><span class="o">=</span><span class="s2">&quot;/path/to/right_hand.urdf&quot;</span><span class="p">,</span>
+    <span class="n">hand_side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">bimanual_retargeter</span> <span class="o">=</span> <span class="n">DexBiManualRetargeter</span><span class="p">(</span>
+    <span class="n">left_config</span><span class="o">=</span><span class="n">left_config</span><span class="p">,</span>
+    <span class="n">right_config</span><span class="o">=</span><span class="n">right_config</span><span class="p">,</span>
+    <span class="n">target_joint_names</span><span class="o">=</span><span class="n">left_hand_joints</span> <span class="o">+</span> <span class="n">right_hand_joints</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;dex_bimanual&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 <p class="sd-card-text"><strong>Coordinate frame:</strong> The <code class="docutils literal notranslate"><span class="pre">handtracking_to_baselink_frame_transform</span></code> parameter is a 3x3
 rotation matrix flattened to 9 elements. Applied as
 <code class="docutils literal notranslate"><span class="pre">target_pos</span> <span class="pre">=</span> <span class="pre">joint_pos</span> <span class="pre">&#64;</span> <span class="pre">wrist_rotation</span> <span class="pre">&#64;</span> <span class="pre">transform_matrix</span></code>. Config default is <strong>Identity</strong>
@@ -681,7 +707,7 @@ both hands with left and right VR controllers.</p>
 <p class="sd-card-text">For a complete hand retargeting example (e.g. <code class="docutils literal notranslate"><span class="pre">HandsSource</span></code> + <code class="docutils literal notranslate"><span class="pre">DexHandRetargeter</span></code> or
 <code class="docutils literal notranslate"><span class="pre">TriHandMotionControllerRetargeter</span></code>, connect and compute), see
 <code class="docutils literal notranslate"><span class="pre">g1_trihand_retargeting_example.py</span></code> and <code class="docutils literal notranslate"><span class="pre">dex_bimanual_example.py</span></code> in the
-<code class="docutils literal notranslate"><span class="pre">examples/teleop/python</span></code> directory, or the <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/retargeters/README.md" rel="noopener noreferrer" target="_blank">retargeters README</a>.</p>
+<a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/tree/main/examples/teleop/python" rel="noopener noreferrer" target="_blank">examples/teleop/python</a> directory.</p>
 </div>
 </div>
 </details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
@@ -797,8 +823,7 @@ retargeter tuning UI.</p></li>
 <li><p>Connect to existing source nodes (<code class="docutils literal notranslate"><span class="pre">HandsSource</span></code>, <code class="docutils literal notranslate"><span class="pre">ControllersSource</span></code>) or create a new
 <code class="docutils literal notranslate"><span class="pre">IDeviceIOSource</span></code> subclass for custom input devices.</p></li>
 </ol>
-<p>See the <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/retargeters/README.md" rel="noopener noreferrer" target="_blank">retargeters README</a>
-and <a class="reference internal" href="../../getting_started/contributing.html"><span class="doc">Contributing Guide</span></a> for details.</p>
+<p>See the <a class="reference internal" href="../../getting_started/contributing.html"><span class="doc">Contributing Guide</span></a> for details.</p>
 <div class="toctree-wrapper compound">
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Retargeter setup guides</span></p>
 <ul>
@@ -946,7 +971,7 @@ and <a class="reference internal" href="../../getting_started/contributing.html"
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 30, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 31, 2026.
       <br/>
     
   </p>
