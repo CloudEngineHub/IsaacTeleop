@@ -584,6 +584,13 @@ PICO vendor. Its <code class="docutils literal notranslate"><span class="pre">co
 still hand-written. They are derivable from the <code class="docutils literal notranslate"><span class="pre">.bfbs</span></code> reflection data <code class="docutils literal notranslate"><span class="pre">flatc</span></code> already emits
 (<code class="docutils literal notranslate"><span class="pre">--bfbs-gen-embed</span> <span class="pre">--reflect-names</span> <span class="pre">--reflect-types</span></code>), so this is a viable follow-up, but it is a
 separate generator with its own risks.</p>
+<p><strong>Manifest ``python_accessor`` (pybind method name).</strong> Generated <code class="docutils literal notranslate"><span class="pre">in</span></code> trackers use
+<code class="docutils literal notranslate"><span class="pre">fragments/pybind_in.template</span></code>, which binds whatever string <code class="docutils literal notranslate"><span class="pre">python_accessor</span></code> holds (default
+<code class="docutils literal notranslate"><span class="pre">get_data</span></code>; <code class="docutils literal notranslate"><span class="pre">oglo_tactile</span></code> and <code class="docutils literal notranslate"><span class="pre">generic_3axis_pedal</span></code> override with device-specific names).
+<code class="docutils literal notranslate"><span class="pre">direction</span> <span class="pre">=</span> <span class="pre">&quot;out&quot;</span></code> uses <code class="docutils literal notranslate"><span class="pre">push</span></code> via defaults. Future work: remove the manifest key and
+hard-code <code class="docutils literal notranslate"><span class="pre">get_data</span></code> on readers (or maybe <code class="docutils literal notranslate"><span class="pre">pull</span></code>, paired with <code class="docutils literal notranslate"><span class="pre">push</span></code> on producers).
+Maybe rename the C++ facade to match if we pick <code class="docutils literal notranslate"><span class="pre">pull</span></code>, so Python and C++ stay aligned without
+per-tracker overrides.</p>
 <p>If a prospective shape makes the templates hard to follow, leaving that tracker hand-written is the
 correct outcome — the generator exists to remove mechanical duplication, not to model every device.</p>
 </section>
@@ -725,7 +732,7 @@ correct outcome — the generator exists to remove mechanical duplication, not t
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 30, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on July 31, 2026.
       <br/>
     
   </p>

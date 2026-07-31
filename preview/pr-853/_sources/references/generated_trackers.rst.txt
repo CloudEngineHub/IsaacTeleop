@@ -151,5 +151,13 @@ still hand-written. They are derivable from the ``.bfbs`` reflection data ``flat
 (``--bfbs-gen-embed --reflect-names --reflect-types``), so this is a viable follow-up, but it is a
 separate generator with its own risks.
 
+**Manifest ``python_accessor`` (pybind method name).** Generated ``in`` trackers use
+``fragments/pybind_in.template``, which binds whatever string ``python_accessor`` holds (default
+``get_data``; ``oglo_tactile`` and ``generic_3axis_pedal`` override with device-specific names).
+``direction = "out"`` uses ``push`` via defaults. Future work: remove the manifest key and
+hard-code ``get_data`` on readers (or maybe ``pull``, paired with ``push`` on producers).
+Maybe rename the C++ facade to match if we pick ``pull``, so Python and C++ stay aligned without
+per-tracker overrides.
+
 If a prospective shape makes the templates hard to follow, leaving that tracker hand-written is the
 correct outcome — the generator exists to remove mechanical duplication, not to model every device.
