@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-DeviceIO Tensor Types - Tracked wrapper objects from DeviceIO.
+DeviceIO Tensor Types - payload handles from DeviceIO trackers.
 
 These tensor types represent the encoded payloads returned by DeviceIO trackers.
 Each carries a handle over the encoded payload, read directly through the schema

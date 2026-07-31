@@ -23,8 +23,8 @@ public:
     // so prefer the endpoint overload there. Kept for backward compatibility.
     virtual const Serialized<HapticCommand>& get_data() const = 0;
 
-    // Latest command for `endpoint` ("left"/"right"/...); `data` is null until a
-    // sample for that endpoint arrives. Endpoints are tracked independently so
+    // Latest command for `endpoint` ("left"/"right"/...); the handle is empty until
+    // a sample for that endpoint arrives. Endpoints are tracked independently so
     // commands pushed for different endpoints on one collection do not clobber
     // each other.
     virtual const Serialized<HapticCommand>& get_data(std::string_view endpoint) const = 0;

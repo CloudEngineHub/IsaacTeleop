@@ -24,8 +24,8 @@ namespace core
  * After each ``ITrackerSession::update()`` that includes this tracker, ``get_data(session)``
  * reflects the implementation's tracked snapshot. As with other ``SchemaTracker``-backed trackers,
  * the live backend may retain the last-known sample when a tick has no new samples while the
- * collection remains available (``data`` stays non-null but may be stale); ``data`` is null only
- * when no sample has arrived yet or the collection is unavailable.
+ * collection remains available (the handle stays non-empty but may be stale); the handle is empty
+ * only when no sample has arrived yet or the collection is unavailable.
  *
  * Usage:
  * @code
