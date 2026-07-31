@@ -7,6 +7,7 @@
 #include <schema/controller_bfbs_generated.h>
 #include <schema/serialized.hpp>
 #include <schema/timestamp_generated.h>
+#include <schema/tracked.hpp>
 
 #include <cassert>
 #include <cstring>
@@ -41,11 +42,11 @@ const Serialized<ControllerSnapshot>& ReplayControllerTrackerImpl::get_right_con
 
 void ReplayControllerTrackerImpl::update(int64_t /*monotonic_time_ns*/)
 {
-    auto left_record = mcap_viewers_->read(0);
-    auto right_record = mcap_viewers_->read(1);
+    auto left_record = mcap_viewers_->read_serialized(0);
+    auto right_record = mcap_viewers_->read_serialized(1);
     if (left_record)
     {
-        left_tracked_ = pack_optional<ControllerSnapshot>(std::move(left_record->data));
+        left_tracked_ = left_record.narrow(payload(left_record));
     }
     else
     {
@@ -55,7 +56,7 @@ void ReplayControllerTrackerImpl::update(int64_t /*monotonic_time_ns*/)
 
     if (right_record)
     {
-        right_tracked_ = pack_optional<ControllerSnapshot>(std::move(right_record->data));
+        right_tracked_ = right_record.narrow(payload(right_record));
     }
     else
     {

@@ -7,6 +7,7 @@
 #include <schema/joint_state_bfbs_generated.h>
 #include <schema/serialized.hpp>
 #include <schema/timestamp_generated.h>
+#include <schema/tracked.hpp>
 
 #include <iostream>
 #include <string>
@@ -37,10 +38,10 @@ const Serialized<JointStateOutput>& ReplayJointStateTrackerImpl::get_data() cons
 
 void ReplayJointStateTrackerImpl::update(int64_t /*monotonic_time_ns*/)
 {
-    auto record = mcap_viewers_->read(0);
+    auto record = mcap_viewers_->read_serialized(0);
     if (record)
     {
-        tracked_ = pack_optional<JointStateOutput>(std::move(record->data));
+        tracked_ = record.narrow(payload(record));
         warned_no_data_ = false;
     }
     else

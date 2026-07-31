@@ -7,6 +7,7 @@
 #include <schema/head_bfbs_generated.h>
 #include <schema/serialized.hpp>
 #include <schema/timestamp_generated.h>
+#include <schema/tracked.hpp>
 
 #include <cassert>
 #include <cstring>
@@ -35,10 +36,10 @@ const Serialized<HeadPose>& ReplayHeadTrackerImpl::get_head() const
 
 void ReplayHeadTrackerImpl::update(int64_t /*monotonic_time_ns*/)
 {
-    auto record = mcap_viewers_->read(0);
+    auto record = mcap_viewers_->read_serialized(0);
     if (record)
     {
-        tracked_ = pack_optional<HeadPose>(std::move(record->data));
+        tracked_ = record.narrow(payload(record));
     }
     else
     {
