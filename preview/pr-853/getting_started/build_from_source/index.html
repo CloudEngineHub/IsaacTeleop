@@ -794,12 +794,12 @@ tagged <code class="docutils literal notranslate"><span class="pre">+local</span
 </ul>
 <div class="admonition-editable-installs-and-iterating-on-pure-python-subpackages admonition">
 <p class="admonition-title">Editable installs and iterating on pure-Python subpackages</p>
-<p>An editable install (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code>) does <strong>not</strong> recompile on import, so
-it is fast and works offline. However, the pure-Python subpackages (e.g.
-<code class="docutils literal notranslate"><span class="pre">isaacteleop.retargeters</span></code>) are <em>copied</em> from <code class="docutils literal notranslate"><span class="pre">src/</span></code> into the package tree by
-CMake, so editing <code class="docutils literal notranslate"><span class="pre">src/retargeters/</span></code> does not take effect live — re-run
-<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code> (or <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span></code>) to re-stage. Making source-tree
-edits live for the pure-Python packages is a planned follow-up (see <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/issues/735" rel="noopener noreferrer" target="_blank">issue #735</a>).</p>
+<p>An editable install (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code>) never recompiles on import. Pure-Python
+subpackages resolve straight to <code class="docutils literal notranslate"><span class="pre">src/python/isaacteleop/</span></code>, so edits <strong>take effect
+live</strong> — a fresh interpreter is enough.</p>
+<p>Compiled extensions are the exception: <code class="docutils literal notranslate"><span class="pre">.so</span></code>/<code class="docutils literal notranslate"><span class="pre">.pyd</span></code> still come from the CMake
+build tree, so C++ changes need a <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span></code> (or a re-run of
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code>) first.</p>
 </div>
 <p>See <a class="reference internal" href="../../references/build.html"><span class="doc">Build System</span></a> for the full build-system reference.</p>
 <div class="admonition-retargeters-extra-on-aarch64-jetson-dgx admonition">

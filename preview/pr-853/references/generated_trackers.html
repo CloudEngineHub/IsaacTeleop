@@ -447,7 +447,8 @@ renders the output.</p></li>
 <p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/cmake/GenerateTrackers.cmake" rel="noopener noreferrer" target="_blank">cmake/GenerateTrackers.cmake</a> runs the generator through <code class="docutils literal notranslate"><span class="pre">execute_process</span></code> at
 <strong>configure</strong> time, not build time, because CMake needs the resulting source list before it can
 define targets. Output lands in <code class="docutils literal notranslate"><span class="pre">${CMAKE_BINARY_DIR}/generated/trackers/</span></code> and is <strong>not</strong> checked
-into git, exactly like the <code class="docutils literal notranslate"><span class="pre">flatc</span></code> output. Two consequences worth knowing:</p>
+into git, exactly like the <code class="docutils literal notranslate"><span class="pre">flatc</span></code> output. Sources are wired through an explicit
+<code class="docutils literal notranslate"><span class="pre">generated_sources.cmake</span></code> list (not by globbing that directory). Two consequences worth knowing:</p>
 <ul class="simple">
 <li><p>Grepping <code class="docutils literal notranslate"><span class="pre">src/</span></code> for a generated class such as <code class="docutils literal notranslate"><span class="pre">Se3Tracker</span></code> finds the manifest entry and the
 generator, not a <code class="docutils literal notranslate"><span class="pre">.cpp</span></code>. Searching, debugging, and clangd all need a configured build tree.</p></li>
@@ -455,8 +456,9 @@ generator, not a <code class="docutils literal notranslate"><span class="pre">.c
 <code class="docutils literal notranslate"><span class="pre">templates/</span></code> are registered as <code class="docutils literal notranslate"><span class="pre">CMAKE_CONFIGURE_DEPENDS</span></code>, so editing any of them re-runs
 configure on the next build.</p></li>
 </ul>
-<p>The generator owns its output directory: each run deletes files it did not emit, so a renamed
-tracker cannot leave a stale header behind on an include path.</p>
+<p>The generator rewrites a file only when its content changed. Configure also passes
+<code class="docutils literal notranslate"><span class="pre">--prune-stale</span></code> so that after renaming or removing a tracker, orphan headers cannot remain on
+the generated include path and keep satisfying a stale <code class="docutils literal notranslate"><span class="pre">#include</span></code>.</p>
 </section>
 <section id="what-each-entry-produces">
 <h2>What each entry produces<a class="headerlink" href="#what-each-entry-produces" title="Link to this heading">#</a></h2>
@@ -474,7 +476,7 @@ the live and replay factories (includes, forward declarations, try-create thunks
 factory declarations and definitions), the MCAP recording traits in
 <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/core/mcap/cpp/inc/mcap/recording_traits.hpp" rel="noopener noreferrer" target="_blank">src/core/mcap/cpp/inc/mcap/recording_traits.hpp</a>, the pybind blocks in
 <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/core/deviceio_trackers/python/tracker_bindings.cpp" rel="noopener noreferrer" target="_blank">src/core/deviceio_trackers/python/tracker_bindings.cpp</a>, and a
-<code class="docutils literal notranslate"><span class="pre">_generated_tracker_exports.py</span></code> that <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/core/deviceio_trackers/python/deviceio_trackers_init.py" rel="noopener noreferrer" target="_blank">src/core/deviceio_trackers/python/deviceio_trackers_init.py</a>
+<code class="docutils literal notranslate"><span class="pre">_generated_tracker_exports.py</span></code> that <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/python/isaacteleop/deviceio_trackers/__init__.py" rel="noopener noreferrer" target="_blank">src/python/isaacteleop/deviceio_trackers/__init__.py</a>
 star-imports. Because that last one is spliced into <code class="docutils literal notranslate"><span class="pre">__all__</span></code>, a new manifest entry needs no
 Python edit at all.</p>
 <p><code class="docutils literal notranslate"><span class="pre">.pyi</span></code> stubs need no work either: <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/core/python/generate_stubs.py" rel="noopener noreferrer" target="_blank">src/core/python/generate_stubs.py</a> derives them from
