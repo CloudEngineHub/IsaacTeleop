@@ -5,7 +5,7 @@
 #include <deviceio_trackers/hand_tracker.hpp>
 #include <deviceio_trackers/head_tracker.hpp>
 #include <oxr/oxr_session.hpp>
-#include <schema/tracked.hpp>
+#include <schema/serialized.hpp>
 
 #include <chrono>
 #include <iostream>

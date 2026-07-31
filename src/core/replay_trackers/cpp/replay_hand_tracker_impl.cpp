@@ -5,8 +5,8 @@
 
 #include <mcap/recording_traits.hpp>
 #include <schema/hand_bfbs_generated.h>
+#include <schema/serialized.hpp>
 #include <schema/timestamp_generated.h>
-#include <schema/tracked.hpp>
 
 #include <cassert>
 #include <cstring>

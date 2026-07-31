@@ -120,17 +120,21 @@ class ControllersSource(IDeviceIOSource):
             outputs: Dict with "controller_left" and "controller_right" OptionalTensorGroups
             context: ComputeContext (unused by this converter node).
         """
-        left_tracked: "ControllerSnapshot" = inputs["deviceio_controller_left"][0]
-        right_tracked: "ControllerSnapshot" = inputs["deviceio_controller_right"][0]
+        left_tracked: "ControllerSnapshot | None" = inputs["deviceio_controller_left"][
+            0
+        ]
+        right_tracked: "ControllerSnapshot | None" = inputs[
+            "deviceio_controller_right"
+        ][0]
 
         self._update_controller_data(outputs["controller_left"], left_tracked)
         self._update_controller_data(outputs["controller_right"], right_tracked)
 
     def _update_controller_data(
-        self, group: OptionalTensorGroup, snapshot: "ControllerSnapshot"
+        self, group: OptionalTensorGroup, snapshot: "ControllerSnapshot | None"
     ) -> None:
         """Helper to convert controller data for a single controller."""
-        if not snapshot:
+        if snapshot is None:
             group.set_none()
             return
 

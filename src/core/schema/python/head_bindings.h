@@ -32,7 +32,7 @@ inline void bind_head(py::module& m)
                      return pack<HeadPose>(native);
                  }),
              py::arg("pose") = Pose(), py::arg("is_valid") = false,
-             "Encode a head pose. Defaults to an identity pose that is not valid.")
+             "Encode a head pose. Defaults to an all-zero pose that is not valid.")
         .def_property_readonly(
             "pose", [](const Serialized<HeadPose>& self) { return self ? self->pose() : nullptr; },
             py::return_value_policy::reference_internal)

@@ -18,7 +18,7 @@
 #include <deviceio_session/deviceio_session.hpp>
 #include <deviceio_trackers/generic_3axis_pedal_tracker.hpp>
 #include <oxr/oxr_session.hpp>
-#include <schema/tracked.hpp>
+#include <schema/serialized.hpp>
 
 #include <chrono>
 #include <iomanip>

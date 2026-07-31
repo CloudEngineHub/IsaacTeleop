@@ -12,9 +12,15 @@
 //
 // Two properties the rest of the tracker stack leans on:
 //
-//   - Copying is a refcount bump, and the bytes are immutable, so a copy taken this
-//     frame stays valid and unchanged after the tracker moves on. Consumers hold
-//     snapshots, not views into live tracker storage.
+//   - Copying is a refcount bump, and nothing rewrites the bytes once encoded, so a copy
+//     taken this frame stays valid after the tracker moves on. Consumers hold snapshots,
+//     not views into live tracker storage.
+//
+//     Immutability is a contract, not an enforcement: the Python bindings hand out
+//     writable NumPy views over the joint arrays, because NumPy cannot export a
+//     read-only array over DLPack before 2.1 (see schema_array_views.h). Writing through
+//     one changes what every holder of that buffer sees, so callers that intend to
+//     modify must copy first.
 //   - `ptr_` need not be the buffer root. Narrowing to a nested table shares the
 //     parent's owner and just re-points, so one allocation backs a whole tree of views.
 //

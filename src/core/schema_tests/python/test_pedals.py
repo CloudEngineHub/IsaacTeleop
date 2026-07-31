@@ -159,14 +159,14 @@ class TestGeneric3AxisPedalOutputEdgeCases:
         assert second.rudder == pytest.approx(-0.8)
 
 
-class TestGeneric3AxisPedalOutputAbsence:
-    """Tests for the absent state a tracker publishes when no pedal data is available."""
+class TestGeneric3AxisPedalOutputEncoding:
+    """Tests that an encoded payload reads back.
 
-    def test_absent_is_falsy(self):
-        """absent() carries no payload, so it gates as False."""
-        assert not Generic3AxisPedalOutput.absent()
+    A tracker with no pedal data returns None rather than an empty payload, so
+    absence needs no case here; the source-node tests cover feeding None through.
+    """
 
-    def test_encoded_payload_is_truthy_and_reads_back(self):
+    def test_encoded_payload_reads_back(self):
         """An encoded payload gates as True and its fields read directly."""
         output = Generic3AxisPedalOutput(left_pedal=0.8, right_pedal=0.2, rudder=-0.5)
 
@@ -174,10 +174,6 @@ class TestGeneric3AxisPedalOutputAbsence:
         assert output.left_pedal == pytest.approx(0.8)
         assert output.right_pedal == pytest.approx(0.2)
         assert output.rudder == pytest.approx(-0.5)
-
-    def test_repr_absent(self):
-        """Repr of an absent payload says so rather than showing fields."""
-        assert "empty" in repr(Generic3AxisPedalOutput.absent())
 
     def test_repr_present(self):
         """Repr of a present payload names the type."""

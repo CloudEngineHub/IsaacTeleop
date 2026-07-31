@@ -129,9 +129,9 @@ tensor samples from OpenXR. Implement a concrete tracker class (e.g.
 In the **Impl**:
 
 - **update()** — Call ``m_schema_reader.read_all_samples(pending_records)``. If the
-  collection is not present, clear the tracked state (e.g. set ``m_tracked.data = nullptr``).
-  Otherwise, deserialize the latest sample (or all samples) into your tracked type and
-  keep the last one for ``get_data()``.
+  collection is not present, clear the published state (e.g. assign an empty
+  ``Serialized<Generic3AxisPedalOutput>``). Otherwise, keep the latest sample's buffer and
+  publish it as a ``Serialized<...>`` from ``get_data()``.
 - **serialize_all()** — For each sample in the pending batch, deserialize, build the
   Record FlatBuffer (output table + ``DeviceDataTimestamp``), and invoke the callback with
   ``(log_time_ns, buffer_ptr, size)``. The buffer is only valid during the callback. If the
@@ -163,8 +163,8 @@ the collection and prints samples. Pattern (see :code-file:`examples/schemaio/pe
 2. Get required extensions with ``DeviceIOSession::get_required_extensions(trackers)`` and
    create an ``OpenXRSession``.
 3. Create a ``DeviceIOSession`` with ``DeviceIOSession::run(trackers, oxr_session->get_handles())``.
-4. Loop: call ``session->update()``, then read ``tracker->get_data(*session)``. If
-   ``tracked.data`` is non-null, use the latest sample; otherwise sleep briefly and repeat.
+4. Loop: call ``session->update()``, then read ``tracker->get_data(*session)``. If the
+   returned handle is non-empty, use the latest sample; otherwise sleep briefly and repeat.
 
 Use the same ``collection_id`` (and optionally ``tensor_identifier``) as the plugin. See
 :ref:`Schema IO example: build and run <schema-io-example>` above for building and running

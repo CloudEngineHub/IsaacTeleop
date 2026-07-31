@@ -34,7 +34,7 @@ inline void bind_se3_tracker(py::module& m)
                      return pack<Se3TrackerPose>(native);
                  }),
              py::arg("pose") = Pose(), py::arg("is_valid") = false,
-             "Encode an SE3 pose. Defaults to an identity pose that is not valid.")
+             "Encode an SE3 pose. Defaults to an all-zero pose that is not valid.")
         .def_property_readonly(
             "pose", [](const Serialized<Se3TrackerPose>& self) { return self ? self->pose() : nullptr; },
             py::return_value_policy::reference_internal)

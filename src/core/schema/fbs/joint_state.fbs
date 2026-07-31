@@ -30,6 +30,7 @@ table JointState {
 }
 
 // Per-frame state of a generic joint-space input device (leader arm, exoskeleton, glove, or
+// any joint-encoder source), as name:value joint records.
 // All fields are always present whenever this table itself is present.
 table JointStateOutput {
   // One entry per actuated DOF, keyed by JointState.name. The reference JointStateSource maps

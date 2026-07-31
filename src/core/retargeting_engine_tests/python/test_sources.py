@@ -267,7 +267,7 @@ class TestHeadSource:
         """Test that inactive head (Tracked.data is None) produces absent output."""
         source = HeadSource(name="head")
 
-        inputs = _make_inputs(source, {"deviceio_head": [HeadPose.absent()]})
+        inputs = _make_inputs(source, {"deviceio_head": [None]})
         outputs = {
             name: _make_output_group(gt) for name, gt in source.output_spec().items()
         }
@@ -335,7 +335,7 @@ class TestControllersSourceOptional:
         inputs = _make_inputs(
             source,
             {
-                "deviceio_controller_left": [ControllerSnapshot.absent()],
+                "deviceio_controller_left": [None],
                 "deviceio_controller_right": [right_snapshot],
             },
         )
@@ -354,8 +354,8 @@ class TestControllersSourceOptional:
         inputs = _make_inputs(
             source,
             {
-                "deviceio_controller_left": [ControllerSnapshot.absent()],
-                "deviceio_controller_right": [ControllerSnapshot.absent()],
+                "deviceio_controller_left": [None],
+                "deviceio_controller_right": [None],
             },
         )
         outputs = {
@@ -446,7 +446,7 @@ class TestHeadSourceOptional:
         """Inactive head (Tracked.data is None) produces absent OptionalTensorGroup."""
         source = HeadSource(name="head")
 
-        inputs = _make_inputs(source, {"deviceio_head": [HeadPose.absent()]})
+        inputs = _make_inputs(source, {"deviceio_head": [None]})
         outputs = {
             name: _make_output_group(gt) for name, gt in source.output_spec().items()
         }
@@ -458,7 +458,7 @@ class TestHeadSourceOptional:
         """Accessing fields of an absent head output raises ValueError."""
         source = HeadSource(name="head")
 
-        inputs = _make_inputs(source, {"deviceio_head": [HeadPose.absent()]})
+        inputs = _make_inputs(source, {"deviceio_head": [None]})
         outputs = {
             name: _make_output_group(gt) for name, gt in source.output_spec().items()
         }

@@ -24,11 +24,27 @@
 
 namespace py = pybind11;
 
-// Every accessor below returns the tracker's encoded snapshot for the frame. Handing it to
-// Python copies a shared_ptr to an immutable buffer, so there is no payload clone on the read
-// path and no aliasing of live tracker storage: what a caller reads this frame keeps its
-// values after the next session.update(), which publishes a new buffer rather than refilling
-// this one.
+namespace
+{
+
+// Hand an encoded snapshot to Python, mapping "no payload" onto None.
+//
+// C++ spells absence as an empty handle, but exposing that to Python would make an
+// inactive device answer field reads with defaults -- a disconnected pedal would read
+// 0.0, indistinguishable from a pedal at rest. None makes the same mistake an
+// AttributeError instead, and is what the caller already tests for.
+template <typename T>
+py::object to_python(const core::Serialized<T>& handle)
+{
+    return handle ? py::cast(handle) : py::none();
+}
+
+} // namespace
+
+// Handing a snapshot to Python copies a shared_ptr to an immutable buffer, so there is no
+// payload clone on the read path and no aliasing of live tracker storage: what a caller
+// reads this frame keeps its values after the next session.update(), which publishes a new
+// buffer rather than refilling this one.
 
 PYBIND11_MODULE(_deviceio_trackers, m)
 {
@@ -46,33 +62,34 @@ PYBIND11_MODULE(_deviceio_trackers, m)
         .def(
             "get_left_hand",
             [](const core::HandTracker& self, const core::ITrackerSession& session)
-            { return self.get_left_hand(session); },
-            py::arg("session"), "Get the left hand tracked state (data is None if inactive)")
+            { return to_python(self.get_left_hand(session)); },
+            py::arg("session"), "Get the left hand tracked state (None if inactive)")
         .def(
             "get_right_hand",
             [](const core::HandTracker& self, const core::ITrackerSession& session)
-            { return self.get_right_hand(session); },
-            py::arg("session"), "Get the right hand tracked state (data is None if inactive)");
+            { return to_python(self.get_right_hand(session)); },
+            py::arg("session"), "Get the right hand tracked state (None if inactive)");
 
     py::class_<core::HeadTracker, core::ITracker, std::shared_ptr<core::HeadTracker>>(m, "HeadTracker")
         .def(py::init<>())
         .def(
             "get_head",
-            [](const core::HeadTracker& self, const core::ITrackerSession& session) { return self.get_head(session); },
-            py::arg("session"), "Get the head tracked state (data is None if inactive)");
+            [](const core::HeadTracker& self, const core::ITrackerSession& session)
+            { return to_python(self.get_head(session)); },
+            py::arg("session"), "Get the head tracked state (None if inactive)");
 
     py::class_<core::ControllerTracker, core::ITracker, std::shared_ptr<core::ControllerTracker>>(m, "ControllerTracker")
         .def(py::init<>())
         .def(
             "get_left_controller",
             [](const core::ControllerTracker& self, const core::ITrackerSession& session)
-            { return self.get_left_controller(session); },
-            py::arg("session"), "Get the left controller tracked state (data is None if inactive)")
+            { return to_python(self.get_left_controller(session)); },
+            py::arg("session"), "Get the left controller tracked state (None if inactive)")
         .def(
             "get_right_controller",
             [](const core::ControllerTracker& self, const core::ITrackerSession& session)
-            { return self.get_right_controller(session); },
-            py::arg("session"), "Get the right controller tracked state (data is None if inactive)")
+            { return to_python(self.get_right_controller(session)); },
+            py::arg("session"), "Get the right controller tracked state (None if inactive)")
         .def(
             "apply_left_haptic_feedback",
             [](const core::ControllerTracker& self, const core::ITrackerSession& session, float amplitude,
@@ -118,7 +135,7 @@ PYBIND11_MODULE(_deviceio_trackers, m)
         .def(
             "get_messages",
             [](const core::MessageChannelTracker& self, const core::ITrackerSession& session)
-            { return self.get_messages(session); },
+            { return to_python(self.get_messages(session)); },
             py::arg("session"), "Get all messages drained during the last update (possibly empty)")
         .def(
             "get_status",
@@ -145,10 +162,9 @@ PYBIND11_MODULE(_deviceio_trackers, m)
         .def(
             "get_stream_data",
             [](const core::FrameMetadataTrackerOak& self, const core::ITrackerSession& session, size_t stream_index)
-            { return self.get_stream_data(session, stream_index); },
+            { return to_python(self.get_stream_data(session, stream_index)); },
             py::arg("session"), py::arg("stream_index"),
-            "Get the FrameMetadataOakTracked snapshot for a specific stream by index; .data is None until first frame "
-            "arrives")
+            "Get the frame metadata for a specific stream by index; None until the first frame arrives")
         .def_property_readonly("stream_count", &core::FrameMetadataTrackerOak::get_stream_count,
                                "Number of streams this tracker is configured for");
 
@@ -160,8 +176,8 @@ PYBIND11_MODULE(_deviceio_trackers, m)
         .def(
             "get_pedal_data",
             [](const core::Generic3AxisPedalTracker& self, const core::ITrackerSession& session)
-            { return self.get_data(session); },
-            py::arg("session"), "Get the current foot pedal tracked state (data is None when no data available)");
+            { return to_python(self.get_data(session)); },
+            py::arg("session"), "Get the current foot pedal tracked state (None when no data available)");
 
     py::class_<core::OgloTactileTracker, core::ITracker, std::shared_ptr<core::OgloTactileTracker>>(
         m, "OgloTactileTracker")
@@ -172,8 +188,8 @@ PYBIND11_MODULE(_deviceio_trackers, m)
         .def(
             "get_glove_data",
             [](const core::OgloTactileTracker& self, const core::ITrackerSession& session)
-            { return self.get_data(session); },
-            py::arg("session"), "Get the current tactile glove tracked state (data is None when no data available)");
+            { return to_python(self.get_data(session)); },
+            py::arg("session"), "Get the current tactile glove tracked state (None when no data available)");
 
     py::class_<core::TensorPushTracker, core::ITracker, std::shared_ptr<core::TensorPushTracker>> tensor_push_tracker(
         m, "TensorPushTracker");
@@ -202,8 +218,8 @@ PYBIND11_MODULE(_deviceio_trackers, m)
         .def(
             "get_data",
             [](const core::JointStateTracker& self, const core::ITrackerSession& session)
-            { return self.get_data(session); },
-            py::arg("session"), "Get the current joint-state tracked state (data is None when no data available)");
+            { return to_python(self.get_data(session)); },
+            py::arg("session"), "Get the current joint-state tracked state (None when no data available)");
 
     py::class_<core::Se3Tracker, core::ITracker, std::shared_ptr<core::Se3Tracker>>(m, "Se3Tracker")
         .def(py::init<const std::string&, size_t>(), py::arg("collection_id"),
@@ -212,10 +228,11 @@ PYBIND11_MODULE(_deviceio_trackers, m)
              "6-DoF pose source: tracker puck, mocap rigid body, logical tracker, ...)")
         .def(
             "get_data",
-            [](const core::Se3Tracker& self, const core::ITrackerSession& session) { return self.get_data(session); },
+            [](const core::Se3Tracker& self, const core::ITrackerSession& session)
+            { return to_python(self.get_data(session)); },
             py::arg("session"),
-            "Get the current SE3 tracked state (data is None when no data available; gate on "
-            "data.is_valid before consuming the pose)");
+            "Get the current SE3 tracked state (None when no data available; gate on "
+            "is_valid before consuming the pose)");
 
     py::class_<core::FullBodyTracker, core::ITracker, std::shared_ptr<core::FullBodyTracker>>(m, "FullBodyTracker")
         .def(py::init<>(),
@@ -224,8 +241,8 @@ PYBIND11_MODULE(_deviceio_trackers, m)
         .def(
             "get_body_pose",
             [](const core::FullBodyTracker& self, const core::ITrackerSession& session)
-            { return self.get_body_pose(session); },
-            py::arg("session"), "Get full body pose tracked state (data is None if inactive)");
+            { return to_python(self.get_body_pose(session)); },
+            py::arg("session"), "Get full body pose tracked state (None if inactive)");
 
     m.attr("NUM_JOINTS") = static_cast<int>(core::HandJoint_NUM_JOINTS);
     m.attr("JOINT_PALM") = static_cast<int>(core::HandJoint_PALM);

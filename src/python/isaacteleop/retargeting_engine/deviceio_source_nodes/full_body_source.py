@@ -112,10 +112,10 @@ class FullBodySource(IDeviceIOSource):
             outputs: Dict with "full_body" OptionalTensorGroup
             context: Shared ComputeContext for the current step (carries GraphTime).
         """
-        tracked: "FullBodyPose" = inputs["deviceio_full_body"][0]
-        body_pose: "FullBodyPose" = tracked
+        tracked: "FullBodyPose | None" = inputs["deviceio_full_body"][0]
+        body_pose: "FullBodyPose | None" = tracked
 
-        if not body_pose:
+        if body_pose is None:
             outputs["full_body"].set_none()
             return
 

@@ -8,7 +8,6 @@
 #include <flatbuffers/flatbuffers.h>
 #include <mcap/tracker_channels.hpp>
 #include <schema/serialized.hpp>
-#include <schema/tracked.hpp>
 
 #include <memory>
 #include <optional>

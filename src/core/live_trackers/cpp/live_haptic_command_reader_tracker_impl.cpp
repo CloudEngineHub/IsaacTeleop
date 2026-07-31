@@ -4,7 +4,7 @@
 #include "live_haptic_command_reader_tracker_impl.hpp"
 
 #include <flatbuffers/flatbuffers.h>
-#include <schema/tracked.hpp>
+#include <schema/serialized.hpp>
 
 #include <memory>
 #include <string>

@@ -108,11 +108,11 @@ class Generic3AxisPedalSource(IDeviceIOSource):
             outputs: Dict with "pedals" OptionalTensorGroup
             context: Shared ComputeContext for the current step (carries GraphTime).
         """
-        tracked: "Generic3AxisPedalOutput" = inputs["deviceio_pedals"][0]
-        pedal: Generic3AxisPedalOutput = tracked
+        tracked: "Generic3AxisPedalOutput | None" = inputs["deviceio_pedals"][0]
+        pedal: "Generic3AxisPedalOutput | None" = tracked
 
         out = outputs["pedals"]
-        if not pedal:
+        if pedal is None:
             out.set_none()
             return
 

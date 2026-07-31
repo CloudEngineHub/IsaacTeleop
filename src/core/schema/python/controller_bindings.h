@@ -82,7 +82,7 @@ inline void bind_controller(py::module& m)
                  }),
              py::arg("grip_pose") = ControllerPose(), py::arg("aim_pose") = ControllerPose(),
              py::arg("inputs") = ControllerInputState(),
-             "Encode a controller snapshot. Omitted poses are identity and not valid.")
+             "Encode a controller snapshot. Omitted poses are all-zero and not valid.")
         .def_property_readonly(
             "grip_pose", [](const Serialized<ControllerSnapshot>& self) { return self ? self->grip_pose() : nullptr; },
             py::return_value_policy::reference_internal)

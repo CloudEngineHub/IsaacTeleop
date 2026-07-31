@@ -117,9 +117,7 @@ class TestJointStateSource:
             name="leader", collection_id="so101_leader", joint_names=SO101_JOINTS
         )
         # Tracked wrapper with no data -> device inactive.
-        inputs = _make_inputs(
-            src, {"deviceio_joint_state": [JointStateOutput.absent()]}
-        )
+        inputs = _make_inputs(src, {"deviceio_joint_state": [None]})
         outputs = _outputs(src)
         src.compute(inputs, outputs)
         assert outputs[JointStateSource.JOINTS].is_none

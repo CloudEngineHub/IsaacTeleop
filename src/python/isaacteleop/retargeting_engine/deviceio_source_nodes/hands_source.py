@@ -119,17 +119,17 @@ class HandsSource(IDeviceIOSource):
             outputs: Dict with "hand_left" and "hand_right" OptionalTensorGroups
             context: ComputeContext (unused by this converter node).
         """
-        left_tracked: "HandPose" = inputs["deviceio_hand_left"][0]
-        right_tracked: "HandPose" = inputs["deviceio_hand_right"][0]
+        left_tracked: "HandPose | None" = inputs["deviceio_hand_left"][0]
+        right_tracked: "HandPose | None" = inputs["deviceio_hand_right"][0]
 
         self._update_hand_data(outputs["hand_left"], left_tracked)
         self._update_hand_data(outputs["hand_right"], right_tracked)
 
     def _update_hand_data(
-        self, group: OptionalTensorGroup, hand_data: "HandPose"
+        self, group: OptionalTensorGroup, hand_data: "HandPose | None"
     ) -> None:
         """Helper to convert hand data for a single hand."""
-        if not hand_data:
+        if hand_data is None:
             group.set_none()
             return
 

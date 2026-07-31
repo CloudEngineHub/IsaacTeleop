@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Python bindings for the OGLO tactile glove FlatBuffer schema.
-// Types: OgloGloveSample (table), OgloGloveSampleRecord, OgloGloveSampleTracked.
+// Types: OgloGloveSample (table) and OgloGloveSampleRecord, exposed as encoded views.
 
 #pragma once
 

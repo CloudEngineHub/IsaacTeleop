@@ -40,14 +40,12 @@ template <typename T>
 py::class_<Serialized<T>> serialized_class(py::module& m, const char* name, const char* doc)
 {
     return py::class_<Serialized<T>>(m, name, doc)
+        // Always true in practice: an absent payload reaches Python as None, never as an
+        // empty view. Kept so that a view which somehow arrived empty still reports it
+        // rather than silently answering field reads with defaults.
         .def(
             "__bool__", [](const Serialized<T>& self) { return static_cast<bool>(self); },
-            "False when the payload is absent.")
-        // The ordinary constructors encode a payload, so they always yield a present
-        // value. This is the only way to spell the absent one -- what a tracker returns
-        // while its device is inactive, and what a test needs to simulate that.
-        .def_static(
-            "absent", [] { return Serialized<T>(); }, "An absent payload: falsy, with no fields to read.");
+            "False when the payload is absent.");
 }
 
 /*!
@@ -75,14 +73,16 @@ void bind_record(py::module& m, const char* name, const char* data_name)
     serialized_class<RecordT>(m, name, "Encoded MCAP record: a payload plus the timestamp it was captured at.")
         .def(py::init<>(), "Construct an empty record (.data and .timestamp are None).")
         .def(py::init(
-                 [](const Serialized<DataT>& data, const DeviceDataTimestamp& timestamp)
+                 [](const Serialized<DataT>* data, const DeviceDataTimestamp& timestamp)
                  {
                      typename RecordT::NativeTableType native;
-                     native.data = to_native(data);
+                     native.data = data != nullptr ? to_native(*data) : nullptr;
                      native.timestamp = std::make_shared<DeviceDataTimestamp>(timestamp);
                      return pack<RecordT>(native);
                  }),
-             py::arg("data"), py::arg("timestamp"), "Encode a record from a payload and its timestamp.")
+             py::arg("data").none(true), py::arg("timestamp"),
+             "Encode a record from a payload and its timestamp. `data` may be None: MCAP "
+             "carries payload-less records, such as the message channel's frame sentinel.")
 
         // Unlike Tracked, a Record cannot fold its no-arg form into defaults: `timestamp` is a
         // struct with no meaningful default, and an empty record is a distinct thing from one
@@ -99,9 +99,10 @@ void bind_record(py::module& m, const char* name, const char* data_name)
             "timestamp", [](const Serialized<RecordT>& self) { return self ? self->timestamp() : nullptr; },
             py::return_value_policy::reference_internal, "Capture timestamp, or None when absent.")
         .def("__repr__",
-             [name, data_name](const Serialized<RecordT>& self) {
+             [name, data_name](const Serialized<RecordT>& self)
+             {
                  return std::string(name) +
-                        "(data=" + (self.get() != nullptr ? std::string(data_name) + "(...)" : "None") + ")";
+                        "(data=" + (payload(self) != nullptr ? std::string(data_name) + "(...)" : "None") + ")";
              });
 }
 

@@ -22,7 +22,7 @@
 #include <deviceio_trackers/full_body_tracker.hpp>
 #include <oxr/oxr_session.hpp>
 #include <schema/full_body_generated.h>
-#include <schema/tracked.hpp>
+#include <schema/serialized.hpp>
 
 #include <chrono>
 #include <cstdint>

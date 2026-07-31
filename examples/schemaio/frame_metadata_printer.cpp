@@ -17,7 +17,7 @@
 #include <deviceio_session/deviceio_session.hpp>
 #include <deviceio_trackers/frame_metadata_tracker_oak.hpp>
 #include <oxr/oxr_session.hpp>
-#include <schema/tracked.hpp>
+#include <schema/serialized.hpp>
 
 #include <chrono>
 #include <iostream>

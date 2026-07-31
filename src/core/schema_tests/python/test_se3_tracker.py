@@ -57,14 +57,14 @@ class TestSe3TrackerPoseTConstruction:
         assert "is_valid=True" in repr_str
 
 
-class TestSe3TrackerPoseAbsence:
-    """Tests for the absent state: no sample yet, or collection unavailable."""
+class TestSe3TrackerPoseEncoding:
+    """Tests that an encoded pose reads back.
 
-    def test_absent_is_falsy(self):
-        """absent() carries no payload, so it gates as False."""
-        assert not Se3TrackerPose.absent()
+    A tracker with no sample returns None rather than an empty pose, so absence
+    needs no case here.
+    """
 
-    def test_encoded_payload_is_truthy_and_reads_back(self):
+    def test_encoded_payload_reads_back(self):
         """An encoded pose gates as True and its fields read directly."""
         pose = Pose(Point(1.0, 2.0, 3.0), Quaternion(0.0, 0.0, 0.0, 1.0))
         data = Se3TrackerPose(pose, True)

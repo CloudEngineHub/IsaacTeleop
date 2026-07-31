@@ -82,8 +82,8 @@ def main():
                             session
                         )
 
-                        if left_tracked.data is not None:
-                            pos = left_tracked.data.joints.poses(
+                        if left_tracked:
+                            pos = left_tracked.joints.poses(
                                 deviceio.JOINT_WRIST
                             ).pose.position
                             print(
@@ -92,8 +92,8 @@ def main():
                         else:
                             print("  Left hand:   inactive")
 
-                        if right_tracked.data is not None:
-                            pos = right_tracked.data.joints.poses(
+                        if right_tracked:
+                            pos = right_tracked.joints.poses(
                                 deviceio.JOINT_WRIST
                             ).pose.position
                             print(
@@ -104,8 +104,8 @@ def main():
 
                         # Get head data
                         head_tracked: schema.HeadPose = head_tracker.get_head(session)
-                        if head_tracked.data is not None:
-                            pos = head_tracked.data.pose.position
+                        if head_tracked:
+                            pos = head_tracked.pose.position
                             print(
                                 f"  Head pos:    [{pos.x:6.3f}, {pos.y:6.3f}, {pos.z:6.3f}]"
                             )

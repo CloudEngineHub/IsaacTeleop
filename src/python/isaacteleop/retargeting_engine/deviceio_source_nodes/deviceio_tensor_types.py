@@ -37,7 +37,8 @@ class HeadPoseTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, HeadPose):
+        # None is how an inactive device arrives; only a wrong type is an error.
+        if value is not None and not isinstance(value, HeadPose):
             raise TypeError(
                 f"Expected HeadPose for '{self.name}', got {type(value).__name__}"
             )
@@ -55,7 +56,8 @@ class HandPoseTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, HandPose):
+        # None is how an inactive device arrives; only a wrong type is an error.
+        if value is not None and not isinstance(value, HandPose):
             raise TypeError(
                 f"Expected HandPose for '{self.name}', got {type(value).__name__}"
             )
@@ -75,7 +77,8 @@ class ControllerSnapshotTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, ControllerSnapshot):
+        # None is how an inactive device arrives; only a wrong type is an error.
+        if value is not None and not isinstance(value, ControllerSnapshot):
             raise TypeError(
                 f"Expected ControllerSnapshot for '{self.name}', got {type(value).__name__}"
             )
@@ -95,7 +98,8 @@ class Generic3AxisPedalOutputTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, Generic3AxisPedalOutput):
+        # None is how an inactive device arrives; only a wrong type is an error.
+        if value is not None and not isinstance(value, Generic3AxisPedalOutput):
             raise TypeError(
                 f"Expected Generic3AxisPedalOutput for '{self.name}', got {type(value).__name__}"
             )
@@ -115,7 +119,8 @@ class JointStateOutputTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, JointStateOutput):
+        # None is how an inactive device arrives; only a wrong type is an error.
+        if value is not None and not isinstance(value, JointStateOutput):
             raise TypeError(
                 f"Expected JointStateOutput for '{self.name}', got {type(value).__name__}"
             )
@@ -139,7 +144,8 @@ class FullBodyPoseTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, FullBodyPose):
+        # None is how an inactive device arrives; only a wrong type is an error.
+        if value is not None and not isinstance(value, FullBodyPose):
             raise TypeError(
                 f"Expected FullBodyPose for '{self.name}', got {type(value).__name__}"
             )
@@ -159,7 +165,8 @@ class MessageChannelMessagesTrackedType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, MessageChannelMessagesTracked):
+        # None is how an inactive device arrives; only a wrong type is an error.
+        if value is not None and not isinstance(value, MessageChannelMessagesTracked):
             raise TypeError(
                 f"Expected MessageChannelMessagesTracked for '{self.name}', got {type(value).__name__}"
             )
@@ -189,7 +196,8 @@ class MessageChannelStatusType(TensorType):
         return True
 
     def validate_value(self, value: Any) -> None:
-        if not isinstance(value, MessageChannelConnectionStatus):
+        # None is how an inactive device arrives; only a wrong type is an error.
+        if value is not None and not isinstance(value, MessageChannelConnectionStatus):
             raise TypeError(
                 f"Expected MessageChannelConnectionStatus for '{self.name}', got {type(value).__name__}"
             )

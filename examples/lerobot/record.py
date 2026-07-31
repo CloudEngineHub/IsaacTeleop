@@ -132,18 +132,16 @@ def main():
                         left_pos = np.zeros(3, dtype=np.float32)
                         right_pos = np.zeros(3, dtype=np.float32)
 
-                        if left_tracked.data is not None and left_tracked.data.joints:
-                            wrist = left_tracked.data.joints.poses(deviceio.JOINT_WRIST)
+                        if left_tracked and left_tracked.joints:
+                            wrist = left_tracked.joints.poses(deviceio.JOINT_WRIST)
                             if wrist.is_valid:
                                 pos = wrist.pose.position
                                 left_pos = np.array(
                                     [pos.x, pos.y, pos.z], dtype=np.float32
                                 )
 
-                        if right_tracked.data is not None and right_tracked.data.joints:
-                            wrist = right_tracked.data.joints.poses(
-                                deviceio.JOINT_WRIST
-                            )
+                        if right_tracked and right_tracked.joints:
+                            wrist = right_tracked.joints.poses(deviceio.JOINT_WRIST)
                             if wrist.is_valid:
                                 pos = wrist.pose.position
                                 right_pos = np.array(
@@ -151,8 +149,8 @@ def main():
                                 )
 
                         head_pos = np.zeros(3, dtype=np.float32)
-                        if head_tracked.data is not None and head_tracked.data.is_valid:
-                            pos = head_tracked.data.pose.position
+                        if head_tracked and head_tracked.is_valid:
+                            pos = head_tracked.pose.position
                             head_pos = np.array([pos.x, pos.y, pos.z], dtype=np.float32)
 
                         # STEP 3: Record frame to dataset
