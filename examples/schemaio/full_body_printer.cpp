@@ -116,7 +116,7 @@ try
         // Print current data if available. tracked.data is null only in limp mode (body tracking
         // unsupported); a supported-but-untracked body still delivers data with valid=0/24 joints.
         const auto& tracked = tracker->get_body_pose(*session);
-        if (const auto* body = payload(tracked))
+        if (const auto* body = tracked.get())
         {
             print_body_pose(*body, received_count++);
         }

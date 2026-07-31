@@ -42,8 +42,8 @@ public:
     LiveControllerTrackerImpl& operator=(LiveControllerTrackerImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const Serialized<ControllerSnapshotTracked>& get_left_controller() const override;
-    const Serialized<ControllerSnapshotTracked>& get_right_controller() const override;
+    const Serialized<ControllerSnapshot>& get_left_controller() const override;
+    const Serialized<ControllerSnapshot>& get_right_controller() const override;
     void apply_left_haptic_feedback(float amplitude, float frequency_hz, float duration_s) const override;
     void apply_right_haptic_feedback(float amplitude, float frequency_hz, float duration_s) const override;
 
@@ -92,10 +92,10 @@ private:
 
     // Assembly scratch for the OpenXR query, and the encoded snapshots published from it
     // each frame. Only the latter leave this class.
-    ControllerSnapshotTrackedT left_native_;
-    ControllerSnapshotTrackedT right_native_;
-    Serialized<ControllerSnapshotTracked> left_tracked_;
-    Serialized<ControllerSnapshotTracked> right_tracked_;
+    std::shared_ptr<ControllerSnapshotT> left_native_;
+    std::shared_ptr<ControllerSnapshotT> right_native_;
+    Serialized<ControllerSnapshot> left_tracked_;
+    Serialized<ControllerSnapshot> right_tracked_;
     int64_t last_update_time_ = 0;
 
     // Once-per-side log gates for OpenXR haptic call failures. Indexed by

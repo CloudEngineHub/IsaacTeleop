@@ -75,11 +75,11 @@ void ControllerSe3TrackerPlugin::update()
 
     m_deviceio_session->update();
 
-    const core::Serialized<core::ControllerSnapshotTracked>& tracked =
+    const core::Serialized<core::ControllerSnapshot>& tracked =
         m_use_left_hand ? m_controller_tracker->get_left_controller(*m_deviceio_session) :
                           m_controller_tracker->get_right_controller(*m_deviceio_session);
 
-    const core::ControllerSnapshot* snapshot = tracked ? tracked->data() : nullptr;
+    const core::ControllerSnapshot* snapshot = tracked.get();
 
     core::Se3TrackerPoseT out;
     if (snapshot != nullptr && snapshot->grip_pose() != nullptr && snapshot->grip_pose()->is_valid())

@@ -10,13 +10,13 @@
 namespace core
 {
 
-struct Generic3AxisPedalOutputTracked;
+struct Generic3AxisPedalOutput;
 
 // Abstract base interface for Generic3AxisPedalTracker implementations.
 class IGeneric3AxisPedalTrackerImpl : public ITrackerImpl
 {
 public:
-    virtual const Serialized<Generic3AxisPedalOutputTracked>& get_data() const = 0;
+    virtual const Serialized<Generic3AxisPedalOutput>& get_data() const = 0;
 };
 
 } // namespace core

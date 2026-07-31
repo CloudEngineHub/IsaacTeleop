@@ -96,7 +96,7 @@ try
     std::vector<std::optional<uint64_t>> last_sequences(stream_count);
     for (size_t i = 0; i < stream_count; ++i)
     {
-        if (const auto* metadata = payload(tracker->get_stream_data(*session, i)))
+        if (const auto* metadata = tracker->get_stream_data(*session, i).get())
         {
             last_sequences[i] = metadata->sequence_number();
         }
@@ -119,7 +119,7 @@ try
             // data is already present so we don't reprint an existing sample.
             for (size_t i = old_count; i < stream_count; ++i)
             {
-                if (const auto* metadata = payload(tracker->get_stream_data(*session, i)))
+                if (const auto* metadata = tracker->get_stream_data(*session, i).get())
                 {
                     last_sequences[i] = metadata->sequence_number();
                 }
@@ -129,7 +129,7 @@ try
         // Print one line per stream that has a new sample.
         for (size_t i = 0; i < stream_count; ++i)
         {
-            const auto* metadata = payload(tracker->get_stream_data(*session, i));
+            const auto* metadata = tracker->get_stream_data(*session, i).get();
             if (metadata == nullptr ||
                 (last_sequences[i].has_value() && metadata->sequence_number() == last_sequences[i].value()))
             {

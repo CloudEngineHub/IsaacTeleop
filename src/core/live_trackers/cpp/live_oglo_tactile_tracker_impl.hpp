@@ -19,7 +19,7 @@ namespace core
 {
 
 using OgloMcapChannels = McapTrackerChannels<OgloGloveSampleRecord, OgloGloveSample>;
-using OgloSchemaTracker = SchemaTracker<OgloGloveSampleRecord, OgloGloveSample, OgloGloveSampleTracked>;
+using OgloSchemaTracker = SchemaTracker<OgloGloveSampleRecord, OgloGloveSample>;
 
 class LiveOgloTactileTrackerImpl : public IOgloTactileTrackerImpl
 {
@@ -40,12 +40,12 @@ public:
     LiveOgloTactileTrackerImpl& operator=(LiveOgloTactileTrackerImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const Serialized<OgloGloveSampleTracked>& get_data() const override;
+    const Serialized<OgloGloveSample>& get_data() const override;
 
 private:
     std::unique_ptr<OgloMcapChannels> mcap_channels_;
     OgloSchemaTracker m_schema_reader;
-    Serialized<OgloGloveSampleTracked> m_tracked;
+    Serialized<OgloGloveSample> m_tracked;
 };
 
 } // namespace core

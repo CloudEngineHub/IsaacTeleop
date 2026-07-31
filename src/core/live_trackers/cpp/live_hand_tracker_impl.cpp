@@ -180,23 +180,23 @@ void LiveHandTrackerImpl::update(int64_t monotonic_time_ns)
     update_hand(left_hand_trackers_, xr_time, left_native_);
     update_hand(right_hand_trackers_, xr_time, right_native_);
 
-    left_tracked_ = pack_tracked<HandPoseTracked>(left_native_.data);
-    right_tracked_ = pack_tracked<HandPoseTracked>(right_native_.data);
+    left_tracked_ = pack_optional<HandPose>(left_native_);
+    right_tracked_ = pack_optional<HandPose>(right_native_);
 
     if (mcap_channels_)
     {
         DeviceDataTimestamp timestamp(last_update_time_, last_update_time_, xr_time);
-        mcap_channels_->write(0, timestamp, left_native_.data);
-        mcap_channels_->write(1, timestamp, right_native_.data);
+        mcap_channels_->write(0, timestamp, left_native_);
+        mcap_channels_->write(1, timestamp, right_native_);
     }
 }
 
-const Serialized<HandPoseTracked>& LiveHandTrackerImpl::get_left_hand() const
+const Serialized<HandPose>& LiveHandTrackerImpl::get_left_hand() const
 {
     return left_tracked_;
 }
 
-const Serialized<HandPoseTracked>& LiveHandTrackerImpl::get_right_hand() const
+const Serialized<HandPose>& LiveHandTrackerImpl::get_right_hand() const
 {
     return right_tracked_;
 }
@@ -364,11 +364,13 @@ void LiveHandTrackerImpl::destroy_xdev_list()
     }
 }
 
-void LiveHandTrackerImpl::update_hand(const std::vector<XrHandTrackerEXT>& trackers, XrTime time, HandPoseTrackedT& tracked)
+void LiveHandTrackerImpl::update_hand(const std::vector<XrHandTrackerEXT>& trackers,
+                                      XrTime time,
+                                      std::shared_ptr<HandPoseT>& tracked)
 {
     for (XrHandTrackerEXT tracker : trackers)
     {
-        HandPoseTrackedT candidate;
+        std::shared_ptr<HandPoseT> candidate;
         if (try_update_hand(tracker, time, candidate))
         {
             tracked = std::move(candidate);
@@ -376,14 +378,14 @@ void LiveHandTrackerImpl::update_hand(const std::vector<XrHandTrackerEXT>& track
         }
     }
 
-    tracked.data.reset();
+    tracked.reset();
 }
 
-bool LiveHandTrackerImpl::try_update_hand(XrHandTrackerEXT tracker, XrTime time, HandPoseTrackedT& tracked)
+bool LiveHandTrackerImpl::try_update_hand(XrHandTrackerEXT tracker, XrTime time, std::shared_ptr<HandPoseT>& tracked)
 {
     if (tracker == XR_NULL_HANDLE)
     {
-        tracked.data.reset();
+        tracked.reset();
         return false;
     }
 
@@ -401,14 +403,14 @@ bool LiveHandTrackerImpl::try_update_hand(XrHandTrackerEXT tracker, XrTime time,
     XrResult result = pfn_locate_hand_joints_(tracker, &locate_info, &locations);
     if (XR_FAILED(result))
     {
-        tracked.data.reset();
+        tracked.reset();
         return false;
     }
 
     if (!locations.isActive)
     {
         // Policy: inactive hand is a common runtime condition; non-fatal.
-        tracked.data.reset();
+        tracked.reset();
         return false;
     }
 
@@ -433,7 +435,7 @@ bool LiveHandTrackerImpl::try_update_hand(XrHandTrackerEXT tracker, XrTime time,
         data->joints->mutable_poses()->Mutate(i, joint_pose);
     }
 
-    tracked.data = std::move(data);
+    tracked = std::move(data);
     return true;
 }
 

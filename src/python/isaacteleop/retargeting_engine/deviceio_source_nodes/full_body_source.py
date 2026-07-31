@@ -22,7 +22,7 @@ from .deviceio_tensor_types import DeviceIOFullBodyPoseTracked
 
 if TYPE_CHECKING:
     from isaacteleop.deviceio import ITracker, TrackerVendor
-    from isaacteleop.schema import FullBodyPose, FullBodyPoseTracked
+    from isaacteleop.schema import FullBodyPose
 
 
 class FullBodySource(IDeviceIOSource):
@@ -108,14 +108,14 @@ class FullBodySource(IDeviceIOSource):
         Calls ``set_none()`` on the output when body tracking is inactive.
 
         Args:
-            inputs: Dict with "deviceio_full_body" containing FullBodyPoseTracked wrapper
+            inputs: Dict with "deviceio_full_body" containing FullBodyPose wrapper
             outputs: Dict with "full_body" OptionalTensorGroup
             context: Shared ComputeContext for the current step (carries GraphTime).
         """
-        tracked: "FullBodyPoseTracked" = inputs["deviceio_full_body"][0]
-        body_pose: "FullBodyPose | None" = tracked.data
+        tracked: "FullBodyPose" = inputs["deviceio_full_body"][0]
+        body_pose: "FullBodyPose" = tracked
 
-        if body_pose is None:
+        if not body_pose:
             outputs["full_body"].set_none()
             return
 

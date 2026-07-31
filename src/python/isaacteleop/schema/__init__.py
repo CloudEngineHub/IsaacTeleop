@@ -23,37 +23,30 @@ from ._schema import (
     Pose,
     # Head-related types.
     HeadPose,
-    HeadPoseTracked,
     HeadPoseRecord,
     # Hand-related types.
     HandJoint,
     HandJointPose,
     HandJoints,
     HandPose,
-    HandPoseTracked,
     HandPoseRecord,
     # Controller-related types.
     ControllerInputState,
     ControllerPose,
     ControllerSnapshot,
-    ControllerSnapshotTracked,
     ControllerSnapshotRecord,
     # Pedals-related types.
     Generic3AxisPedalOutput,
-    Generic3AxisPedalOutputTracked,
     Generic3AxisPedalOutputRecord,
     # OGLO tactile glove types.
     OgloGloveSample,
-    OgloGloveSampleTracked,
     OgloGloveSampleRecord,
     # Joint-state types (generic joint-space devices: leader arms, exoskeletons, ...).
     JointState,
     JointStateOutput,
-    JointStateOutputTracked,
     JointStateOutputRecord,
     # SE3 tracker types (generic 6-DoF pose sources: tracker pucks, mocap rigid bodies, ...).
     Se3TrackerPose,
-    Se3TrackerPoseTracked,
     Se3TrackerPoseRecord,
     # Message channel types.
     MessageChannelMessages,
@@ -61,20 +54,17 @@ from ._schema import (
     MessageChannelMessagesRecord,
     # Haptic command types (vendor-neutral cross-process device output).
     HapticCommand,
-    HapticCommandTracked,
     HapticCommandRecord,
     pack_haptic_command,
     # Camera-related types.
     StreamType,
     FrameMetadataOak,
-    FrameMetadataOakTracked,
     FrameMetadataOakRecord,
     # Full body-related types.
     BodyJoint,
     BodyJointPose,
     BodyJoints,
     FullBodyPose,
-    FullBodyPoseTracked,
     FullBodyPoseRecord,
 )
 
@@ -85,26 +75,19 @@ from ._schema import (
 # bound to. Python no longer sees those at all, so the alias resolves to the encoded
 # view: reads are unchanged, but the objects are immutable and are built by passing
 # every field to the constructor rather than by assigning attributes afterwards.
+#
+# The Tracked wrappers have no alias: trackers now hand out the payload table itself
+# and express "no data" with an empty view, so there is no object to redirect to.
 _DEPRECATED_ALIASES = {
     "BodyJointPico": "BodyJoint",
     "BodyJointsPico": "BodyJoints",
     "FullBodyPosePicoT": "FullBodyPose",
-    "FullBodyPosePicoTrackedT": "FullBodyPoseTracked",
     "FullBodyPosePicoRecord": "FullBodyPoseRecord",
     "HeadPoseT": "HeadPose",
-    "HeadPoseTrackedT": "HeadPoseTracked",
     "HandPoseT": "HandPose",
-    "HandPoseTrackedT": "HandPoseTracked",
-    "ControllerSnapshotTrackedT": "ControllerSnapshotTracked",
-    "Generic3AxisPedalOutputTrackedT": "Generic3AxisPedalOutputTracked",
-    "OgloGloveSampleTrackedT": "OgloGloveSampleTracked",
-    "JointStateOutputTrackedT": "JointStateOutputTracked",
     "Se3TrackerPoseT": "Se3TrackerPose",
-    "Se3TrackerPoseTrackedT": "Se3TrackerPoseTracked",
     "MessageChannelMessagesTrackedT": "MessageChannelMessagesTracked",
-    "FrameMetadataOakTrackedT": "FrameMetadataOakTracked",
     "FullBodyPoseT": "FullBodyPose",
-    "FullBodyPoseTrackedT": "FullBodyPoseTracked",
 }
 
 
@@ -129,37 +112,30 @@ __all__ = [
     "Pose",
     # Head types.
     "HeadPose",
-    "HeadPoseTracked",
     "HeadPoseRecord",
     # Hand types.
     "HandJoint",
     "HandJointPose",
     "HandJoints",
     "HandPose",
-    "HandPoseTracked",
     "HandPoseRecord",
     # Controller types.
     "ControllerInputState",
     "ControllerPose",
     "ControllerSnapshot",
-    "ControllerSnapshotTracked",
     "ControllerSnapshotRecord",
     # Pedals types.
     "Generic3AxisPedalOutput",
-    "Generic3AxisPedalOutputTracked",
     "Generic3AxisPedalOutputRecord",
     # OGLO tactile glove types.
     "OgloGloveSample",
-    "OgloGloveSampleTracked",
     "OgloGloveSampleRecord",
     # Joint-state types (generic joint-space devices).
     "JointState",
     "JointStateOutput",
-    "JointStateOutputTracked",
     "JointStateOutputRecord",
     # SE3 tracker types (generic 6-DoF pose sources).
     "Se3TrackerPose",
-    "Se3TrackerPoseTracked",
     "Se3TrackerPoseRecord",
     # Message channel types.
     "MessageChannelMessages",
@@ -167,19 +143,16 @@ __all__ = [
     "MessageChannelMessagesRecord",
     # Haptic command types.
     "HapticCommand",
-    "HapticCommandTracked",
     "HapticCommandRecord",
     "pack_haptic_command",
     # Camera types.
     "StreamType",
     "FrameMetadataOak",
-    "FrameMetadataOakTracked",
     "FrameMetadataOakRecord",
     # Full body types.
     "BodyJointPose",
     "BodyJoint",
     "BodyJoints",
     "FullBodyPose",
-    "FullBodyPoseTracked",
     "FullBodyPoseRecord",
 ]

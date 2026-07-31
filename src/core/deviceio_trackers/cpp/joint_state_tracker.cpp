@@ -15,7 +15,7 @@ JointStateTracker::JointStateTracker(const std::string& collection_id, size_t ma
 {
 }
 
-const Serialized<JointStateOutputTracked>& JointStateTracker::get_data(const ITrackerSession& session) const
+const Serialized<JointStateOutput>& JointStateTracker::get_data(const ITrackerSession& session) const
 {
     return static_cast<const IJointStateTrackerImpl&>(session.get_tracker_impl(*this)).get_data();
 }

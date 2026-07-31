@@ -10,14 +10,14 @@
 namespace core
 {
 
-struct HandPoseTracked;
+struct HandPose;
 
 // Abstract base interface for hand tracker implementations.
 class IHandTrackerImpl : public ITrackerImpl
 {
 public:
-    virtual const Serialized<HandPoseTracked>& get_left_hand() const = 0;
-    virtual const Serialized<HandPoseTracked>& get_right_hand() const = 0;
+    virtual const Serialized<HandPose>& get_left_hand() const = 0;
+    virtual const Serialized<HandPose>& get_right_hand() const = 0;
 };
 
 } // namespace core

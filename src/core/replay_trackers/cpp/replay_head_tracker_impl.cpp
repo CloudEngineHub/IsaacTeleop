@@ -28,7 +28,7 @@ ReplayHeadTrackerImpl::ReplayHeadTrackerImpl(std::unique_ptr<mcap::McapReader> r
 {
 }
 
-const Serialized<HeadPoseTracked>& ReplayHeadTrackerImpl::get_head() const
+const Serialized<HeadPose>& ReplayHeadTrackerImpl::get_head() const
 {
     return tracked_;
 }
@@ -38,12 +38,12 @@ void ReplayHeadTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     auto record = mcap_viewers_->read(0);
     if (record)
     {
-        tracked_ = pack_tracked<HeadPoseTracked>(std::move(record->data));
+        tracked_ = pack_optional<HeadPose>(std::move(record->data));
     }
     else
     {
         std::cerr << "ReplayHeadTrackerImpl: head data not found" << std::endl;
-        tracked_ = Serialized<HeadPoseTracked>();
+        tracked_ = Serialized<HeadPose>();
     }
 }
 

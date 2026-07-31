@@ -13,7 +13,7 @@ import pytest
 from isaacteleop.retargeting_engine.deviceio_source_nodes import JointStateSource
 from isaacteleop.retargeting_engine.interface.base_retargeter import _make_output_group
 from isaacteleop.retargeting_engine.interface.tensor_group import TensorGroup
-from isaacteleop.schema import JointState, JointStateOutput, JointStateOutputTracked
+from isaacteleop.schema import JointState, JointStateOutput
 
 SO101_JOINTS = [
     "shoulder_pan",
@@ -75,7 +75,7 @@ class TestJointStateSource:
         values = {n: round(0.1 * (i + 1), 3) for i, n in enumerate(SO101_JOINTS)}
         inputs = _make_inputs(
             src,
-            {"deviceio_joint_state": [JointStateOutputTracked(_make_output(values))]},
+            {"deviceio_joint_state": [_make_output(values)]},
         )
         outputs = _outputs(src)
         src.compute(inputs, outputs)
@@ -92,9 +92,7 @@ class TestJointStateSource:
         )
         # Schema joints intentionally in reverse order.
         out = _make_output({"c": 3.0, "a": 1.0, "b": 2.0})
-        inputs = _make_inputs(
-            src, {"deviceio_joint_state": [JointStateOutputTracked(out)]}
-        )
+        inputs = _make_inputs(src, {"deviceio_joint_state": [out]})
         outputs = _outputs(src)
         src.compute(inputs, outputs)
         group = outputs[JointStateSource.JOINTS]
@@ -107,9 +105,7 @@ class TestJointStateSource:
             name="leader", collection_id="so101_leader", joint_names=["a", "missing"]
         )
         out = _make_output({"a": 1.5})
-        inputs = _make_inputs(
-            src, {"deviceio_joint_state": [JointStateOutputTracked(out)]}
-        )
+        inputs = _make_inputs(src, {"deviceio_joint_state": [out]})
         outputs = _outputs(src)
         src.compute(inputs, outputs)
         group = outputs[JointStateSource.JOINTS]
@@ -122,7 +118,7 @@ class TestJointStateSource:
         )
         # Tracked wrapper with no data -> device inactive.
         inputs = _make_inputs(
-            src, {"deviceio_joint_state": [JointStateOutputTracked()]}
+            src, {"deviceio_joint_state": [JointStateOutput.absent()]}
         )
         outputs = _outputs(src)
         src.compute(inputs, outputs)

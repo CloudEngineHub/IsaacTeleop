@@ -124,7 +124,7 @@ try
 
         if (frame_count % 60 == 0)
         {
-            const auto* body = payload(tracker->get_body_pose(*session));
+            const auto* body = tracker->get_body_pose(*session).get();
             std::cout << "[record] t=" << std::fixed << std::setprecision(2) << elapsed_s << "s  frame=" << frame_count;
             if (body != nullptr)
             {

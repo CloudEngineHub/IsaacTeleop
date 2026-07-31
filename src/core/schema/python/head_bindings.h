@@ -60,7 +60,6 @@ inline void bind_head(py::module& m)
              });
 
     bind_record<HeadPoseRecord, HeadPose>(m, "HeadPoseRecord", "HeadPose");
-    bind_tracked<HeadPoseTracked, HeadPose>(m, "HeadPoseTracked", "HeadPose");
 }
 
 } // namespace core

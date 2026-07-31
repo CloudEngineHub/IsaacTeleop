@@ -13,7 +13,7 @@ namespace core
 {
 
 /*!
- * @brief Facade for a generic joint-space device exposed as ``Serialized<JointStateOutputTracked>``.
+ * @brief Facade for a generic joint-space device exposed as ``Serialized<JointStateOutput>``.
  *
  * Generic across joint-space input devices (leader arms, exoskeletons, gloves, ...): the payload
  * is a list of named joints (``JointStateOutput.joints``, keyed by ``JointState.name``) plus an
@@ -62,7 +62,7 @@ public:
      * ``tracked->data()`` is null when no valid sample exists. When non-null, the nested
      * ``JointStateOutput`` (joints, device_id, optional ee_pose) is safe to read.
      */
-    const Serialized<JointStateOutputTracked>& get_data(const ITrackerSession& session) const;
+    const Serialized<JointStateOutput>& get_data(const ITrackerSession& session) const;
 
     const std::string& collection_id() const
     {

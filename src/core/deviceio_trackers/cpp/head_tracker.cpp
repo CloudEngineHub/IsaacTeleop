@@ -10,7 +10,7 @@ namespace core
 // HeadTracker
 // ============================================================================
 
-const Serialized<HeadPoseTracked>& HeadTracker::get_head(const ITrackerSession& session) const
+const Serialized<HeadPose>& HeadTracker::get_head(const ITrackerSession& session) const
 {
     return static_cast<const IHeadTrackerImpl&>(session.get_tracker_impl(*this)).get_head();
 }

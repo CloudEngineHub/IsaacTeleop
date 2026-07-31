@@ -29,7 +29,7 @@ ReplayOgloTactileTrackerImpl::ReplayOgloTactileTrackerImpl(std::unique_ptr<mcap:
 {
 }
 
-const Serialized<OgloGloveSampleTracked>& ReplayOgloTactileTrackerImpl::get_data() const
+const Serialized<OgloGloveSample>& ReplayOgloTactileTrackerImpl::get_data() const
 {
     return tracked_;
 }
@@ -39,12 +39,12 @@ void ReplayOgloTactileTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     auto record = mcap_viewers_->read(0);
     if (record)
     {
-        tracked_ = pack_tracked<OgloGloveSampleTracked>(std::move(record->data));
+        tracked_ = pack_optional<OgloGloveSample>(std::move(record->data));
     }
     else
     {
         std::cerr << "ReplayOgloTactileTrackerImpl: glove data not found" << std::endl;
-        tracked_ = Serialized<OgloGloveSampleTracked>();
+        tracked_ = Serialized<OgloGloveSample>();
     }
 }
 

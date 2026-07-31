@@ -184,7 +184,6 @@ inline void bind_hand(py::module& m)
              });
 
     bind_record<HandPoseRecord, HandPose>(m, "HandPoseRecord", "HandPose");
-    bind_tracked<HandPoseTracked, HandPose>(m, "HandPoseTracked", "HandPose");
 }
 
 } // namespace core

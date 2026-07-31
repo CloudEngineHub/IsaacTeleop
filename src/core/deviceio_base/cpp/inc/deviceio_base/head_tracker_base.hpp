@@ -10,13 +10,13 @@
 namespace core
 {
 
-struct HeadPoseTracked;
+struct HeadPose;
 
 // Abstract base interface for head tracker implementations.
 class IHeadTrackerImpl : public ITrackerImpl
 {
 public:
-    virtual const Serialized<HeadPoseTracked>& get_head() const = 0;
+    virtual const Serialized<HeadPose>& get_head() const = 0;
 };
 
 } // namespace core

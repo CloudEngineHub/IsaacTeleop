@@ -21,8 +21,8 @@ public:
     // Query methods:
     // - tracked->data() is null when the hand is inactive.
     // - when tracked->data() is non-null, nested fields in HandPose are safe to read.
-    const Serialized<HandPoseTracked>& get_left_hand(const ITrackerSession& session) const;
-    const Serialized<HandPoseTracked>& get_right_hand(const ITrackerSession& session) const;
+    const Serialized<HandPose>& get_left_hand(const ITrackerSession& session) const;
+    const Serialized<HandPose>& get_right_hand(const ITrackerSession& session) const;
 
 private:
     static constexpr const char* TRACKER_NAME = "HandTracker";

@@ -29,10 +29,10 @@ public:
     ReplayFullBodyTrackerImpl& operator=(ReplayFullBodyTrackerImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const Serialized<FullBodyPoseTracked>& get_body_pose() const override;
+    const Serialized<FullBodyPose>& get_body_pose() const override;
 
 private:
-    Serialized<FullBodyPoseTracked> tracked_;
+    Serialized<FullBodyPose> tracked_;
     std::unique_ptr<FullBodyMcapViewers> mcap_viewers_;
 };
 

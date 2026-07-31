@@ -10,7 +10,7 @@
 namespace core
 {
 
-struct Se3TrackerPoseTracked;
+struct Se3TrackerPose;
 
 // Abstract base interface for Se3Tracker implementations.
 //
@@ -20,7 +20,7 @@ struct Se3TrackerPoseTracked;
 class ISe3TrackerImpl : public ITrackerImpl
 {
 public:
-    virtual const Serialized<Se3TrackerPoseTracked>& get_data() const = 0;
+    virtual const Serialized<Se3TrackerPose>& get_data() const = 0;
 };
 
 } // namespace core

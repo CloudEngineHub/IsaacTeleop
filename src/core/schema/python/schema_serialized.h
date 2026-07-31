@@ -14,9 +14,10 @@
 // encodes it, and returns the view. That keeps the encoder honest (it is the generated
 // Pack, so the layout always matches the C++ readers) while the `-T` stays invisible.
 //
-// Every Tracked and Record wrapper has the same shape, so bind_tracked() and
-// bind_record() below cover them; each schema's binding header only has to describe its
-// own payload table.
+// Every Record wrapper has the same shape, so bind_record() below covers them; each
+// schema's binding header only has to describe its own payload table. Trackers publish
+// their payload table directly -- an empty view is how absence is expressed -- so there
+// is no wrapper binding here.
 
 #pragma once
 
@@ -41,7 +42,12 @@ py::class_<Serialized<T>> serialized_class(py::module& m, const char* name, cons
     return py::class_<Serialized<T>>(m, name, doc)
         .def(
             "__bool__", [](const Serialized<T>& self) { return static_cast<bool>(self); },
-            "False when the payload is absent.");
+            "False when the payload is absent.")
+        // The ordinary constructors encode a payload, so they always yield a present
+        // value. This is the only way to spell the absent one -- what a tracker returns
+        // while its device is inactive, and what a test needs to simulate that.
+        .def_static(
+            "absent", [] { return Serialized<T>(); }, "An absent payload: falsy, with no fields to read.");
 }
 
 /*!
@@ -60,42 +66,6 @@ std::shared_ptr<typename DataT::NativeTableType> to_native(const Serialized<Data
         return nullptr;
     }
     return std::shared_ptr<typename DataT::NativeTableType>(data->UnPack());
-}
-
-/*!
- * @brief Binds a `Tracked` wrapper: `X()` for absent, `X(data)` to wrap a payload.
- *
- * `.data` yields None rather than an empty view when the payload is absent, so the
- * `if tracked.data is None` idiom these wrappers were built around keeps working.
- */
-template <typename TrackedT, typename DataT>
-void bind_tracked(py::module& m, const char* name, const char* data_name)
-{
-    const std::string data_doc = std::string("The ") + data_name + " payload, or None when absent.";
-    serialized_class<TrackedT>(m, name, "Encoded tracker snapshot; .data is None when the payload is absent.")
-        .def(py::init(
-                 [](const Serialized<DataT>& data)
-                 {
-                     typename TrackedT::NativeTableType native;
-                     native.data = to_native(data);
-                     return pack<TrackedT>(native);
-                 }),
-             py::arg("data") = Serialized<DataT>(),
-             "Encode a snapshot wrapping the given payload. Omit `data` for an absent snapshot.")
-        .def_property_readonly(
-            "data",
-            [](const Serialized<TrackedT>& self) -> py::object
-            {
-                const DataT* data = payload(self);
-                return data != nullptr ? py::cast(self.narrow(data)) : py::none();
-            },
-            data_doc.c_str())
-        .def("__repr__",
-             [name, data_name](const Serialized<TrackedT>& self)
-             {
-                 return std::string(name) +
-                        "(data=" + (payload(self) != nullptr ? std::string(data_name) + "(...)" : "None") + ")";
-             });
 }
 
 //! Binds a `Record` wrapper (an MCAP payload: data plus its capture timestamp).
@@ -129,10 +99,9 @@ void bind_record(py::module& m, const char* name, const char* data_name)
             "timestamp", [](const Serialized<RecordT>& self) { return self ? self->timestamp() : nullptr; },
             py::return_value_policy::reference_internal, "Capture timestamp, or None when absent.")
         .def("__repr__",
-             [name, data_name](const Serialized<RecordT>& self)
-             {
+             [name, data_name](const Serialized<RecordT>& self) {
                  return std::string(name) +
-                        "(data=" + (payload(self) != nullptr ? std::string(data_name) + "(...)" : "None") + ")";
+                        "(data=" + (self.get() != nullptr ? std::string(data_name) + "(...)" : "None") + ")";
              });
 }
 

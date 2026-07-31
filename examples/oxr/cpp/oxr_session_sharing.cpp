@@ -86,11 +86,11 @@ try
 
         if (i % 3 == 0)
         {
-            std::cout << "Frame " << i << ": "
-                      << "Hands=" << (left_tracked ? "ACTIVE" : "INACTIVE") << " | "
-                      << "Head="
-                      << ((payload(head_tracked) != nullptr && payload(head_tracked)->is_valid()) ? "VALID" : "INVALID");
-            const auto* head = payload(head_tracked);
+            std::cout
+                << "Frame " << i << ": "
+                << "Hands=" << (left_tracked ? "ACTIVE" : "INACTIVE") << " | "
+                << "Head=" << ((head_tracked.get() != nullptr && head_tracked.get()->is_valid()) ? "VALID" : "INVALID");
+            const auto* head = head_tracked.get();
             if (head != nullptr && head->is_valid() && head->pose() != nullptr)
             {
                 const auto& pos = head->pose()->position();

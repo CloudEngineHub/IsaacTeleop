@@ -166,7 +166,6 @@ inline void bind_full_body(py::module& m)
              });
 
     bind_record<FullBodyPoseRecord, FullBodyPose>(m, "FullBodyPoseRecord", "FullBodyPose");
-    bind_tracked<FullBodyPoseTracked, FullBodyPose>(m, "FullBodyPoseTracked", "FullBodyPose");
 }
 
 } // namespace core

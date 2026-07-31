@@ -13,7 +13,7 @@ namespace core
 {
 
 /*!
- * @brief Facade for one OGLO tactile glove exposed as ``Serialized<OgloGloveSampleTracked>``.
+ * @brief Facade for one OGLO tactile glove exposed as ``Serialized<OgloGloveSample>``.
  *
  * Reads a tensor collection pushed by the ``oglo_tactile`` plugin
  * (``--collection-prefix``). One tracker per hand: construct with the matching
@@ -57,7 +57,7 @@ public:
      * @c tracked->data() is null when no valid sample is available; when non-null,
      * @c data->taxels (80 values) and the IMU fields are safe to read.
      */
-    const Serialized<OgloGloveSampleTracked>& get_data(const ITrackerSession& session) const;
+    const Serialized<OgloGloveSample>& get_data(const ITrackerSession& session) const;
 
     const std::string& collection_id() const
     {

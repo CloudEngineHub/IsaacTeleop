@@ -32,9 +32,7 @@ from isaacteleop.schema import (
     ControllerPose,
     ControllerInputState,
     ControllerSnapshot,
-    ControllerSnapshotTracked,
     HeadPose,
-    HeadPoseTracked,
 )
 
 
@@ -145,10 +143,8 @@ class TestControllersSource:
         inputs = _make_inputs(
             source,
             {
-                "deviceio_controller_left": [ControllerSnapshotTracked(left_snapshot)],
-                "deviceio_controller_right": [
-                    ControllerSnapshotTracked(right_snapshot)
-                ],
+                "deviceio_controller_left": [left_snapshot],
+                "deviceio_controller_right": [right_snapshot],
             },
         )
 
@@ -251,7 +247,7 @@ class TestHeadSource:
             True,
         )
 
-        inputs = _make_inputs(source, {"deviceio_head": [HeadPoseTracked(head_data)]})
+        inputs = _make_inputs(source, {"deviceio_head": [head_data]})
         outputs = {
             name: _make_output_group(gt) for name, gt in source.output_spec().items()
         }
@@ -271,7 +267,7 @@ class TestHeadSource:
         """Test that inactive head (Tracked.data is None) produces absent output."""
         source = HeadSource(name="head")
 
-        inputs = _make_inputs(source, {"deviceio_head": [HeadPoseTracked()]})
+        inputs = _make_inputs(source, {"deviceio_head": [HeadPose.absent()]})
         outputs = {
             name: _make_output_group(gt) for name, gt in source.output_spec().items()
         }
@@ -310,10 +306,8 @@ class TestControllersSourceOptional:
         inputs = _make_inputs(
             source,
             {
-                "deviceio_controller_left": [ControllerSnapshotTracked(left_snapshot)],
-                "deviceio_controller_right": [
-                    ControllerSnapshotTracked(right_snapshot)
-                ],
+                "deviceio_controller_left": [left_snapshot],
+                "deviceio_controller_right": [right_snapshot],
             },
         )
         outputs = {
@@ -341,10 +335,8 @@ class TestControllersSourceOptional:
         inputs = _make_inputs(
             source,
             {
-                "deviceio_controller_left": [ControllerSnapshotTracked()],
-                "deviceio_controller_right": [
-                    ControllerSnapshotTracked(right_snapshot)
-                ],
+                "deviceio_controller_left": [ControllerSnapshot.absent()],
+                "deviceio_controller_right": [right_snapshot],
             },
         )
         outputs = {
@@ -362,8 +354,8 @@ class TestControllersSourceOptional:
         inputs = _make_inputs(
             source,
             {
-                "deviceio_controller_left": [ControllerSnapshotTracked()],
-                "deviceio_controller_right": [ControllerSnapshotTracked()],
+                "deviceio_controller_left": [ControllerSnapshot.absent()],
+                "deviceio_controller_right": [ControllerSnapshot.absent()],
             },
         )
         outputs = {
@@ -439,7 +431,7 @@ class TestHeadSourceOptional:
             True,
         )
 
-        inputs = _make_inputs(source, {"deviceio_head": [HeadPoseTracked(head_data)]})
+        inputs = _make_inputs(source, {"deviceio_head": [head_data]})
         outputs = {
             name: _make_output_group(gt) for name, gt in source.output_spec().items()
         }
@@ -454,7 +446,7 @@ class TestHeadSourceOptional:
         """Inactive head (Tracked.data is None) produces absent OptionalTensorGroup."""
         source = HeadSource(name="head")
 
-        inputs = _make_inputs(source, {"deviceio_head": [HeadPoseTracked()]})
+        inputs = _make_inputs(source, {"deviceio_head": [HeadPose.absent()]})
         outputs = {
             name: _make_output_group(gt) for name, gt in source.output_spec().items()
         }
@@ -466,7 +458,7 @@ class TestHeadSourceOptional:
         """Accessing fields of an absent head output raises ValueError."""
         source = HeadSource(name="head")
 
-        inputs = _make_inputs(source, {"deviceio_head": [HeadPoseTracked()]})
+        inputs = _make_inputs(source, {"deviceio_head": [HeadPose.absent()]})
         outputs = {
             name: _make_output_group(gt) for name, gt in source.output_spec().items()
         }

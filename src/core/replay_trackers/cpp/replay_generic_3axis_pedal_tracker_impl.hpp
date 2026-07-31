@@ -27,10 +27,10 @@ public:
     ReplayGeneric3AxisPedalTrackerImpl& operator=(ReplayGeneric3AxisPedalTrackerImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const Serialized<Generic3AxisPedalOutputTracked>& get_data() const override;
+    const Serialized<Generic3AxisPedalOutput>& get_data() const override;
 
 private:
-    Serialized<Generic3AxisPedalOutputTracked> tracked_;
+    Serialized<Generic3AxisPedalOutput> tracked_;
     std::unique_ptr<PedalMcapViewers> mcap_viewers_;
 };
 

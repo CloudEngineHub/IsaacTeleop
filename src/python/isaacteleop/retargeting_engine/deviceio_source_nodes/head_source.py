@@ -24,7 +24,7 @@ from .deviceio_tensor_types import DeviceIOHeadPoseTracked
 if TYPE_CHECKING:
     from isaacteleop.deviceio import ITracker
 
-    from isaacteleop.schema import HeadPose, HeadPoseTracked
+    from isaacteleop.schema import HeadPose
 
 
 class HeadSource(IDeviceIOSource):
@@ -71,7 +71,7 @@ class HeadSource(IDeviceIOSource):
             deviceio_session: The active DeviceIO session.
 
         Returns:
-            Dict with "deviceio_head" TensorGroup containing HeadPoseTracked.
+            Dict with "deviceio_head" TensorGroup containing HeadPose.
         """
         tracked = self._head_tracker.get_head(deviceio_session)
         source_inputs = self.input_spec()
@@ -92,20 +92,20 @@ class HeadSource(IDeviceIOSource):
 
     def _compute_fn(self, inputs: RetargeterIO, outputs: RetargeterIO, context) -> None:
         """
-        Convert DeviceIO HeadPoseTracked to standard HeadInput tensor.
+        Convert DeviceIO HeadPose to standard HeadInput tensor.
 
         Calls ``set_none()`` on the output when head tracking is inactive.
 
         Args:
-            inputs: Dict with "deviceio_head" containing HeadPoseTracked wrapper
+            inputs: Dict with "deviceio_head" containing HeadPose wrapper
             outputs: Dict with "head" OptionalTensorGroup
             context: ComputeContext (unused by this converter node).
         """
-        tracked: "HeadPoseTracked" = inputs["deviceio_head"][0]
-        head_pose: "HeadPose | None" = tracked.data
+        tracked: "HeadPose" = inputs["deviceio_head"][0]
+        head_pose: "HeadPose" = tracked
 
         output = outputs["head"]
-        if head_pose is None:
+        if not head_pose:
             output.set_none()
             return
 

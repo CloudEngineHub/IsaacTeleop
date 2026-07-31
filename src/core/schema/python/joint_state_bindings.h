@@ -136,7 +136,6 @@ inline void bind_joint_state(py::module& m)
              });
 
     bind_record<JointStateOutputRecord, JointStateOutput>(m, "JointStateOutputRecord", "JointStateOutput");
-    bind_tracked<JointStateOutputTracked, JointStateOutput>(m, "JointStateOutputTracked", "JointStateOutput");
 }
 
 } // namespace core

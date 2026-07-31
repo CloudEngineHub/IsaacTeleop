@@ -6,13 +6,12 @@
 Tests the following FlatBuffers types:
 - OgloGloveSample: tactile glove sample (seq, device_time_us, 80 taxels, 6-axis IMU)
 - OgloGloveSampleRecord: record wrapper carrying DeviceDataTimestamp
-- OgloGloveSampleTracked: tracked wrapper (data is None when inactive)
+- OgloGloveSample: tracked wrapper (data is None when inactive)
 """
 
 from isaacteleop.schema import (
-    OgloGloveSample,
     OgloGloveSampleRecord,
-    OgloGloveSampleTracked,
+    OgloGloveSample,
 )
 
 NUM_TAXELS = 80
@@ -51,14 +50,14 @@ class TestOgloGloveSample:
         assert "OgloGloveSample" in repr(OgloGloveSample())
 
 
-class TestOgloGloveSampleTracked:
-    """Tests for the tracked wrapper."""
+class TestOgloGloveSampleAbsence:
+    """Tests for the absent state: glove disconnected or no sample yet."""
 
-    def test_default_construction_inactive(self):
-        assert OgloGloveSampleTracked().data is None
+    def test_absent_is_falsy(self):
+        assert not OgloGloveSample.absent()
 
-    def test_repr_inactive(self):
-        assert "None" in repr(OgloGloveSampleTracked())
+    def test_repr_absent(self):
+        assert "empty" in repr(OgloGloveSample.absent())
 
 
 class TestOgloGloveSampleRecord:

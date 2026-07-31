@@ -194,15 +194,15 @@ TEST_CASE("ReplaySession: head tracker round-trip with multiple frames", "[repla
     {
         session->update();
         const auto& head = head_tracker.get_head(*session);
-        REQUIRE(payload(head) != nullptr);
+        REQUIRE(head.get() != nullptr);
         float v = static_cast<float>(i + 1);
-        CHECK(payload(head)->pose()->position().x() == v);
-        CHECK(payload(head)->pose()->position().y() == v * 10.0f);
-        CHECK(payload(head)->pose()->position().z() == v * 100.0f);
+        CHECK(head.get()->pose()->position().x() == v);
+        CHECK(head.get()->pose()->position().y() == v * 10.0f);
+        CHECK(head.get()->pose()->position().z() == v * 100.0f);
     }
 
     session->update();
-    CHECK(payload(head_tracker.get_head(*session)) == nullptr);
+    CHECK(head_tracker.get_head(*session).get() == nullptr);
 }
 
 // =============================================================================
@@ -248,19 +248,19 @@ TEST_CASE("ReplaySession: se3 tracker round-trip and null at EOF", "[replay][ses
     {
         session->update();
         const auto& tracked = tracker.get_data(*session);
-        REQUIRE(payload(tracked) != nullptr);
-        CHECK(payload(tracked)->is_valid());
+        REQUIRE(tracked.get() != nullptr);
+        CHECK(tracked.get()->is_valid());
         float v = static_cast<float>(i + 1);
-        CHECK(payload(tracked)->pose()->position().x() == v);
-        CHECK(payload(tracked)->pose()->position().y() == v * 10.0f);
-        CHECK(payload(tracked)->pose()->position().z() == v * 100.0f);
+        CHECK(tracked.get()->pose()->position().x() == v);
+        CHECK(tracked.get()->pose()->position().y() == v * 10.0f);
+        CHECK(tracked.get()->pose()->position().z() == v * 100.0f);
     }
 
     // Replay nulls data at gap/EOF — intentionally different from the live impl's
     // stale-sample retention on sample-less ticks. See the "Record/replay fidelity"
     // paragraph in docs/se3-tracker-design.md before "fixing" this toward sample-and-hold.
     session->update();
-    CHECK(payload(tracker.get_data(*session)) == nullptr);
+    CHECK(tracker.get_data(*session).get() == nullptr);
 }
 
 // =============================================================================
@@ -301,13 +301,13 @@ TEST_CASE("ReplaySession: hand tracker round-trip with left and right", "[replay
         session->update();
         const auto& left = hand_tracker.get_left_hand(*session);
         const auto& right = hand_tracker.get_right_hand(*session);
-        CHECK(payload(left) != nullptr);
-        CHECK(payload(right) != nullptr);
+        CHECK(left.get() != nullptr);
+        CHECK(right.get() != nullptr);
     }
 
     session->update();
-    CHECK(payload(hand_tracker.get_left_hand(*session)) == nullptr);
-    CHECK(payload(hand_tracker.get_right_hand(*session)) == nullptr);
+    CHECK(hand_tracker.get_left_hand(*session).get() == nullptr);
+    CHECK(hand_tracker.get_right_hand(*session).get() == nullptr);
 }
 
 // =============================================================================
@@ -362,19 +362,19 @@ TEST_CASE("ReplaySession: head and hand trackers in one session", "[replay][sess
         float v = static_cast<float>(i + 1);
 
         const auto& head = head_tracker.get_head(*session);
-        REQUIRE(payload(head) != nullptr);
-        CHECK(payload(head)->pose()->position().x() == v);
-        CHECK(payload(head)->pose()->position().y() == v * 2.0f);
-        CHECK(payload(head)->pose()->position().z() == v * 3.0f);
+        REQUIRE(head.get() != nullptr);
+        CHECK(head.get()->pose()->position().x() == v);
+        CHECK(head.get()->pose()->position().y() == v * 2.0f);
+        CHECK(head.get()->pose()->position().z() == v * 3.0f);
 
-        CHECK(payload(hand_tracker.get_left_hand(*session)) != nullptr);
-        CHECK(payload(hand_tracker.get_right_hand(*session)) != nullptr);
+        CHECK(hand_tracker.get_left_hand(*session).get() != nullptr);
+        CHECK(hand_tracker.get_right_hand(*session).get() != nullptr);
     }
 
     session->update();
-    CHECK(payload(head_tracker.get_head(*session)) == nullptr);
-    CHECK(payload(hand_tracker.get_left_hand(*session)) == nullptr);
-    CHECK(payload(hand_tracker.get_right_hand(*session)) == nullptr);
+    CHECK(head_tracker.get_head(*session).get() == nullptr);
+    CHECK(hand_tracker.get_left_hand(*session).get() == nullptr);
+    CHECK(hand_tracker.get_right_hand(*session).get() == nullptr);
 }
 
 // =============================================================================

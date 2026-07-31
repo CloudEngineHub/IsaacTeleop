@@ -86,7 +86,6 @@ inline void bind_oglo_tactile(py::module& m)
              });
 
     bind_record<OgloGloveSampleRecord, OgloGloveSample>(m, "OgloGloveSampleRecord", "OgloGloveSample");
-    bind_tracked<OgloGloveSampleTracked, OgloGloveSample>(m, "OgloGloveSampleTracked", "OgloGloveSample");
 }
 
 } // namespace core

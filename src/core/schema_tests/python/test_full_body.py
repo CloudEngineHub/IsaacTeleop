@@ -404,7 +404,6 @@ class TestDeprecatedPicoAliases:
 
         cases = [
             ("FullBodyPosePicoT", "FullBodyPose"),
-            ("FullBodyPosePicoTrackedT", "FullBodyPoseTracked"),
             ("FullBodyPosePicoRecord", "FullBodyPoseRecord"),
             ("BodyJointsPico", "BodyJoints"),
             ("BodyJointPico", "BodyJoint"),

@@ -63,7 +63,6 @@ inline void bind_se3_tracker(py::module& m)
              });
 
     bind_record<Se3TrackerPoseRecord, Se3TrackerPose>(m, "Se3TrackerPoseRecord", "Se3TrackerPose");
-    bind_tracked<Se3TrackerPoseTracked, Se3TrackerPose>(m, "Se3TrackerPoseTracked", "Se3TrackerPose");
 }
 
 } // namespace core

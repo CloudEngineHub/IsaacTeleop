@@ -88,12 +88,12 @@ try
         std::cout << "  Left hand:  " << (left_tracked ? "ACTIVE" : "INACTIVE") << std::endl;
         std::cout << "  Right hand: " << (right_tracked ? "ACTIVE" : "INACTIVE") << std::endl;
         std::cout << "  Head pose:  "
-                  << ((payload(head_tracked) != nullptr && payload(head_tracked)->is_valid()) ? "VALID" : "INVALID")
+                  << ((head_tracked.get() != nullptr && head_tracked.get()->is_valid()) ? "VALID" : "INVALID")
                   << std::endl;
 
-        if (payload(head_tracked) != nullptr && payload(head_tracked)->is_valid())
+        if (head_tracked.get() != nullptr && head_tracked.get()->is_valid())
         {
-            const auto& pos = payload(head_tracked)->pose()->position();
+            const auto& pos = head_tracked.get()->pose()->position();
             std::cout << "    Position: [" << pos.x() << ", " << pos.y() << ", " << pos.z() << "]" << std::endl;
         }
         std::cout << std::endl;

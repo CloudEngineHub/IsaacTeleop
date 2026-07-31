@@ -10,12 +10,12 @@ namespace core
 // HandTracker
 // ============================================================================
 
-const Serialized<HandPoseTracked>& HandTracker::get_left_hand(const ITrackerSession& session) const
+const Serialized<HandPose>& HandTracker::get_left_hand(const ITrackerSession& session) const
 {
     return static_cast<const IHandTrackerImpl&>(session.get_tracker_impl(*this)).get_left_hand();
 }
 
-const Serialized<HandPoseTracked>& HandTracker::get_right_hand(const ITrackerSession& session) const
+const Serialized<HandPose>& HandTracker::get_right_hand(const ITrackerSession& session) const
 {
     return static_cast<const IHandTrackerImpl&>(session.get_tracker_impl(*this)).get_right_hand();
 }

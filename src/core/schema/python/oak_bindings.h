@@ -57,7 +57,6 @@ inline void bind_oak(py::module& m)
              });
 
     bind_record<FrameMetadataOakRecord, FrameMetadataOak>(m, "FrameMetadataOakRecord", "FrameMetadataOak");
-    bind_tracked<FrameMetadataOakTracked, FrameMetadataOak>(m, "FrameMetadataOakTracked", "FrameMetadataOak");
 }
 
 } // namespace core

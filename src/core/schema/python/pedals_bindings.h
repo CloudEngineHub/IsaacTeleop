@@ -53,8 +53,6 @@ inline void bind_pedals(py::module& m)
 
     bind_record<Generic3AxisPedalOutputRecord, Generic3AxisPedalOutput>(
         m, "Generic3AxisPedalOutputRecord", "Generic3AxisPedalOutput");
-    bind_tracked<Generic3AxisPedalOutputTracked, Generic3AxisPedalOutput>(
-        m, "Generic3AxisPedalOutputTracked", "Generic3AxisPedalOutput");
 }
 
 } // namespace core

@@ -6,7 +6,7 @@
 Tests the following FlatBuffers types:
 - Generic3AxisPedalOutput: Table with left_pedal, right_pedal, and rudder
 - Generic3AxisPedalOutputRecord: Record wrapper carrying DeviceDataTimestamp
-- Generic3AxisPedalOutputTracked: Tracked wrapper (data is None when inactive)
+- Generic3AxisPedalOutput: Tracked wrapper (data is None when inactive)
 
 Timestamps are carried by Generic3AxisPedalOutputRecord, not Generic3AxisPedalOutput.
 """
@@ -14,9 +14,8 @@ Timestamps are carried by Generic3AxisPedalOutputRecord, not Generic3AxisPedalOu
 import pytest
 
 from isaacteleop.schema import (
-    Generic3AxisPedalOutput,
     Generic3AxisPedalOutputRecord,
-    Generic3AxisPedalOutputTracked,
+    Generic3AxisPedalOutput,
     DeviceDataTimestamp,
 )
 
@@ -160,34 +159,29 @@ class TestGeneric3AxisPedalOutputEdgeCases:
         assert second.rudder == pytest.approx(-0.8)
 
 
-class TestGeneric3AxisPedalOutputTracked:
-    """Tests for Generic3AxisPedalOutputTracked tracked wrapper."""
+class TestGeneric3AxisPedalOutputAbsence:
+    """Tests for the absent state a tracker publishes when no pedal data is available."""
 
-    def test_default_construction_inactive(self):
-        """Default-constructed Tracked wrapper has data=None (inactive)."""
-        tracked = Generic3AxisPedalOutputTracked()
-        assert tracked.data is None
+    def test_absent_is_falsy(self):
+        """absent() carries no payload, so it gates as False."""
+        assert not Generic3AxisPedalOutput.absent()
 
-    def test_construction_with_data(self):
-        """Tracked wrapper constructed with data wraps the payload correctly."""
+    def test_encoded_payload_is_truthy_and_reads_back(self):
+        """An encoded payload gates as True and its fields read directly."""
         output = Generic3AxisPedalOutput(left_pedal=0.8, right_pedal=0.2, rudder=-0.5)
-        tracked = Generic3AxisPedalOutputTracked(output)
 
-        assert tracked.data is not None
-        assert tracked.data.left_pedal == pytest.approx(0.8)
-        assert tracked.data.right_pedal == pytest.approx(0.2)
-        assert tracked.data.rudder == pytest.approx(-0.5)
+        assert output
+        assert output.left_pedal == pytest.approx(0.8)
+        assert output.right_pedal == pytest.approx(0.2)
+        assert output.rudder == pytest.approx(-0.5)
 
-    def test_repr_inactive(self):
-        """Repr of inactive Tracked wrapper mentions None."""
-        tracked = Generic3AxisPedalOutputTracked()
-        assert "None" in repr(tracked)
+    def test_repr_absent(self):
+        """Repr of an absent payload says so rather than showing fields."""
+        assert "empty" in repr(Generic3AxisPedalOutput.absent())
 
-    def test_repr_active(self):
-        """Repr of active Tracked wrapper mentions the payload type."""
-        output = Generic3AxisPedalOutput()
-        tracked = Generic3AxisPedalOutputTracked(output)
-        assert "Generic3AxisPedalOutput" in repr(tracked)
+    def test_repr_present(self):
+        """Repr of a present payload names the type."""
+        assert "Generic3AxisPedalOutput" in repr(Generic3AxisPedalOutput())
 
 
 class TestGeneric3AxisPedalOutputRecordTimestamp:

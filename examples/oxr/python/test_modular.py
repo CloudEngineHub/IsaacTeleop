@@ -53,8 +53,8 @@ with oxr.OpenXRSession("ModularTest", required_extensions) as oxr_session:
 
         # Test 5: Check hand data
         print("[Test 5] Checking hand tracking data...")
-        left_tracked: schema.HandPoseTracked = hand_tracker.get_left_hand(session)
-        right_tracked: schema.HandPoseTracked = hand_tracker.get_right_hand(session)
+        left_tracked: schema.HandPose = hand_tracker.get_left_hand(session)
+        right_tracked: schema.HandPose = hand_tracker.get_right_hand(session)
         print(
             f"  Left hand: {'ACTIVE' if left_tracked.data is not None else 'INACTIVE'}"
         )
@@ -71,7 +71,7 @@ with oxr.OpenXRSession("ModularTest", required_extensions) as oxr_session:
 
         # Test 6: Check head data
         print("[Test 6] Checking head tracking data...")
-        head_tracked: schema.HeadPoseTracked = head_tracker.get_head(session)
+        head_tracked: schema.HeadPose = head_tracker.get_head(session)
         if head_tracked.data is not None:
             pos = head_tracked.data.pose.position
             ori = head_tracked.data.pose.orientation

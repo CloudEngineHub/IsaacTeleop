@@ -22,7 +22,7 @@ from .deviceio_tensor_types import DeviceIOHandPoseTracked
 
 if TYPE_CHECKING:
     from isaacteleop.deviceio import ITracker
-    from isaacteleop.schema import HandPose, HandPoseTracked
+    from isaacteleop.schema import HandPose
 
 
 class HandsSource(IDeviceIOSource):
@@ -79,7 +79,7 @@ class HandsSource(IDeviceIOSource):
 
         Returns:
             Dict with "deviceio_hand_left" and "deviceio_hand_right" TensorGroups
-            containing HandPoseTracked wrappers.
+            containing HandPose wrappers.
         """
         left_tracked = self._hand_tracker.get_left_hand(deviceio_session)
         right_tracked = self._hand_tracker.get_right_hand(deviceio_session)
@@ -110,26 +110,26 @@ class HandsSource(IDeviceIOSource):
 
     def _compute_fn(self, inputs: RetargeterIO, outputs: RetargeterIO, context) -> None:
         """
-        Convert DeviceIO HandPoseTracked to standard HandInput tensors.
+        Convert DeviceIO HandPose to standard HandInput tensors.
 
         Calls ``set_none()`` on the output when the corresponding hand is inactive.
 
         Args:
-            inputs: Dict with "deviceio_hand_left" and "deviceio_hand_right" HandPoseTracked wrappers
+            inputs: Dict with "deviceio_hand_left" and "deviceio_hand_right" HandPose wrappers
             outputs: Dict with "hand_left" and "hand_right" OptionalTensorGroups
             context: ComputeContext (unused by this converter node).
         """
-        left_tracked: "HandPoseTracked" = inputs["deviceio_hand_left"][0]
-        right_tracked: "HandPoseTracked" = inputs["deviceio_hand_right"][0]
+        left_tracked: "HandPose" = inputs["deviceio_hand_left"][0]
+        right_tracked: "HandPose" = inputs["deviceio_hand_right"][0]
 
-        self._update_hand_data(outputs["hand_left"], left_tracked.data)
-        self._update_hand_data(outputs["hand_right"], right_tracked.data)
+        self._update_hand_data(outputs["hand_left"], left_tracked)
+        self._update_hand_data(outputs["hand_right"], right_tracked)
 
     def _update_hand_data(
-        self, group: OptionalTensorGroup, hand_data: "HandPose | None"
+        self, group: OptionalTensorGroup, hand_data: "HandPose"
     ) -> None:
         """Helper to convert hand data for a single hand."""
-        if hand_data is None:
+        if not hand_data:
             group.set_none()
             return
 

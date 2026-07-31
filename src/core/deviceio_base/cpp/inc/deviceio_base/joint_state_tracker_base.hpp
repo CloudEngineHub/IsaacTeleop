@@ -10,7 +10,7 @@
 namespace core
 {
 
-struct JointStateOutputTracked;
+struct JointStateOutput;
 
 // Abstract base interface for JointStateTracker implementations.
 //
@@ -19,7 +19,7 @@ struct JointStateOutputTracked;
 class IJointStateTrackerImpl : public ITrackerImpl
 {
 public:
-    virtual const Serialized<JointStateOutputTracked>& get_data() const = 0;
+    virtual const Serialized<JointStateOutput>& get_data() const = 0;
 };
 
 } // namespace core

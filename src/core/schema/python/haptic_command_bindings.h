@@ -52,7 +52,6 @@ inline void bind_haptic_command(py::module& m)
                                });
 
     bind_record<HapticCommandRecord, HapticCommand>(m, "HapticCommandRecord", "HapticCommand");
-    bind_tracked<HapticCommandTracked, HapticCommand>(m, "HapticCommandTracked", "HapticCommand");
 
     // Producer-side encode: serialise a HapticCommand (endpoint + values) to the raw
     // FlatBuffer bytes that TensorPushTracker.push() carries to the consumer. Distinct

@@ -110,7 +110,6 @@ inline void bind_controller(py::module& m)
              });
 
     bind_record<ControllerSnapshotRecord, ControllerSnapshot>(m, "ControllerSnapshotRecord", "ControllerSnapshot");
-    bind_tracked<ControllerSnapshotTracked, ControllerSnapshot>(m, "ControllerSnapshotTracked", "ControllerSnapshot");
 }
 
 } // namespace core

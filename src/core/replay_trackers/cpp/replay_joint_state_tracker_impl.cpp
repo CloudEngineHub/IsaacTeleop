@@ -30,7 +30,7 @@ ReplayJointStateTrackerImpl::ReplayJointStateTrackerImpl(std::unique_ptr<mcap::M
 {
 }
 
-const Serialized<JointStateOutputTracked>& ReplayJointStateTrackerImpl::get_data() const
+const Serialized<JointStateOutput>& ReplayJointStateTrackerImpl::get_data() const
 {
     return tracked_;
 }
@@ -40,7 +40,7 @@ void ReplayJointStateTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     auto record = mcap_viewers_->read(0);
     if (record)
     {
-        tracked_ = pack_tracked<JointStateOutputTracked>(std::move(record->data));
+        tracked_ = pack_optional<JointStateOutput>(std::move(record->data));
         warned_no_data_ = false;
     }
     else
@@ -51,7 +51,7 @@ void ReplayJointStateTrackerImpl::update(int64_t /*monotonic_time_ns*/)
             std::cerr << "ReplayJointStateTrackerImpl: joint state data not found" << std::endl;
             warned_no_data_ = true;
         }
-        tracked_ = Serialized<JointStateOutputTracked>();
+        tracked_ = Serialized<JointStateOutput>();
     }
 }
 

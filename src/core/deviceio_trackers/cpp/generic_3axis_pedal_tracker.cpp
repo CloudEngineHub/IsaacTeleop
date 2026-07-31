@@ -15,7 +15,7 @@ Generic3AxisPedalTracker::Generic3AxisPedalTracker(const std::string& collection
 {
 }
 
-const Serialized<Generic3AxisPedalOutputTracked>& Generic3AxisPedalTracker::get_data(const ITrackerSession& session) const
+const Serialized<Generic3AxisPedalOutput>& Generic3AxisPedalTracker::get_data(const ITrackerSession& session) const
 {
     return static_cast<const IGeneric3AxisPedalTrackerImpl&>(session.get_tracker_impl(*this)).get_data();
 }

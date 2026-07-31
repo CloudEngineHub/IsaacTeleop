@@ -21,7 +21,7 @@ namespace core
 {
 
 using FullBodyMcapChannels = McapTrackerChannels<FullBodyPoseRecord, FullBodyPose>;
-using FullBodyNoitomSchemaTracker = SchemaTracker<FullBodyPoseRecord, FullBodyPose, FullBodyPoseTracked>;
+using FullBodyNoitomSchemaTracker = SchemaTracker<FullBodyPoseRecord, FullBodyPose>;
 
 class LiveFullBodyTrackerNoitomImpl : public IFullBodyTrackerImpl
 {
@@ -48,12 +48,12 @@ public:
     LiveFullBodyTrackerNoitomImpl& operator=(LiveFullBodyTrackerNoitomImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const Serialized<FullBodyPoseTracked>& get_body_pose() const override;
+    const Serialized<FullBodyPose>& get_body_pose() const override;
 
 private:
     std::unique_ptr<FullBodyMcapChannels> mcap_channels_;
     FullBodyNoitomSchemaTracker schema_reader_;
-    Serialized<FullBodyPoseTracked> tracked_;
+    Serialized<FullBodyPose> tracked_;
 };
 
 } // namespace core

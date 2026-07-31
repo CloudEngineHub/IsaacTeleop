@@ -17,7 +17,6 @@ import pytest
 
 from isaacteleop.schema import (
     Se3TrackerPose,
-    Se3TrackerPoseTracked,
     Se3TrackerPoseRecord,
     Pose,
     Point,
@@ -58,21 +57,20 @@ class TestSe3TrackerPoseTConstruction:
         assert "is_valid=True" in repr_str
 
 
-class TestSe3TrackerPoseTracked:
-    """Tests for the Se3TrackerPoseTracked wrapper."""
+class TestSe3TrackerPoseAbsence:
+    """Tests for the absent state: no sample yet, or collection unavailable."""
 
-    def test_default_construction_has_no_data(self):
-        """Default Tracked wrapper has no data (no sample yet / collection unavailable)."""
-        tracked = Se3TrackerPoseTracked()
-        assert tracked.data is None
+    def test_absent_is_falsy(self):
+        """absent() carries no payload, so it gates as False."""
+        assert not Se3TrackerPose.absent()
 
-    def test_construction_with_data(self):
-        """Tracked wrapper carries the payload."""
+    def test_encoded_payload_is_truthy_and_reads_back(self):
+        """An encoded pose gates as True and its fields read directly."""
         pose = Pose(Point(1.0, 2.0, 3.0), Quaternion(0.0, 0.0, 0.0, 1.0))
-        tracked = Se3TrackerPoseTracked(Se3TrackerPose(pose, True))
+        data = Se3TrackerPose(pose, True)
 
-        assert tracked.data is not None
-        assert tracked.data.is_valid is True
+        assert data
+        assert data.is_valid is True
 
 
 class TestSe3TrackerPoseRecordTimestamp:

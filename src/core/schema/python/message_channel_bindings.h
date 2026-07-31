@@ -3,7 +3,8 @@
 
 // Python bindings for the message channel FlatBuffer schema.
 // Types: MessageChannelMessages (table) and its Tracked / Record wrappers, exposed as
-// encoded views. The Tracked wrapper holds a list, so it does not use bind_tracked().
+// encoded views. This is the one surviving wrapper: its payload is a list, so a table
+// is still needed to hold the vector.
 
 #pragma once
 

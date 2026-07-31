@@ -10,13 +10,13 @@
 namespace core
 {
 
-struct OgloGloveSampleTracked;
+struct OgloGloveSample;
 
 // Abstract base interface for OgloTactileTracker implementations.
 class IOgloTactileTrackerImpl : public ITrackerImpl
 {
 public:
-    virtual const Serialized<OgloGloveSampleTracked>& get_data() const = 0;
+    virtual const Serialized<OgloGloveSample>& get_data() const = 0;
 };
 
 } // namespace core

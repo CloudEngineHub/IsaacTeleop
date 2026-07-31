@@ -56,7 +56,7 @@ void LiveJointStateTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     m_schema_reader.update(m_tracked);
 }
 
-const Serialized<JointStateOutputTracked>& LiveJointStateTrackerImpl::get_data() const
+const Serialized<JointStateOutput>& LiveJointStateTrackerImpl::get_data() const
 {
     return m_tracked;
 }

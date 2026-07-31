@@ -19,7 +19,7 @@ namespace core
 {
 
 using Se3TrackerMcapChannels = McapTrackerChannels<Se3TrackerPoseRecord, Se3TrackerPose>;
-using Se3TrackerSchemaTracker = SchemaTracker<Se3TrackerPoseRecord, Se3TrackerPose, Se3TrackerPoseTracked>;
+using Se3TrackerSchemaTracker = SchemaTracker<Se3TrackerPoseRecord, Se3TrackerPose>;
 
 class LiveSe3TrackerImpl : public ISe3TrackerImpl
 {
@@ -41,12 +41,12 @@ public:
     LiveSe3TrackerImpl& operator=(LiveSe3TrackerImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const Serialized<Se3TrackerPoseTracked>& get_data() const override;
+    const Serialized<Se3TrackerPose>& get_data() const override;
 
 private:
     std::unique_ptr<Se3TrackerMcapChannels> mcap_channels_;
     Se3TrackerSchemaTracker m_schema_reader;
-    Serialized<Se3TrackerPoseTracked> m_tracked;
+    Serialized<Se3TrackerPose> m_tracked;
 };
 
 } // namespace core

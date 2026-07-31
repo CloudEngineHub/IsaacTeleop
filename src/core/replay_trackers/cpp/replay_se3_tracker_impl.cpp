@@ -30,7 +30,7 @@ ReplaySe3TrackerImpl::ReplaySe3TrackerImpl(std::unique_ptr<mcap::McapReader> rea
 {
 }
 
-const Serialized<Se3TrackerPoseTracked>& ReplaySe3TrackerImpl::get_data() const
+const Serialized<Se3TrackerPose>& ReplaySe3TrackerImpl::get_data() const
 {
     return tracked_;
 }
@@ -40,7 +40,7 @@ void ReplaySe3TrackerImpl::update(int64_t /*monotonic_time_ns*/)
     auto record = mcap_viewers_->read(0);
     if (record)
     {
-        tracked_ = pack_tracked<Se3TrackerPoseTracked>(std::move(record->data));
+        tracked_ = pack_optional<Se3TrackerPose>(std::move(record->data));
         warned_no_data_ = false;
     }
     else
@@ -51,7 +51,7 @@ void ReplaySe3TrackerImpl::update(int64_t /*monotonic_time_ns*/)
             std::cerr << no_data_message_ << std::endl;
             warned_no_data_ = true;
         }
-        tracked_ = Serialized<Se3TrackerPoseTracked>();
+        tracked_ = Serialized<Se3TrackerPose>();
     }
 }
 

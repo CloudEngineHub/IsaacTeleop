@@ -24,7 +24,7 @@ from .deviceio_tensor_types import DeviceIOJointStateOutputTracked
 
 if TYPE_CHECKING:
     from isaacteleop.deviceio import ITracker
-    from isaacteleop.schema import JointStateOutputTracked
+    from isaacteleop.schema import JointStateOutput
 
 
 class JointStateSource(IDeviceIOSource):
@@ -91,15 +91,15 @@ class JointStateSource(IDeviceIOSource):
         }
 
     def _compute_fn(self, inputs: RetargeterIO, outputs: RetargeterIO, context) -> None:
-        """Convert ``JointStateOutputTracked`` to a name-keyed joint-position group.
+        """Convert ``JointStateOutput`` to a name-keyed joint-position group.
 
         Calls ``set_none()`` on the output when the device is inactive.
         """
-        tracked: "JointStateOutputTracked" = inputs["deviceio_joint_state"][0]
-        data = tracked.data
+        tracked: "JointStateOutput" = inputs["deviceio_joint_state"][0]
+        data = tracked
 
         out = outputs[self.JOINTS]
-        if data is None:
+        if not data:
             out.set_none()
             return
 

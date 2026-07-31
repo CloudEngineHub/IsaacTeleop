@@ -94,7 +94,7 @@ try
         // last-known sample between pushes, so without the fixed-rate sleep below this
         // loop would spin and reprint stale data as fast as the CPU allows.
         const auto& tracked = tracker->get_data(*session);
-        if (const auto* pose = payload(tracked))
+        if (const auto* pose = tracked.get())
         {
             print_se3_data(*pose, received_count++);
         }

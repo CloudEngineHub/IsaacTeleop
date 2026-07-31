@@ -28,7 +28,7 @@ ReplayFullBodyTrackerImpl::ReplayFullBodyTrackerImpl(std::unique_ptr<mcap::McapR
 {
 }
 
-const Serialized<FullBodyPoseTracked>& ReplayFullBodyTrackerImpl::get_body_pose() const
+const Serialized<FullBodyPose>& ReplayFullBodyTrackerImpl::get_body_pose() const
 {
     return tracked_;
 }
@@ -38,12 +38,12 @@ void ReplayFullBodyTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     auto record = mcap_viewers_->read(0);
     if (record)
     {
-        tracked_ = pack_tracked<FullBodyPoseTracked>(std::move(record->data));
+        tracked_ = pack_optional<FullBodyPose>(std::move(record->data));
     }
     else
     {
         std::cerr << "ReplayFullBodyTrackerImpl: body data not found" << std::endl;
-        tracked_ = Serialized<FullBodyPoseTracked>();
+        tracked_ = Serialized<FullBodyPose>();
     }
 }
 

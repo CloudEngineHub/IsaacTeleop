@@ -74,7 +74,7 @@ try
 
         // Print current data if available
         const auto& tracked = tracker->get_data(*session);
-        if (const auto* pedals = payload(tracked))
+        if (const auto* pedals = tracked.get())
         {
             print_pedal_data(*pedals, received_count++);
         }

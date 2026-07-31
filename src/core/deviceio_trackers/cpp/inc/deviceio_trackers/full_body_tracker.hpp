@@ -34,7 +34,7 @@ public:
     // Query method:
     // - tracked->data() is null when the body tracker is inactive.
     // - when tracked->data() is non-null, nested fields in FullBodyPose are safe to read.
-    const Serialized<FullBodyPoseTracked>& get_body_pose(const ITrackerSession& session) const;
+    const Serialized<FullBodyPose>& get_body_pose(const ITrackerSession& session) const;
 
 private:
     static constexpr const char* TRACKER_NAME = "FullBodyTracker";

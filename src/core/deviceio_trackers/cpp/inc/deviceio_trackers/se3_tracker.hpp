@@ -14,7 +14,7 @@ namespace core
 {
 
 /*!
- * @brief Facade for a generic SE3 (6-DoF pose) tracker device exposed as ``Serialized<Se3TrackerPoseTracked>``.
+ * @brief Facade for a generic SE3 (6-DoF pose) tracker device exposed as ``Serialized<Se3TrackerPose>``.
  *
  * Generic across rigid-body pose sources (tracker pucks, mocap rigid bodies, logical trackers
  * derived from other devices, ...): the payload is a single pose plus a validity flag. The
@@ -73,7 +73,7 @@ public:
      * When non-null, gate on ``data->is_valid`` before consuming ``data->pose`` — the pose is
      * unspecified while tracking is lost.
      */
-    const Serialized<Se3TrackerPoseTracked>& get_data(const ITrackerSession& session) const;
+    const Serialized<Se3TrackerPose>& get_data(const ITrackerSession& session) const;
 
     const std::string& collection_id() const
     {

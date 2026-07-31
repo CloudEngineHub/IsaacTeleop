@@ -13,7 +13,7 @@ namespace core
 {
 
 /*!
- * @brief Facade for three-axis pedal state exposed as ``Serialized<Generic3AxisPedalOutputTracked>``.
+ * @brief Facade for three-axis pedal state exposed as ``Serialized<Generic3AxisPedalOutput>``.
  *
  * Semantic contract: ``left_pedal``, ``right_pedal``, and ``rudder`` are scalar floats matching the
  * ``Generic3AxisPedalOutput`` schema (axis semantics are left/right/rudder as named). Units, range,
@@ -65,7 +65,7 @@ public:
      * and ``m_pending_records``). When ``tracked->data()`` is non-null, nested fields in
      * ``Generic3AxisPedalOutput`` are safe to read.
      */
-    const Serialized<Generic3AxisPedalOutputTracked>& get_data(const ITrackerSession& session) const;
+    const Serialized<Generic3AxisPedalOutput>& get_data(const ITrackerSession& session) const;
 
     const std::string& collection_id() const
     {

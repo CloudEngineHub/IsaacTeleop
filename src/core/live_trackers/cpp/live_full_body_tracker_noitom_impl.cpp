@@ -86,7 +86,7 @@ void LiveFullBodyTrackerNoitomImpl::update(int64_t /*monotonic_time_ns*/)
     schema_reader_.update(tracked_);
 }
 
-const Serialized<FullBodyPoseTracked>& LiveFullBodyTrackerNoitomImpl::get_body_pose() const
+const Serialized<FullBodyPose>& LiveFullBodyTrackerNoitomImpl::get_body_pose() const
 {
     return tracked_;
 }

@@ -21,7 +21,7 @@ public:
     // Query method:
     // - tracked->data() is null when no head sample is available for the frame.
     // - when tracked->data() is non-null, nested fields in HeadPose are safe to read.
-    const Serialized<HeadPoseTracked>& get_head(const ITrackerSession& session) const;
+    const Serialized<HeadPose>& get_head(const ITrackerSession& session) const;
 
 private:
     static constexpr const char* TRACKER_NAME = "HeadTracker";

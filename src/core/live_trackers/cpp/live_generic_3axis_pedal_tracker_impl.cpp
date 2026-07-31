@@ -55,7 +55,7 @@ void LiveGeneric3AxisPedalTrackerImpl::update(int64_t /*monotonic_time_ns*/)
     m_schema_reader.update(m_tracked);
 }
 
-const Serialized<Generic3AxisPedalOutputTracked>& LiveGeneric3AxisPedalTrackerImpl::get_data() const
+const Serialized<Generic3AxisPedalOutput>& LiveGeneric3AxisPedalTrackerImpl::get_data() const
 {
     return m_tracked;
 }

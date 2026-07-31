@@ -23,7 +23,7 @@ from .deviceio_tensor_types import DeviceIOControllerSnapshotTracked
 
 if TYPE_CHECKING:
     from isaacteleop.deviceio import ITracker
-    from isaacteleop.schema import ControllerSnapshot, ControllerSnapshotTracked
+    from isaacteleop.schema import ControllerSnapshot
 
 
 class ControllersSource(IDeviceIOSource):
@@ -80,7 +80,7 @@ class ControllersSource(IDeviceIOSource):
 
         Returns:
             Dict with "deviceio_controller_left" and "deviceio_controller_right"
-            TensorGroups containing ControllerSnapshotTracked wrappers.
+            TensorGroups containing ControllerSnapshot wrappers.
         """
         left_tracked = self._controller_tracker.get_left_controller(deviceio_session)
         right_tracked = self._controller_tracker.get_right_controller(deviceio_session)
@@ -111,7 +111,7 @@ class ControllersSource(IDeviceIOSource):
 
     def _compute_fn(self, inputs: RetargeterIO, outputs: RetargeterIO, context) -> None:
         """
-        Convert DeviceIO ControllerSnapshotTracked to standard ControllerInput tensors.
+        Convert DeviceIO ControllerSnapshot to standard ControllerInput tensors.
 
         Calls ``set_none()`` on the output when the corresponding controller is inactive.
 
@@ -120,21 +120,17 @@ class ControllersSource(IDeviceIOSource):
             outputs: Dict with "controller_left" and "controller_right" OptionalTensorGroups
             context: ComputeContext (unused by this converter node).
         """
-        left_tracked: "ControllerSnapshotTracked" = inputs["deviceio_controller_left"][
-            0
-        ]
-        right_tracked: "ControllerSnapshotTracked" = inputs[
-            "deviceio_controller_right"
-        ][0]
+        left_tracked: "ControllerSnapshot" = inputs["deviceio_controller_left"][0]
+        right_tracked: "ControllerSnapshot" = inputs["deviceio_controller_right"][0]
 
-        self._update_controller_data(outputs["controller_left"], left_tracked.data)
-        self._update_controller_data(outputs["controller_right"], right_tracked.data)
+        self._update_controller_data(outputs["controller_left"], left_tracked)
+        self._update_controller_data(outputs["controller_right"], right_tracked)
 
     def _update_controller_data(
-        self, group: OptionalTensorGroup, snapshot: "ControllerSnapshot | None"
+        self, group: OptionalTensorGroup, snapshot: "ControllerSnapshot"
     ) -> None:
         """Helper to convert controller data for a single controller."""
-        if snapshot is None:
+        if not snapshot:
             group.set_none()
             return
 

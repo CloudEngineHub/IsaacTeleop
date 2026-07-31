@@ -59,7 +59,7 @@ void LiveSe3TrackerImpl::update(int64_t /*monotonic_time_ns*/)
     m_schema_reader.update(m_tracked);
 }
 
-const Serialized<Se3TrackerPoseTracked>& LiveSe3TrackerImpl::get_data() const
+const Serialized<Se3TrackerPose>& LiveSe3TrackerImpl::get_data() const
 {
     return m_tracked;
 }

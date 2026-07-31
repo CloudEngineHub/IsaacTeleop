@@ -38,7 +38,7 @@ public:
     LiveHeadTrackerImpl& operator=(LiveHeadTrackerImpl&&) = delete;
 
     void update(int64_t monotonic_time_ns) override;
-    const Serialized<HeadPoseTracked>& get_head() const override;
+    const Serialized<HeadPose>& get_head() const override;
 
 private:
     const OpenXRCoreFunctions core_funcs_;
@@ -47,8 +47,8 @@ private:
     XrSpacePtr view_space_;
     // Assembly scratch for the OpenXR query, and the encoded snapshot published from it
     // each frame. Only the latter leaves this class.
-    HeadPoseTrackedT native_;
-    Serialized<HeadPoseTracked> tracked_;
+    std::shared_ptr<HeadPoseT> native_;
+    Serialized<HeadPose> tracked_;
     int64_t last_update_time_ = 0;
     std::unique_ptr<HeadMcapChannels> mcap_channels_;
 };
