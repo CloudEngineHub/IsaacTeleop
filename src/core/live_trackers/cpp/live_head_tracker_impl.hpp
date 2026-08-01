@@ -1,7 +1,9 @@
-// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+
+#include "inc/live_trackers/location_flags_diagnostic.hpp"
 
 #include <deviceio_base/head_tracker_base.hpp>
 #include <mcap/tracker_channels.hpp>
@@ -47,6 +49,13 @@ private:
     XrSpacePtr view_space_;
     HeadPoseTrackedT tracked_;
     int64_t last_update_time_ = 0;
+
+    // Opt-in XrSpaceLocationFlags observation of the view space.
+    // Delete when `is_tracked` reaches MCAP (Phase 1 of issue #731). Exists only
+    // because the TRACKED bits are otherwise unobservable; VALID already is, via
+    // `is_valid`.
+    LocationFlagsDiagnostic head_diag_{};
+
     std::unique_ptr<HeadMcapChannels> mcap_channels_;
 };
 

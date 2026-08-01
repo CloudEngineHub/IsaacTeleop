@@ -3,6 +3,8 @@
 
 #include "live_head_tracker_impl.hpp"
 
+#include "inc/live_trackers/location_flags_diagnostic.hpp"
+
 #include <mcap/recording_traits.hpp>
 #include <oxr_utils/oxr_funcs.hpp>
 #include <schema/head_bfbs_generated.h>
@@ -53,9 +55,13 @@ void LiveHeadTrackerImpl::update(int64_t monotonic_time_ns)
 
     if (XR_FAILED(result))
     {
+        head_diag_.log_locate_failed("[HeadTracker]", "head", "view", result, last_update_time_, xr_time);
         tracked_.data.reset();
         throw std::runtime_error("[HeadTracker] xrLocateSpace failed: " + std::to_string(result));
     }
+
+    // Opt-in diagnostic (ISAAC_TELEOP_LOG_XR_LOCATION_FLAGS); observes only.
+    head_diag_.log("[HeadTracker]", "head", "view", location.locationFlags, location.pose, last_update_time_, xr_time);
 
     bool position_valid = (location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) != 0;
     bool orientation_valid = (location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;

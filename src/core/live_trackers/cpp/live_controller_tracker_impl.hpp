@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "inc/live_trackers/location_flags_diagnostic.hpp"
+
 #include <deviceio_base/controller_tracker_base.hpp>
 #include <mcap/tracker_channels.hpp>
 #include <oxr_utils/oxr_funcs.hpp>
@@ -101,6 +103,14 @@ private:
     // runtime), but we still want to log the first failure per side.
     mutable std::array<std::atomic<bool>, 2> apply_haptic_error_logged_{ { false, false } };
     mutable std::array<std::atomic<bool>, 2> stop_haptic_error_logged_{ { false, false } };
+
+    // Opt-in XrSpaceLocationFlags observation, one sampler per located space.
+    // Indexed by side ([0]=left, [1]=right), matching the arrays above.
+    // Delete when `is_tracked` reaches MCAP (Phase 1 of issue #731). Exists only
+    // because the TRACKED bits are otherwise unobservable; VALID already is, via
+    // `is_valid`.
+    std::array<LocationFlagsDiagnostic, 2> grip_diag_{};
+    std::array<LocationFlagsDiagnostic, 2> aim_diag_{};
 
     std::unique_ptr<ControllerMcapChannels> mcap_channels_;
 };

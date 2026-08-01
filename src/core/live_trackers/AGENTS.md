@@ -41,6 +41,11 @@ When adding MCAP support to a new tracker impl, all of the following are require
 7. **Always build** (`cmake --build <build_dir> -- -j$(nproc)`) before treating work as done. Pre-commit alone does not catch compile errors or clang-format violations enforced at build time.
 8. Read `AGENTS.md` before starting. Not after CI breaks.
 
+## Diagnostics
+
+- `ISAAC_TELEOP_LOG_XR_LOCATION_FLAGS` (presence enables it; the value is ignored) turns on the `LocationFlagsDiagnostic` sampler in `inc/live_trackers/location_flags_diagnostic.hpp`, which logs the four `XrSpaceLocationFlags` bits for the controller grip/aim and head view spaces. It is **observation only** — it must never gate, alter, or short-circuit tracker behavior, and it is deleted once `is_tracked` reaches MCAP (Phase 1 of issue #731).
+- The contractual selector for its data lines is the literal `xr_location_flags v=1 ` — trailing space included; the tests and any downstream grep key on it, so **do not** put that token anywhere else. The banner prose says `XrSpaceLocationFlags` for exactly this reason, and the one place it prints the selector (its own `grep` hint) closes the quote straight after `v=1` so the prose cannot match; a test asserts the banner contributes no selector match. Fields are appended only within a version — never renamed, reordered, or removed.
+
 ## Related docs
 
 - Session update loop: [`../deviceio_session/AGENTS.md`](../deviceio_session/AGENTS.md)

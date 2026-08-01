@@ -3,6 +3,8 @@
 
 #include "live_controller_tracker_impl.hpp"
 
+#include "inc/live_trackers/location_flags_diagnostic.hpp"
+
 #include <mcap/recording_traits.hpp>
 #include <oxr_utils/oxr_funcs.hpp>
 #include <schema/controller_bfbs_generated.h>
@@ -362,12 +364,21 @@ void LiveControllerTrackerImpl::update(int64_t monotonic_time_ns)
         throw std::runtime_error("[ControllerTracker] xrSyncActions2NV failed: " + std::to_string(result));
     }
 
-    auto update_controller = [&](XrPath hand_path, const XrSpacePtr& grip_space, const XrSpacePtr& aim_space,
+    auto update_controller = [&](Side side, XrPath hand_path, const XrSpacePtr& grip_space, const XrSpacePtr& aim_space,
                                  ControllerSnapshotTrackedT& tracked)
     {
+        const size_t slot = (side == Side::Left) ? 0 : 1;
+        const char* const side_name = (side == Side::Left) ? "left" : "right";
+
         if (!get_pose_action_active(session_, core_funcs_, grip_pose_action_, hand_path))
         {
             // Policy: controller not active is a common runtime condition.
+            // Marked in the diagnostic trace so the gap is not silent: without
+            // it, a controller set down and picked up elsewhere prints the whole
+            // displacement as a single-frame dpos_m, which is shape-identical to
+            // the tracking lurch this diagnostic is hunting.
+            grip_diag_[slot].log_inactive("[ControllerTracker]", side_name, "grip", last_update_time_, xr_time);
+            aim_diag_[slot].log_inactive("[ControllerTracker]", side_name, "aim", last_update_time_, xr_time);
             tracked.data.reset();
             return;
         }
@@ -379,6 +390,8 @@ void LiveControllerTrackerImpl::update(int64_t monotonic_time_ns)
         result = core_funcs_.xrLocateSpace(grip_space.get(), base_space_, xr_time, &grip_location);
         if (XR_FAILED(result))
         {
+            grip_diag_[slot].log_locate_failed(
+                "[ControllerTracker]", side_name, "grip", result, last_update_time_, xr_time);
             tracked.data.reset();
             throw std::runtime_error("[ControllerTracker] xrLocateSpace(grip) failed: " + std::to_string(result));
         }
@@ -400,6 +413,8 @@ void LiveControllerTrackerImpl::update(int64_t monotonic_time_ns)
         result = core_funcs_.xrLocateSpace(aim_space.get(), base_space_, xr_time, &aim_location);
         if (XR_FAILED(result))
         {
+            aim_diag_[slot].log_locate_failed(
+                "[ControllerTracker]", side_name, "aim", result, last_update_time_, xr_time);
             tracked.data.reset();
             throw std::runtime_error("[ControllerTracker] xrLocateSpace(aim) failed: " + std::to_string(result));
         }
@@ -415,6 +430,16 @@ void LiveControllerTrackerImpl::update(int64_t monotonic_time_ns)
                 aim_pose = ControllerPose(Pose(position, orientation), true);
             }
         }
+
+        // Opt-in diagnostic (ISAAC_TELEOP_LOG_XR_LOCATION_FLAGS); observes only.
+        // Both lines are emitted here, after the second xrLocateSpace, so no I/O
+        // lands between the two locate calls. The raw `location.pose` is logged
+        // deliberately: grip_pose/aim_pose stay default-constructed when invalid
+        // and would print zeros during exactly the event of interest.
+        grip_diag_[slot].log("[ControllerTracker]", side_name, "grip", grip_location.locationFlags, grip_location.pose,
+                             last_update_time_, xr_time);
+        aim_diag_[slot].log("[ControllerTracker]", side_name, "aim", aim_location.locationFlags, aim_location.pose,
+                            last_update_time_, xr_time);
 
         bool primary_click = get_boolean_action_state(session_, core_funcs_, primary_click_action_, hand_path);
         bool secondary_click = get_boolean_action_state(session_, core_funcs_, secondary_click_action_, hand_path);
@@ -439,8 +464,8 @@ void LiveControllerTrackerImpl::update(int64_t monotonic_time_ns)
         tracked.data->inputs = std::make_shared<ControllerInputState>(inputs);
     };
 
-    update_controller(left_hand_path_, left_grip_space_, left_aim_space_, left_tracked_);
-    update_controller(right_hand_path_, right_grip_space_, right_aim_space_, right_tracked_);
+    update_controller(Side::Left, left_hand_path_, left_grip_space_, left_aim_space_, left_tracked_);
+    update_controller(Side::Right, right_hand_path_, right_grip_space_, right_aim_space_, right_tracked_);
 
     if (mcap_channels_)
     {

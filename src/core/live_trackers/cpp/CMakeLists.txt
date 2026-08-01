@@ -19,9 +19,11 @@ add_library(live_trackers STATIC
     live_joint_state_tracker_impl.cpp
     live_se3_tracker_impl.cpp
     live_frame_metadata_tracker_oak_impl.cpp
+    location_flags_diagnostic.cpp
     inc/live_trackers/schema_tracker_base.hpp
     inc/live_trackers/schema_tracker.hpp
     inc/live_trackers/live_deviceio_factory.hpp
+    inc/live_trackers/location_flags_diagnostic.hpp
     live_head_tracker_impl.hpp
     live_hand_tracker_impl.hpp
     live_controller_tracker_impl.hpp
