@@ -558,18 +558,14 @@ uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </sp
 uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>record_hand.py<span class="w"> </span><span class="m">10</span><span class="w"> </span>out.mcap<span class="w">  </span><span class="c1"># custom output path</span>
 </pre></div>
 </div>
-<p>Either checkout works, and neither downloads a published wheel — the example
-always runs against the <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> next to it:</p>
-<ul class="simple">
-<li><p><strong>In the source tree</strong> (above), <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> builds <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> from this
-checkout via <code class="docutils literal notranslate"><span class="pre">[tool.uv.sources]</span></code>.  The first sync compiles the extension
-modules and takes a few minutes; later syncs reuse the cached build, and the
-install is editable, so edits under <code class="docutils literal notranslate"><span class="pre">src/python/</span></code> take effect with no
-rebuild.</p></li>
-<li><p><strong>In the install tree</strong> (<code class="docutils literal notranslate"><span class="pre">install/examples/mcap_record_replay/python</span></code>, after
-<code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--install</span></code>), <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> picks up the wheel you just built from
-<code class="docutils literal notranslate"><span class="pre">install/wheels</span></code> — see <a class="reference internal" href="../getting_started/build_from_source/index.html"><span class="doc">Build from Source</span></a>.</p></li>
-</ul>
+<p>The example never downloads a published wheel — it runs against the
+<code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> next to it.  Above, <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> builds it from this checkout; the
+first sync compiles the extension modules and takes a few minutes, later ones
+reuse the cached build, and the install is editable, so edits under
+<code class="docutils literal notranslate"><span class="pre">src/python/</span></code> need no rebuild.  From
+<code class="docutils literal notranslate"><span class="pre">install/examples/mcap_record_replay/python</span></code> (after <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--install</span></code>) it
+picks up the wheel you just built instead — see
+<a class="reference internal" href="../getting_started/build_from_source/index.html"><span class="doc">Build from Source</span></a>.</p>
 <p>An active OpenXR runtime / headset must be connected, just like any other
 live <code class="docutils literal notranslate"><span class="pre">TeleopSession</span></code>.  Recording also needs the CloudXR runtime natives, which
 a from-source build bundles only when the CloudXR SDK tarball is available —
