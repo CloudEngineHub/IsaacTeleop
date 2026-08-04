@@ -650,24 +650,14 @@ reads the PICO <code class="docutils literal notranslate"><span class="pre">XR_B
 <section id="framemetadatatrackeroak">
 <h3>FrameMetadataTrackerOak<a class="headerlink" href="#framemetadatatrackeroak" title="Link to this heading">#</a></h3>
 <p>Per-frame metadata for a <strong>single</strong> OAK camera stream. Create one tracker per
-stream you want to follow. Uses the
+stream, passing the tensor collection the plugin publishes that stream under –
+<code class="docutils literal notranslate"><span class="pre">{collection_prefix}/{StreamName}</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;oak_camera/Color&quot;</span></code>. Uses the
 <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/core/live_trackers/cpp/inc/live_trackers/schema_tracker.hpp" rel="noopener noreferrer" target="_blank">SchemaTracker</a>
 utility internally.</p>
-<p>The constructor takes the tensor collection id the OAK plugin publishes the
-stream under. Always build it with <code class="docutils literal notranslate"><span class="pre">oak_collection_id(collection_prefix,</span> <span class="pre">stream)</span></code>
-– that helper is the single definition of the <code class="docutils literal notranslate"><span class="pre">{prefix}/{StreamName}</span></code> naming
-contract shared by the plugin and the host:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">isaacteleop.deviceio</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrameMetadataTrackerOak</span><span class="p">,</span> <span class="n">StreamType</span><span class="p">,</span> <span class="n">oak_collection_id</span>
-
-<span class="n">color</span> <span class="o">=</span> <span class="n">FrameMetadataTrackerOak</span><span class="p">(</span><span class="n">oak_collection_id</span><span class="p">(</span><span class="s2">&quot;oak_camera&quot;</span><span class="p">,</span> <span class="n">StreamType</span><span class="o">.</span><span class="n">Color</span><span class="p">))</span>
-<span class="n">tracked</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>  <span class="c1"># .data is None until the first frame arrives</span>
-</pre></div>
-</div>
 <ul class="simple">
 <li><p>Schema: <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/core/schema/fbs/oak.fbs" rel="noopener noreferrer" target="_blank">src/core/schema/fbs/oak.fbs</a></p></li>
-<li><p>C++ header: <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&lt;deviceio/frame_metadata_tracker_oak.hpp&gt;</span></code>
-(plus <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&lt;schema/oak_collection.hpp&gt;</span></code> for <code class="docutils literal notranslate"><span class="pre">oak_collection_id</span></code>)</p></li>
-<li><p>Python import: <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">isaacteleop.deviceio</span> <span class="pre">import</span> <span class="pre">FrameMetadataTrackerOak,</span> <span class="pre">oak_collection_id</span></code></p></li>
+<li><p>C++ header: <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&lt;deviceio/frame_metadata_tracker_oak.hpp&gt;</span></code></p></li>
+<li><p>Python import: <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">isaacteleop.deviceio</span> <span class="pre">import</span> <span class="pre">FrameMetadataTrackerOak</span></code></p></li>
 <li><p>Record channels: <code class="docutils literal notranslate"><span class="pre">oak</span></code>, <code class="docutils literal notranslate"><span class="pre">oak_tracked</span></code> | MCAP schema: <code class="docutils literal notranslate"><span class="pre">core.FrameMetadataOakRecord</span></code></p></li>
 <li><p>Tests:</p>
 <ul>

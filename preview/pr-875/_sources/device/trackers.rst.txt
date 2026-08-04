@@ -221,26 +221,14 @@ FrameMetadataTrackerOak
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Per-frame metadata for a **single** OAK camera stream. Create one tracker per
-stream you want to follow. Uses the
+stream, passing the tensor collection the plugin publishes that stream under --
+``{collection_prefix}/{StreamName}``, e.g. ``"oak_camera/Color"``. Uses the
 :code-file:`SchemaTracker <src/core/live_trackers/cpp/inc/live_trackers/schema_tracker.hpp>`
 utility internally.
 
-The constructor takes the tensor collection id the OAK plugin publishes the
-stream under. Always build it with ``oak_collection_id(collection_prefix, stream)``
--- that helper is the single definition of the ``{prefix}/{StreamName}`` naming
-contract shared by the plugin and the host:
-
-.. code-block:: python
-
-   from isaacteleop.deviceio import FrameMetadataTrackerOak, StreamType, oak_collection_id
-
-   color = FrameMetadataTrackerOak(oak_collection_id("oak_camera", StreamType.Color))
-   tracked = color.get_data(session)  # .data is None until the first frame arrives
-
 - Schema: :code-file:`src/core/schema/fbs/oak.fbs`
 - C++ header: ``#include <deviceio/frame_metadata_tracker_oak.hpp>``
-  (plus ``#include <schema/oak_collection.hpp>`` for ``oak_collection_id``)
-- Python import: ``from isaacteleop.deviceio import FrameMetadataTrackerOak, oak_collection_id``
+- Python import: ``from isaacteleop.deviceio import FrameMetadataTrackerOak``
 - Record channels: ``oak``, ``oak_tracked`` | MCAP schema: ``core.FrameMetadataOakRecord``
 - Tests:
 

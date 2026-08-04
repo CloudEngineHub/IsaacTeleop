@@ -109,7 +109,7 @@ controllers, etc.):
    passing ``--collection-prefix`` so the plugin pushes metadata via OpenXR
    ``SchemaPusher``.
 2. **Host trackers** — create one ``FrameMetadataTrackerOak`` **per stream**,
-   passing the collection id that ``oak_collection_id()`` builds from the
+   each with collection id ``{collection_prefix}/{StreamName}`` using the
    **same** prefix the plugin was given (see :doc:`trackers`). TeleopSession's
    DeviceIO layer uses the live tracker implementation to read the pushed
    tensors and write MCAP channels.
@@ -121,23 +121,17 @@ controllers, etc.):
 
    from pathlib import Path
 
-   from isaacteleop.deviceio import (
-       FrameMetadataTrackerOak,
-       McapRecordingConfig,
-       StreamType,
-       oak_collection_id,
-   )
+   from isaacteleop.deviceio import FrameMetadataTrackerOak, McapRecordingConfig
    from isaacteleop.teleop_session_manager import PluginConfig, TeleopSession, TeleopSessionConfig
 
    PLUGIN_ROOT = Path("build/src/plugins")  # or your installed plugin search path
    COLLECTION_PREFIX = "oak_camera"
-   STREAMS = {"color": StreamType.Color, "mono_left": StreamType.MonoLeft}
+   STREAM_NAMES = ["Color", "MonoLeft"]
 
-   # One tracker per stream; oak_collection_id() is the naming contract the plugin
-   # publishes under, so never hand-build the "{prefix}/{StreamName}" string.
+   # One tracker per stream, each on the collection the plugin publishes it under.
    oak_trackers = {
-       name: FrameMetadataTrackerOak(oak_collection_id(COLLECTION_PREFIX, stream))
-       for name, stream in STREAMS.items()
+       name: FrameMetadataTrackerOak(f"{COLLECTION_PREFIX}/{name}")
+       for name in STREAM_NAMES
    }
 
    config = TeleopSessionConfig(
@@ -146,7 +140,7 @@ controllers, etc.):
        trackers=list(oak_trackers.values()),
        mcap_config=McapRecordingConfig(
            "recording.mcap",
-           [(tracker, f"oak_metadata_{name}") for name, tracker in oak_trackers.items()],
+           [(tracker, f"oak_metadata_{name.lower()}") for name, tracker in oak_trackers.items()],
        ),
        plugins=[
            PluginConfig(
