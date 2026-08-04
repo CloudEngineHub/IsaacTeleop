@@ -157,18 +157,23 @@ From the example directory:
    uv run python record_hand.py 10         # record for 10 seconds
    uv run python record_hand.py 10 out.mcap  # custom output path
 
-``uv sync`` builds ``isaacteleop`` from this checkout (see
-:doc:`/getting_started/build_from_source/index`) instead of downloading a
-published wheel, so the example always runs against the sources it ships with.
-The first sync compiles the extension modules and takes a few minutes;
-later syncs reuse the cached build, and the install is editable, so edits under
-``src/python/`` take effect without a rebuild.
+Either checkout works, and neither downloads a published wheel — the example
+always runs against the ``isaacteleop`` next to it:
+
+- **In the source tree** (above), ``uv sync`` builds ``isaacteleop`` from this
+  checkout via ``[tool.uv.sources]``.  The first sync compiles the extension
+  modules and takes a few minutes; later syncs reuse the cached build, and the
+  install is editable, so edits under ``src/python/`` take effect with no
+  rebuild.
+- **In the install tree** (``install/examples/mcap_record_replay/python``, after
+  ``cmake --install``), ``uv sync`` picks up the wheel you just built from
+  ``install/wheels`` — see :doc:`/getting_started/build_from_source/index`.
 
 An active OpenXR runtime / headset must be connected, just like any other
-live ``TeleopSession``.  Recording needs the CloudXR runtime natives, which the
-from-source build bundles only when the CloudXR SDK tarball is available — CMake
-fetches it automatically, and warns rather than fails if it cannot.  Replay has
-no such requirement.
+live ``TeleopSession``.  Recording also needs the CloudXR runtime natives, which
+a from-source build bundles only when the CloudXR SDK tarball is available —
+CMake fetches it automatically, and warns rather than fails if it cannot.  Replay
+has no such requirement.
 
 Replaying
 ^^^^^^^^^
