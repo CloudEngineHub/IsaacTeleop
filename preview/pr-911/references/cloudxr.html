@@ -579,8 +579,6 @@ runtime overrides, e.g. <code class="docutils literal notranslate"><span class="
 environment variables.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--cloudxr-install-dir</span> <span class="pre">&lt;PATH&gt;</span></code> — CloudXR install directory
 (default: <code class="docutils literal notranslate"><span class="pre">~/.cloudxr</span></code>).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">--force</span></code> — take over the install directory from a runtime that is already
-serving it. See <a class="reference internal" href="#cloudxr-one-runtime"><span class="std std-ref">One runtime per install directory</span></a>.</p></li>
 </ul>
 <p>On Jetson Orin the launcher already selects the experimental runtime package
 and main-thread join. The following are Isaac Teleop launcher overrides only
@@ -660,13 +658,9 @@ python<span class="w"> </span>examples/teleop/python/gripper_retargeting_example
 <span class="w">      </span>--no-launch-cloudxr-runtime
 </pre></div>
 </div>
-<p>To <em>replace</em> it, restart the runtime with
-<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">isaacteleop.cloudxr</span> <span class="pre">--force</span></code> (or construct
-<code class="docutils literal notranslate"><span class="pre">CloudXRLauncher(force=True)</span></code>). That sends <code class="docutils literal notranslate"><span class="pre">SIGTERM</span></code> to the process holding
-the socket and waits for it to exit; it needs <code class="docutils literal notranslate"><span class="pre">fuser</span></code>, from the <code class="docutils literal notranslate"><span class="pre">psmisc</span></code>
-package. The examples deliberately have no <code class="docutils literal notranslate"><span class="pre">--force</span></code>: taking over a runtime
-is the runtime owner’s decision, not a side effect of starting an app. Two
-runtimes can also coexist by giving each its own <code class="docutils literal notranslate"><span class="pre">--cloudxr-install-dir</span></code>.</p>
+<p>To <em>replace</em> it, stop the running one first — <code class="docutils literal notranslate"><span class="pre">Ctrl+C</span></code> in its terminal, or
+<code class="docutils literal notranslate"><span class="pre">pkill</span> <span class="pre">-f</span> <span class="pre">isaacteleop.cloudxr.runtime</span></code> — then start yours. Two runtimes can
+also coexist by giving each its own <code class="docutils literal notranslate"><span class="pre">--cloudxr-install-dir</span></code>.</p>
 <p>A crashed runtime leaves its socket and pid files behind. Those are detected as
 dead — the launcher connects to the socket rather than trusting that it
 exists — and removed with a warning on the next start, so no manual cleanup of

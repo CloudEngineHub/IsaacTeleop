@@ -162,8 +162,6 @@ one:
   environment variables.
 - ``--cloudxr-install-dir <PATH>`` — CloudXR install directory
   (default: ``~/.cloudxr``).
-- ``--force`` — take over the install directory from a runtime that is already
-  serving it. See :ref:`cloudxr-one-runtime`.
 
 On Jetson Orin the launcher already selects the experimental runtime package
 and main-thread join. The following are Isaac Teleop launcher overrides only
@@ -246,13 +244,9 @@ environment and pass ``--no-launch-cloudxr-runtime``:
    python examples/teleop/python/gripper_retargeting_example_simple.py \
          --no-launch-cloudxr-runtime
 
-To *replace* it, restart the runtime with
-``python -m isaacteleop.cloudxr --force`` (or construct
-``CloudXRLauncher(force=True)``). That sends ``SIGTERM`` to the process holding
-the socket and waits for it to exit; it needs ``fuser``, from the ``psmisc``
-package. The examples deliberately have no ``--force``: taking over a runtime
-is the runtime owner's decision, not a side effect of starting an app. Two
-runtimes can also coexist by giving each its own ``--cloudxr-install-dir``.
+To *replace* it, stop the running one first — ``Ctrl+C`` in its terminal, or
+``pkill -f isaacteleop.cloudxr.runtime`` — then start yours. Two runtimes can
+also coexist by giving each its own ``--cloudxr-install-dir``.
 
 A crashed runtime leaves its socket and pid files behind. Those are detected as
 dead — the launcher connects to the socket rather than trusting that it
