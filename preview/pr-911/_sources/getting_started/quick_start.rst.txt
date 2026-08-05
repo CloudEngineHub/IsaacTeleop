@@ -110,9 +110,8 @@ remembered for subsequent runs.
 
 The CloudXR runtime uses the ``Quest3`` device profile by default; Apple Vision
 Pro needs ``auto-native``. The profile is set on the *runtime*, so applications
-inherit whatever the runtime they connect to was started with — see
-:ref:`cloudxr-device-profile` for where the value comes from. To override it, or
-any other setting, write a ``KEY=value`` env file and pass it to the example
+inherit whatever the runtime they connect to was started with. To override it,
+or any other setting, write a ``KEY=value`` env file and pass it to the example
 with ``--cloudxr-env-config``:
 
 .. code-block:: bash

@@ -194,65 +194,6 @@ To inspect the active settings after startup:
 
    cat ~/.cloudxr/run/cloudxr.env
 
-.. _cloudxr-device-profile:
-
-Device profile
---------------
-
-The device profile (``NV_DEVICE_PROFILE``) tells the runtime what kind of
-client to expect. It is a **runtime-side** setting: applications never pass it
-to OpenXR, they inherit whatever the runtime they connect to was started with.
-A profile that does not match the connecting device is the usual cause of
-:ref:`xrGetSystem -35 <cloudxr-form-factor-unavailable>`.
-
-The value is resolved from four sources, highest precedence first:
-
-1. ``--cloudxr-env-config`` env file
-2. ``NV_DEVICE_PROFILE`` in the process environment
-3. ``CloudXRLauncher(device_profile=...)`` for embedding applications
-4. the built-in default, ``Quest3``
-
-Supported values are ``auto-webrtc``, ``auto-native``, ``Quest3``, and
-``AppleVisionPro``. Apple Vision Pro needs ``auto-native``; with the standalone
-launcher, put it in an env file:
-
-.. code-block:: bash
-
-   echo 'NV_DEVICE_PROFILE=auto-native' > avp.env
-   python -m isaacteleop.cloudxr --cloudxr-env-config ./avp.env
-
-The launcher prints the resolved profile in its startup banner and records it
-in ``~/.cloudxr/run/cloudxr.env``.
-
-.. _cloudxr-one-runtime:
-
-One runtime per install directory
----------------------------------
-
-A CloudXR install directory holds a single runtime, identified by the
-``ipc_cloudxr`` socket under ``run/``. Starting a second runtime against a
-directory that is already served fails with a message pointing here, rather
-than taking the socket over — a second launch used to terminate the live
-runtime, which surfaced in the first session as a broken pipe.
-
-To *use* the running runtime instead of starting your own, source its
-environment and pass ``--no-launch-cloudxr-runtime``:
-
-.. code-block:: bash
-
-   source ~/.cloudxr/run/cloudxr.env
-   python examples/teleop/python/gripper_retargeting_example_simple.py \
-         --no-launch-cloudxr-runtime
-
-To *replace* it, stop the running one first — ``Ctrl+C`` in its terminal, or
-``pkill -f isaacteleop.cloudxr.runtime`` — then start yours. Two runtimes can
-also coexist by giving each its own ``--cloudxr-install-dir``.
-
-A crashed runtime leaves its socket and pid files behind. Those are detected as
-dead — the launcher connects to the socket rather than trusting that it
-exists — and removed with a warning on the next start, so no manual cleanup of
-``~/.cloudxr/run/`` is needed.
-
 Troubleshooting
 ---------------
 
@@ -269,7 +210,7 @@ yet. Check, in order:
 1. A client is connected. The headset must have loaded the web client and
    clicked CONNECT; until then there is no system to return.
 2. The device profile matches the device: check ``NV_DEVICE_PROFILE`` in
-   ``~/.cloudxr/run/cloudxr.env``. See :ref:`cloudxr-device-profile`.
+   ``~/.cloudxr/run/cloudxr.env``, which the launcher also prints at startup.
 3. The application is talking to the runtime you think it is. Applications that
    do not embed ``CloudXRLauncher`` need ``source ~/.cloudxr/run/cloudxr.env``
    first, so that ``XR_RUNTIME_JSON`` and ``NV_CXR_RUNTIME_DIR`` point at it.

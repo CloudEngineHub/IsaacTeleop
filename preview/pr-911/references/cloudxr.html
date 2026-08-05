@@ -446,9 +446,7 @@ flags (<code class="docutils literal notranslate"><span class="pre">--setup-oob<
 <li><p><a class="reference internal" href="#load-cloudxr-environment-variables" id="id8">Load CloudXR environment variables</a></p></li>
 <li><p><a class="reference internal" href="#run-teleop-examples-against-the-dedicated-runtime" id="id9">Run teleop examples against the dedicated runtime</a></p></li>
 <li><p><a class="reference internal" href="#configuration" id="id10">Configuration</a></p></li>
-<li><p><a class="reference internal" href="#device-profile" id="id11">Device profile</a></p></li>
-<li><p><a class="reference internal" href="#one-runtime-per-install-directory" id="id12">One runtime per install directory</a></p></li>
-<li><p><a class="reference internal" href="#troubleshooting" id="id13">Troubleshooting</a></p></li>
+<li><p><a class="reference internal" href="#troubleshooting" id="id11">Troubleshooting</a></p></li>
 </ul>
 </nav>
 <section id="start-the-runtime">
@@ -620,52 +618,6 @@ them to <code class="docutils literal notranslate"><span class="pre">--cloudxr-e
 </pre></div>
 </div>
 </section>
-<section id="device-profile">
-<span id="cloudxr-device-profile"></span><h2>Device profile<a class="headerlink" href="#device-profile" title="Link to this heading">#</a></h2>
-<p>The device profile (<code class="docutils literal notranslate"><span class="pre">NV_DEVICE_PROFILE</span></code>) tells the runtime what kind of
-client to expect. It is a <strong>runtime-side</strong> setting: applications never pass it
-to OpenXR, they inherit whatever the runtime they connect to was started with.
-A profile that does not match the connecting device is the usual cause of
-<a class="reference internal" href="#cloudxr-form-factor-unavailable"><span class="std std-ref">xrGetSystem -35</span></a>.</p>
-<p>The value is resolved from four sources, highest precedence first:</p>
-<ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">--cloudxr-env-config</span></code> env file</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">NV_DEVICE_PROFILE</span></code> in the process environment</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">CloudXRLauncher(device_profile=...)</span></code> for embedding applications</p></li>
-<li><p>the built-in default, <code class="docutils literal notranslate"><span class="pre">Quest3</span></code></p></li>
-</ol>
-<p>Supported values are <code class="docutils literal notranslate"><span class="pre">auto-webrtc</span></code>, <code class="docutils literal notranslate"><span class="pre">auto-native</span></code>, <code class="docutils literal notranslate"><span class="pre">Quest3</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">AppleVisionPro</span></code>. Apple Vision Pro needs <code class="docutils literal notranslate"><span class="pre">auto-native</span></code>; with the standalone
-launcher, put it in an env file:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;NV_DEVICE_PROFILE=auto-native&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>avp.env
-python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr<span class="w"> </span>--cloudxr-env-config<span class="w"> </span>./avp.env
-</pre></div>
-</div>
-<p>The launcher prints the resolved profile in its startup banner and records it
-in <code class="docutils literal notranslate"><span class="pre">~/.cloudxr/run/cloudxr.env</span></code>.</p>
-</section>
-<section id="one-runtime-per-install-directory">
-<span id="cloudxr-one-runtime"></span><h2>One runtime per install directory<a class="headerlink" href="#one-runtime-per-install-directory" title="Link to this heading">#</a></h2>
-<p>A CloudXR install directory holds a single runtime, identified by the
-<code class="docutils literal notranslate"><span class="pre">ipc_cloudxr</span></code> socket under <code class="docutils literal notranslate"><span class="pre">run/</span></code>. Starting a second runtime against a
-directory that is already served fails with a message pointing here, rather
-than taking the socket over — a second launch used to terminate the live
-runtime, which surfaced in the first session as a broken pipe.</p>
-<p>To <em>use</em> the running runtime instead of starting your own, source its
-environment and pass <code class="docutils literal notranslate"><span class="pre">--no-launch-cloudxr-runtime</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>~/.cloudxr/run/cloudxr.env
-python<span class="w"> </span>examples/teleop/python/gripper_retargeting_example_simple.py<span class="w"> </span><span class="se">\</span>
-<span class="w">      </span>--no-launch-cloudxr-runtime
-</pre></div>
-</div>
-<p>To <em>replace</em> it, stop the running one first — <code class="docutils literal notranslate"><span class="pre">Ctrl+C</span></code> in its terminal, or
-<code class="docutils literal notranslate"><span class="pre">pkill</span> <span class="pre">-f</span> <span class="pre">isaacteleop.cloudxr.runtime</span></code> — then start yours. Two runtimes can
-also coexist by giving each its own <code class="docutils literal notranslate"><span class="pre">--cloudxr-install-dir</span></code>.</p>
-<p>A crashed runtime leaves its socket and pid files behind. Those are detected as
-dead — the launcher connects to the socket rather than trusting that it
-exists — and removed with a warning on the next start, so no manual cleanup of
-<code class="docutils literal notranslate"><span class="pre">~/.cloudxr/run/</span></code> is needed.</p>
-</section>
 <section id="troubleshooting">
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
 <section id="xrgetsystem-fails-with-xr-error-form-factor-unavailable-35">
@@ -678,7 +630,7 @@ yet. Check, in order:</p>
 <li><p>A client is connected. The headset must have loaded the web client and
 clicked CONNECT; until then there is no system to return.</p></li>
 <li><p>The device profile matches the device: check <code class="docutils literal notranslate"><span class="pre">NV_DEVICE_PROFILE</span></code> in
-<code class="docutils literal notranslate"><span class="pre">~/.cloudxr/run/cloudxr.env</span></code>. See <a class="reference internal" href="#cloudxr-device-profile"><span class="std std-ref">Device profile</span></a>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">~/.cloudxr/run/cloudxr.env</span></code>, which the launcher also prints at startup.</p></li>
 <li><p>The application is talking to the runtime you think it is. Applications that
 do not embed <code class="docutils literal notranslate"><span class="pre">CloudXRLauncher</span></code> need <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">~/.cloudxr/run/cloudxr.env</span></code>
 first, so that <code class="docutils literal notranslate"><span class="pre">XR_RUNTIME_JSON</span></code> and <code class="docutils literal notranslate"><span class="pre">NV_CXR_RUNTIME_DIR</span></code> point at it.</p></li>
@@ -747,8 +699,6 @@ before putting the headset on.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#load-cloudxr-environment-variables">Load CloudXR environment variables</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#run-teleop-examples-against-the-dedicated-runtime">Run teleop examples against the dedicated runtime</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#device-profile">Device profile</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#one-runtime-per-install-directory">One runtime per install directory</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#xrgetsystem-fails-with-xr-error-form-factor-unavailable-35"><code class="docutils literal notranslate"><span class="pre">xrGetSystem</span></code> fails with <code class="docutils literal notranslate"><span class="pre">XR_ERROR_FORM_FACTOR_UNAVAILABLE</span></code> (-35)</a></li>
 </ul>
