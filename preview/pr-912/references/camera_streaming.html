@@ -490,17 +490,20 @@ other Python dependency into <code class="docutils literal notranslate"><span cl
 the exact <code class="docutils literal notranslate"><span class="pre">apt-get</span></code> line and prompts <code class="docutils literal notranslate"><span class="pre">[y/N]</span></code> — answering <code class="docutils literal notranslate"><span class="pre">n</span></code> or running non-interactively
 aborts. The <code class="docutils literal notranslate"><span class="pre">cloudxr</span></code> extra is not optional for this sample: XR is the default display mode
 and the viewer launches the CloudXR runtime itself.</p>
-<p>camera_viz needs <code class="docutils literal notranslate"><span class="pre">isaacteleop</span> <span class="pre">&gt;=</span> <span class="pre">1.4</span></code>, and <code class="docutils literal notranslate"><span class="pre">setup</span></code> works down a ladder to get it:</p>
+<p>camera_viz needs an <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> new enough to carry the features it uses, so <code class="docutils literal notranslate"><span class="pre">setup</span></code> works
+down a ladder to get one:</p>
 <ol class="arabic simple">
-<li><p>the newest <strong>final release</strong> on the package index, if one satisfies <code class="docutils literal notranslate"><span class="pre">&gt;=</span> <span class="pre">1.4</span></code>;</p></li>
+<li><p>the newest <strong>final release</strong> on the package index, if one meets that minimum;</p></li>
 <li><p>otherwise the newest <strong>release candidate</strong> — Isaac Teleop publishes an rc from every
-release-branch commit, and PEP 440 keeps pre-releases out of a plain <code class="docutils literal notranslate"><span class="pre">&gt;=</span> <span class="pre">1.4</span></code> specifier;</p></li>
+release-branch commit, and PEP 440 keeps pre-releases out of a plain minimum-version
+specifier;</p></li>
 <li><p>otherwise a <strong>source build</strong> of the surrounding checkout, after asking. This is a full
 C++ / CUDA / Vulkan build and needs CMake, the CUDA toolkit, Vulkan headers,
 <code class="docutils literal notranslate"><span class="pre">glslangValidator</span></code>, and <code class="docutils literal notranslate"><span class="pre">clang-format-14</span></code>.</p></li>
 </ol>
-<p>The ladder is automatic, so <code class="docutils literal notranslate"><span class="pre">setup</span></code> starts preferring final releases the moment one is
-published. Override it with <code class="docutils literal notranslate"><span class="pre">--wheel</span> <span class="pre">PATH</span></code> or <code class="docutils literal notranslate"><span class="pre">--build-from-source</span></code>.</p>
+<p>The ladder is automatic, so <code class="docutils literal notranslate"><span class="pre">setup</span></code> starts preferring final releases the moment one qualifies.
+Override it with <code class="docutils literal notranslate"><span class="pre">--wheel</span> <span class="pre">PATH</span></code> or <code class="docutils literal notranslate"><span class="pre">--build-from-source</span></code>. The minimum version itself lives in
+<a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/camera_viz/scripts/_install_deps.sh" rel="noopener noreferrer" target="_blank">scripts/_install_deps.sh</a>.</p>
 <p>By default <code class="docutils literal notranslate"><span class="pre">setup</span></code> provisions the direct-mode path — USB / UVC and OAK-D camera support. Split
 mode (RTP) and ZED support are opt-in, since both pull in dependencies the direct path never
 needs. Flags trim or extend that:</p>
@@ -1021,7 +1024,7 @@ extensions and forwards the handles through <code class="docutils literal notran
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 05, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 06, 2026.
       <br/>
     
   </p>

@@ -59,17 +59,20 @@ the exact ``apt-get`` line and prompts ``[y/N]`` — answering ``n`` or running 
 aborts. The ``cloudxr`` extra is not optional for this sample: XR is the default display mode
 and the viewer launches the CloudXR runtime itself.
 
-camera_viz needs ``isaacteleop >= 1.4``, and ``setup`` works down a ladder to get it:
+camera_viz needs an ``isaacteleop`` new enough to carry the features it uses, so ``setup`` works
+down a ladder to get one:
 
-#. the newest **final release** on the package index, if one satisfies ``>= 1.4``;
+#. the newest **final release** on the package index, if one meets that minimum;
 #. otherwise the newest **release candidate** — Isaac Teleop publishes an rc from every
-   release-branch commit, and PEP 440 keeps pre-releases out of a plain ``>= 1.4`` specifier;
+   release-branch commit, and PEP 440 keeps pre-releases out of a plain minimum-version
+   specifier;
 #. otherwise a **source build** of the surrounding checkout, after asking. This is a full
    C++ / CUDA / Vulkan build and needs CMake, the CUDA toolkit, Vulkan headers,
    ``glslangValidator``, and ``clang-format-14``.
 
-The ladder is automatic, so ``setup`` starts preferring final releases the moment one is
-published. Override it with ``--wheel PATH`` or ``--build-from-source``.
+The ladder is automatic, so ``setup`` starts preferring final releases the moment one qualifies.
+Override it with ``--wheel PATH`` or ``--build-from-source``. The minimum version itself lives in
+:code-file:`scripts/_install_deps.sh <examples/camera_viz/scripts/_install_deps.sh>`.
 
 By default ``setup`` provisions the direct-mode path — USB / UVC and OAK-D camera support. Split
 mode (RTP) and ZED support are opt-in, since both pull in dependencies the direct path never
