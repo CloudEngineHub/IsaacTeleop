@@ -273,13 +273,13 @@
 <div class="version-switcher">
   <label for="version-select" class="version-switcher__label">Version</label>
   <select id="version-select" class="version-switcher__select" onchange="location = this.value;">
+    <option value="camera_streaming.html" selected>release/1.5.x</option>
     <option value="../../../main/references/camera_streaming.html" >main</option>
     <option value="../../1.0.x/index.html" >release/1.0.x</option>
     <option value="../../1.1.x/index.html" >release/1.1.x</option>
     <option value="../../1.2.x/index.html" >release/1.2.x</option>
     <option value="../../1.3.x/references/camera_streaming.html" >release/1.3.x</option>
     <option value="../../1.4.x/references/camera_streaming.html" >release/1.4.x</option>
-    <option value="camera_streaming.html" selected>release/1.5.x</option>
     <option value="../../../v1.3.131/references/camera_streaming.html" >v1.3.131</option>
     <option value="../../../v1.1.8/index.html" >v1.1.8</option>
     <option value="../../../v1.1.5/index.html" >v1.1.5</option>
@@ -501,12 +501,30 @@ run the sample’s one-time setup:</p>
 </pre></div>
 </div>
 <p>There is no need to install the <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> pip package yourself — <code class="docutils literal notranslate"><span class="pre">setup</span></code> creates the
-sample’s own environment: it installs <code class="docutils literal notranslate"><span class="pre">isaacteleop&gt;=1.4</span></code> (which bundles Televiz) and
-every other Python dependency from PyPI into <code class="docutils literal notranslate"><span class="pre">.venv/</span></code> via <code class="docutils literal notranslate"><span class="pre">uv</span></code>, builds the native NVENC/NVDEC
-codec, and probes system packages (GStreamer plugins, cairo / girepository headers, JetPack
-<code class="docutils literal notranslate"><span class="pre">cuda-nvrtc</span></code> + <code class="docutils literal notranslate"><span class="pre">ld.so</span></code> wiring). When something is missing it prints the exact <code class="docutils literal notranslate"><span class="pre">apt-get</span></code> line
-and prompts <code class="docutils literal notranslate"><span class="pre">[y/N]</span></code> — answering <code class="docutils literal notranslate"><span class="pre">n</span></code> or running non-interactively aborts.</p>
-<p>By default <code class="docutils literal notranslate"><span class="pre">setup</span></code> provisions everything except ZED support; flags trim or extend that:</p>
+sample’s own environment: it installs <code class="docutils literal notranslate"><span class="pre">isaacteleop[cloudxr]</span></code> (which bundles Televiz) and every
+other Python dependency into <code class="docutils literal notranslate"><span class="pre">.venv/</span></code> via <code class="docutils literal notranslate"><span class="pre">uv</span></code>, then probes the system packages it needs
+(cairo / girepository headers, GStreamer plugins and the native NVENC/NVDEC codec under
+<code class="docutils literal notranslate"><span class="pre">--with-rtp</span></code>, JetPack <code class="docutils literal notranslate"><span class="pre">cuda-nvrtc</span></code> + <code class="docutils literal notranslate"><span class="pre">ld.so</span></code> wiring). When something is missing it prints
+the exact <code class="docutils literal notranslate"><span class="pre">apt-get</span></code> line and prompts <code class="docutils literal notranslate"><span class="pre">[y/N]</span></code> — answering <code class="docutils literal notranslate"><span class="pre">n</span></code> or running non-interactively
+aborts. The <code class="docutils literal notranslate"><span class="pre">cloudxr</span></code> extra is not optional for this sample: XR is the default display mode
+and the viewer launches the CloudXR runtime itself.</p>
+<p>camera_viz needs an <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> new enough to carry the features it uses, so <code class="docutils literal notranslate"><span class="pre">setup</span></code> works
+down a ladder to get one:</p>
+<ol class="arabic simple">
+<li><p>the newest <strong>final release</strong> on the package index, if one meets that minimum;</p></li>
+<li><p>otherwise the newest <strong>release candidate</strong> — Isaac Teleop publishes an rc from every
+release-branch commit, and PEP 440 keeps pre-releases out of a plain minimum-version
+specifier;</p></li>
+<li><p>otherwise a <strong>source build</strong> of the surrounding checkout, after asking. This is a full
+C++ / CUDA / Vulkan build and needs CMake, the CUDA toolkit, Vulkan headers,
+<code class="docutils literal notranslate"><span class="pre">glslangValidator</span></code>, and <code class="docutils literal notranslate"><span class="pre">clang-format-14</span></code>.</p></li>
+</ol>
+<p>The ladder is automatic, so <code class="docutils literal notranslate"><span class="pre">setup</span></code> starts preferring final releases the moment one qualifies.
+Override it with <code class="docutils literal notranslate"><span class="pre">--wheel</span> <span class="pre">PATH</span></code> or <code class="docutils literal notranslate"><span class="pre">--build-from-source</span></code>. The minimum version itself lives in
+<a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/camera_viz/scripts/_install_deps.sh" rel="noopener noreferrer" target="_blank">scripts/_install_deps.sh</a>.</p>
+<p>By default <code class="docutils literal notranslate"><span class="pre">setup</span></code> provisions the direct-mode path — USB / UVC and OAK-D camera support. Split
+mode (RTP) and ZED support are opt-in, since both pull in dependencies the direct path never
+needs. Flags trim or extend that:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <colgroup>
 <col style="width: 22.0%" />
@@ -524,9 +542,10 @@ and prompts <code class="docutils literal notranslate"><span class="pre">[y/N]</
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--no-oakd</span></code></p></td>
 <td><p>Skip OAK-D support (<code class="docutils literal notranslate"><span class="pre">depthai</span></code>).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-rtp</span></code></p></td>
-<td><p>Skip split-mode dependencies: the GStreamer system packages and the native NVENC/NVDEC
-codec build. Direct mode still works.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--with-rtp</span></code></p></td>
+<td><p>Also install the split-mode dependencies: the GStreamer system packages, PyGObject, and the
+native NVENC/NVDEC codec build. Required for <code class="docutils literal notranslate"><span class="pre">loopback</span></code> and for any config with
+<code class="docutils literal notranslate"><span class="pre">source:</span> <span class="pre">rtp</span></code>; implied by <code class="docutils literal notranslate"><span class="pre">--sender-only</span></code>. Direct mode does not need it.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--with-zed</span></code></p></td>
 <td><p>Also build + install the ZED SDK’s Python API (<code class="docutils literal notranslate"><span class="pre">pyzed</span></code>). Requires the ZED SDK on the
@@ -542,8 +561,12 @@ machine (default <code class="docutils literal notranslate"><span class="pre">/u
 <td><p>Install into an existing virtual environment instead of creating <code class="docutils literal notranslate"><span class="pre">.venv/</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--wheel</span> <span class="pre">PATH</span></code></p></td>
-<td><p>Install a locally built <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> wheel instead of the PyPI release — for developing
-Isaac Teleop itself (see <a class="reference internal" href="../getting_started/build_from_source/index.html"><span class="doc">Build from Source</span></a>).</p></td>
+<td><p>Install a locally built <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> wheel instead of resolving one from the index — for
+developing Isaac Teleop itself (see <a class="reference internal" href="../getting_started/build_from_source/index.html"><span class="doc">Build from Source</span></a>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--build-from-source</span></code></p></td>
+<td><p>Skip the index entirely and build <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> from the surrounding checkout, and
+answer step 3’s prompt without asking.</p></td>
 </tr>
 </tbody>
 </table>
@@ -593,7 +616,8 @@ recording (e.g. from a ZED) as stereo, splitting each frame into per-eye views (
 <td><p>USB / UVC cameras — anything <code class="docutils literal notranslate"><span class="pre">v4l2-ctl</span> <span class="pre">--list-formats-ext</span></code> reports.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">oakd</span></code></p></td>
-<td><p>OAK-D mono RGB / LEFT / RIGHT (stereo not yet wired).</p></td>
+<td><p>OAK-D RGB / LEFT / RIGHT; mono or <code class="docutils literal notranslate"><span class="pre">stereo:</span> <span class="pre">true</span></code>. Stereo ships GRAY8 over USB to halve
+bandwidth and is broadcast to RGBA on the GPU; <code class="docutils literal notranslate"><span class="pre">stereo_rgb</span></code> keeps color.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zed</span></code></p></td>
 <td><p>ZED 2 / Mini / X One; mono or <code class="docutils literal notranslate"><span class="pre">stereo:</span> <span class="pre">true</span></code> (per-eye SDK retrieve, zero-copy on the GPU).</p></td>
@@ -726,6 +750,9 @@ frame until the next IDR (default every 5 s).</p>
 </div>
 <p>In split mode every camera entry must pin <code class="docutils literal notranslate"><span class="pre">width</span></code>, <code class="docutils literal notranslate"><span class="pre">height</span></code>, and <code class="docutils literal notranslate"><span class="pre">fps</span></code> in the YAML — the
 receiver sizes its decoder from the config, not from the wire.</p>
+<p>The workstation needs the RTP dependencies, which <code class="docutils literal notranslate"><span class="pre">setup</span></code> does not install by default — re-run
+it with <code class="docutils literal notranslate"><span class="pre">--with-rtp</span></code> if you provisioned for direct mode first. The robot side is handled by
+<code class="docutils literal notranslate"><span class="pre">deploy</span></code>, which implies the flag.</p>
 <p>Set <code class="docutils literal notranslate"><span class="pre">source:</span> <span class="pre">rtp</span></code> in the config, export the robot/streaming credentials once per shell, then
 deploy the sender and run the viewer:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">REMOTE_HOST</span><span class="o">=</span><span class="m">10</span>.0.0.5<span class="w"> </span><span class="nv">REMOTE_USER</span><span class="o">=</span>nvidia
