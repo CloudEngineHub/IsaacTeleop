@@ -273,13 +273,13 @@
 <div class="version-switcher">
   <label for="version-select" class="version-switcher__label">Version</label>
   <select id="version-select" class="version-switcher__select" onchange="location = this.value;">
-    <option value="../../1.4.x/references/build.html" >release/1.4.x</option>
+    <option value="build.html" selected>release/1.5.x</option>
     <option value="../../../main/references/build.html" >main</option>
     <option value="../../1.0.x/references/build.html" >release/1.0.x</option>
     <option value="../../1.1.x/references/build.html" >release/1.1.x</option>
     <option value="../../1.2.x/references/build.html" >release/1.2.x</option>
     <option value="../../1.3.x/references/build.html" >release/1.3.x</option>
-    <option value="build.html" selected>release/1.5.x</option>
+    <option value="../../1.4.x/references/build.html" >release/1.4.x</option>
     <option value="../../../v1.3.131/references/build.html" >v1.3.131</option>
     <option value="../../../v1.1.8/references/build.html" >v1.1.8</option>
     <option value="../../../v1.1.5/references/build.html" >v1.1.5</option>
@@ -447,7 +447,7 @@
 <div class="code-100col highlight-text notranslate"><div class="highlight"><pre><span></span>IsaacTeleop/
 ├── CMakeLists.txt              # Top-level: deps, core, examples, plugins, etc.
 ├── cmake/
-│   ├── SetupHunter.cmake       # BUILD_PLUGINS, Hunter for OAK/DepthAI
+│   ├── DepthAIVcpkgManifest.cmake  # OAK/DepthAI vcpkg manifest (pre-project)
 │   ├── SetupPython.cmake       # BUILD_PYTHON_BINDINGS, uv-managed Python
 │   ├── ClangFormat.cmake       # clang_format_check / clang_format_fix
 │   └── ...
@@ -598,7 +598,7 @@ in <a class="reference internal" href="../getting_started/build_from_source/inde
 <li><p>Core modules and options: <code class="docutils literal notranslate"><span class="pre">src/core/CMakeLists.txt</span></code></p></li>
 <li><p>Dependencies: <code class="docutils literal notranslate"><span class="pre">deps/third_party/CMakeLists.txt</span></code></p></li>
 <li><p>Python and uv: <code class="docutils literal notranslate"><span class="pre">cmake/SetupPython.cmake</span></code></p></li>
-<li><p>Plugins and Hunter: <code class="docutils literal notranslate"><span class="pre">cmake/SetupHunter.cmake</span></code></p></li>
+<li><p>OAK/DepthAI vcpkg manifest: <code class="docutils literal notranslate"><span class="pre">cmake/DepthAIVcpkgManifest.cmake</span></code></p></li>
 <li><p>CI (Ubuntu, matrix build_type/python_version/arch): <code class="docutils literal notranslate"><span class="pre">.github/workflows/build-ubuntu.yml</span></code></p></li>
 </ul>
 </section>
