@@ -365,7 +365,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../references/retargeting/index.html">Retargeting Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/camera_streaming.html">Camera Streaming</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/mcap_record_replay.html">MCAP Recording &amp; Replay</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../references/cloudxr.html">Dedicated CloudXR Runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/cloudxr.html">CloudXR Service</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/rig.html">Rig Launcher</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/oob_teleop_control.html">Out-of-Band Teleop Control</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/egocentric_hand_reconstruction.html">Egocentric Hand Reconstruction</a></li>
@@ -510,9 +510,11 @@ See <a class="reference internal" href="build_from_source/index.html"><span clas
 </section>
 <section id="configure-cloudxr-optional">
 <span id="run-cloudxr-server"></span><h2>3. Configure CloudXR (optional)<a class="headerlink" href="#configure-cloudxr-optional" title="Link to this heading">#</a></h2>
-<p>The teleop examples in this guide auto-launch the CloudXR runtime and its WSS
-proxy for you through <code class="docutils literal notranslate"><span class="pre">CloudXRLauncher</span></code> when they connect — you do <strong>not</strong>
-need to start the runtime in a separate terminal or source any environment file.
+<p>The teleop examples in this guide bring CloudXR up for you when they connect —
+you do <strong>not</strong> need to start the runtime in a separate terminal or source any
+environment file. If nothing is serving yet, the example starts a CloudXR
+service in the background and prints how to stop it; that service outlives the
+example, so the headset stays connected from one run to the next.
 The first launch downloads the CloudXR Web Client SDK and asks you to review and
 accept the EULA on the terminal; answer the prompt once and the acceptance is
 remembered for subsequent runs.</p>
@@ -536,10 +538,9 @@ To inspect the resolved settings after startup:</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>If you prefer to run the runtime yourself in its own terminal — e.g. to keep
-the headset connection alive across example restarts, or to use launch modes
-like <code class="docutils literal notranslate"><span class="pre">--host-client</span></code> and <code class="docutils literal notranslate"><span class="pre">--setup-oob</span></code> — see
-<a class="reference internal" href="../references/cloudxr.html"><span class="doc">Dedicated CloudXR Runtime</span></a>.</p>
+<p>To manage the service yourself — check what is running, stop it, or use
+launch modes like <code class="docutils literal notranslate"><span class="pre">--host-client</span></code> and <code class="docutils literal notranslate"><span class="pre">--setup-oob</span></code> — see
+<a class="reference internal" href="../references/cloudxr.html"><span class="doc">CloudXR Service</span></a>.</p>
 </div>
 <div class="pst-scrollable-table-container"><table class="table" id="id1">
 <caption><span class="caption-text">Environment variables</span><a class="headerlink" href="#id1" title="Link to this table">#</a></caption>
@@ -579,7 +580,7 @@ like <code class="docutils literal notranslate"><span class="pre">--host-client<
 main-thread join automatically. You normally do not need to set
 <code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_EXP</span></code> or <code class="docutils literal notranslate"><span class="pre">ISAAC_TELEOP_CLOUDXR_JOIN_MAIN</span></code>; those are
 overrides for debugging or forcing the stable path. See
-<a class="reference internal" href="../references/cloudxr.html"><span class="doc">Dedicated CloudXR Runtime</span></a>.</p>
+<a class="reference internal" href="../references/cloudxr.html"><span class="doc">CloudXR Service</span></a>.</p>
 </section>
 <section id="whitelist-ports-for-firewall">
 <span id="whitelist-firewall-ports"></span><h2>4. Whitelist ports for Firewall<a class="headerlink" href="#whitelist-ports-for-firewall" title="Link to this heading">#</a></h2>

@@ -59,7 +59,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Out-of-Band Teleop Control" href="oob_teleop_control.html" />
-    <link rel="prev" title="Dedicated CloudXR Runtime" href="cloudxr.html" />
+    <link rel="prev" title="CloudXR Service" href="cloudxr.html" />
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -365,7 +365,7 @@
 <li class="toctree-l1"><a class="reference internal" href="retargeting/index.html">Retargeting Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="camera_streaming.html">Camera Streaming</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mcap_record_replay.html">MCAP Recording &amp; Replay</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cloudxr.html">Dedicated CloudXR Runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cloudxr.html">CloudXR Service</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Rig Launcher</a></li>
 <li class="toctree-l1"><a class="reference internal" href="oob_teleop_control.html">Out-of-Band Teleop Control</a></li>
 <li class="toctree-l1"><a class="reference internal" href="egocentric_hand_reconstruction.html">Egocentric Hand Reconstruction</a></li>
@@ -474,18 +474,17 @@ binaries exist under the resolved install prefix and are executable (naming
 the exact remedy if not — see <a class="reference internal" href="#the-install-prefix">The install prefix</a>),
 and the interpreter can import <code class="docutils literal notranslate"><span class="pre">isaacteleop.cloudxr</span></code>. Nothing is created
 until preflight passes.</p></li>
-<li><p><strong>Runtime pane starts immediately</strong> (a slim full-width strip on top —
-25% of the window; it only prints status lines — with the worker panes
-tiled below). It runs <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">isaacteleop.cloudxr</span> <span class="pre">--accept-eula</span></code> by
-default and prints the web-client URL. The runtime is a <strong>host
-singleton</strong> — one per machine.</p></li>
+<li><p><strong>A CloudXR runtime is ensured.</strong> The runtime is a <strong>host singleton</strong>
+owned by the CloudXR service, not by a rig pane: the launcher attaches to
+the one already serving, or starts a detached service when none is (see
+<a class="reference internal" href="cloudxr.html#dedicated-cloudxr-runtime"><span class="std std-ref">CloudXR Service</span></a>). Either way it outlives the rig, so
+killing the rig leaves the headset connected.</p></li>
 <li><p><strong>Worker panes load the CloudXR environment automatically.</strong> Each
-producer/consumer pane waits (up to two minutes) for the runtime’s
-<code class="docutils literal notranslate"><span class="pre">runtime_started</span></code> sentinel, then runs
-<code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">&lt;install-dir&gt;/run/cloudxr.env</span></code> so <code class="docutils literal notranslate"><span class="pre">XR_RUNTIME_JSON</span></code> and
-friends point at the runtime — you never source it by hand. The install
-dir follows the runtime command’s <code class="docutils literal notranslate"><span class="pre">--cloudxr-install-dir</span></code> (default
-<code class="docutils literal notranslate"><span class="pre">~/.cloudxr</span></code>).</p></li>
+producer/consumer pane runs <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">&lt;install-dir&gt;/run/cloudxr.env</span></code> so
+<code class="docutils literal notranslate"><span class="pre">XR_RUNTIME_JSON</span></code> and friends point at the service’s runtime — you never
+source it by hand. There is nothing to wait for: a pane only starts once
+the runtime is serving, so the file already exists. The install dir
+follows <code class="docutils literal notranslate"><span class="pre">CXR_INSTALL_DIR</span></code> (default <code class="docutils literal notranslate"><span class="pre">~/.cloudxr</span></code>).</p></li>
 <li><p><strong>Producer/consumer panes then run their commands automatically.</strong> As
 soon as the CloudXR environment is loaded, each pane prints a banner
 (<code class="docutils literal notranslate"><span class="pre">[producer:</span> <span class="pre">...]</span> <span class="pre">running:</span> <span class="pre">&lt;command&gt;</span></code>) and runs its command — no
@@ -495,9 +494,9 @@ to an interactive shell with the same command pre-typed at the prompt.
 Anything that calls <code class="docutils literal notranslate"><span class="pre">xrGetSystem</span></code> before a headset connects exits with
 <code class="docutils literal notranslate"><span class="pre">Failed</span> <span class="pre">to</span> <span class="pre">get</span> <span class="pre">OpenXR</span> <span class="pre">system</span></code> — so if a pane’s app started before you
 connected the headset to the printed URL, connect it and press
-<kbd class="kbd docutils literal notranslate">Enter</kbd> in that pane to rerun. If the runtime never comes up (or
-its environment fails to load), the pane does <em>not</em> run the command; it
-prints a remedy and leaves the command pre-typed instead.</p></li>
+<kbd class="kbd docutils literal notranslate">Enter</kbd> in that pane to rerun. If the CloudXR environment fails to
+load, the pane does <em>not</em> run the command; it prints a remedy and leaves
+the command pre-typed instead.</p></li>
 <li><p>The launcher then switches you to the rig window. Run from inside tmux,
 the rig is a <strong>new window in your current session</strong> — your other windows
 stay put and nothing nests. Run from a plain shell, it gets a session of
@@ -627,8 +626,7 @@ every command — then one edit in one place changes both sides together.</p>
 is serving before any pane starts, and every pane sources its environment,
 so Python consumers attach to that same runtime instead of starting their
 own.</p>
-<p>See <a class="reference internal" href="cloudxr.html#dedicated-cloudxr-runtime"><span class="std std-ref">Dedicated CloudXR Runtime</span></a> for more on standalone runtime
-workflows.</p>
+<p>See <a class="reference internal" href="cloudxr.html#dedicated-cloudxr-runtime"><span class="std std-ref">CloudXR Service</span></a> for managing that service yourself.</p>
 </div>
 </section>
 <section id="troubleshooting">
@@ -652,13 +650,12 @@ the printed <code class="docutils literal notranslate"><span class="pre">cmake</
 <td><p>You launched from an environment without the <code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> wheel;
 activate the right venv (or <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">install/wheels/isaacteleop-*.whl</span></code>).</p></td>
 </tr>
-<tr class="row-even"><td><p>A worker pane sits idle without running its command</p></td>
-<td><p>The pane is still waiting for the runtime’s <code class="docutils literal notranslate"><span class="pre">runtime_started</span></code>
-CloudXR env file. Check that a runtime is serving with
-<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">isaacteleop.cloudxr.service</span> <span class="pre">status</span></code>.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">no</span> <span class="pre">CloudXR</span> <span class="pre">runtime</span> <span class="pre">for</span> <span class="pre">rig</span> <span class="pre">'...'</span></code></p></td>
+<td><p>Preflight could not attach to a runtime or start a service. Check
+what is serving with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">isaacteleop.cloudxr.service</span> <span class="pre">status</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">[cloudxr]</span> <span class="pre">runtime</span> <span class="pre">is</span> <span class="pre">up</span> <span class="pre">but</span> <span class="pre">loading</span> <span class="pre">...</span> <span class="pre">failed</span></code></p></td>
-<td><p>The runtime came up but its <code class="docutils literal notranslate"><span class="pre">cloudxr.env</span></code> could not be sourced;
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">[cloudxr]</span> <span class="pre">loading</span> <span class="pre">...</span> <span class="pre">failed</span></code></p></td>
+<td><p>The runtime is serving but its <code class="docutils literal notranslate"><span class="pre">cloudxr.env</span></code> could not be sourced;
 the pane does not run its command. Check the error printed above
 the message, <code class="docutils literal notranslate"><span class="pre">source</span></code> the file as the message says, then press
 <kbd class="kbd docutils literal notranslate">Enter</kbd> — the command is already pre-typed.</p></td>
@@ -669,11 +666,7 @@ the message, <code class="docutils literal notranslate"><span class="pre">source
 runtime’s URL, then press <kbd class="kbd docutils literal notranslate">Enter</kbd> in the pane — the command is
 already pre-typed at the prompt.</p></td>
 </tr>
-<tr class="row-odd"><td><p>Runtime pane dies when a consumer starts</p></td>
-<td><p>The consumer self-launched a second runtime; add
-nothing — consumers attach to the running service automatically.</p></td>
-</tr>
-<tr class="row-even"><td><p>Edits to the rig file seem ignored</p></td>
+<tr class="row-odd"><td><p>Edits to the rig file seem ignored</p></td>
 <td><p>The rig was already running; relaunch after
 <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">isaacteleop.rig</span> <span class="pre">&lt;rig.yaml&gt;</span> <span class="pre">--kill</span></code>.</p></td>
 </tr>
@@ -699,7 +692,7 @@ nothing — consumers attach to the running service automatically.</p></td>
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Dedicated CloudXR Runtime</p>
+        <p class="prev-next-title">CloudXR Service</p>
       </div>
     </a>
     <a class="right-next"

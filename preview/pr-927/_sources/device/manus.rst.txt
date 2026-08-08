@@ -142,9 +142,9 @@ that the runtime writes on startup. This points the OpenXR loader at CloudXR:
 
    source ~/.cloudxr/run/cloudxr.env
 
-See :ref:`run-cloudxr-server` and :ref:`whitelist-firewall-ports`
-in the Quick Start for the full CloudXR runtime setup, including EULA
-acceptance and firewall configuration.
+See :ref:`dedicated-cloudxr-runtime` for the full CloudXR service setup,
+including EULA acceptance, and :ref:`whitelist-firewall-ports` in the Quick
+Start for firewall configuration.
 
 2. Verify with the CLI tool
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
