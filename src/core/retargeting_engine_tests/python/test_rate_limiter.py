@@ -405,6 +405,38 @@ class TestEePoseRateLimiter:
         emitted = _read_pose(outputs)[3:7]
         assert _quat_angle(emitted, start_ori) == pytest.approx(0.0, abs=1e-6)
 
+    def test_the_emitted_quaternion_stays_unit_over_a_long_session(self):
+        """Regression: the pose went non-finite after ~0.9 s of normal teleop.
+
+        The pass-through branch emits prev (x) (prev^-1 (x) target), whose norm
+        is |prev|^2. That result becomes the next frame's ``prev``, so the
+        deviation from unit SQUARES every frame -- float64's 1e-16 reaches
+        float32 overflow around frame 60, ``astype(np.float32)`` saturates and
+        every downstream quaternion product turns to NaN.
+
+        Long, and under the limits on purpose: the clamp branch multiplies by a
+        unit step and is stable, so only pass-through -- the band a well-tuned
+        harness spends its whole session in -- diverges.
+        """
+        r = self._limiter()
+        inputs, outputs = _build_io(r)
+        worst = 0.0
+        for frame in range(600):
+            # A gentle rotation well inside max_angular_velocity, jittered so
+            # the rounding cannot cancel to exactly 1.0 the way a fixed target
+            # does. 600 frames is ~8 s at 72 Hz, ten times the old blow-up.
+            angle = 0.4 * math.sin(frame * 0.05)
+            ori = _quat_xyzw([0.0, 1.0, 0.0], angle)
+            ori = ori + 1e-6 * math.sin(frame * 1.7)
+            ori = ori / np.linalg.norm(ori)
+            _set_pose_input(r, inputs, [0.0, 0.0, 0.0], ori)
+            r.compute(inputs, outputs, _make_context(t_ns=frame * 14_000_000))
+            emitted = _read_pose(outputs)
+            assert np.all(np.isfinite(emitted)), f"non-finite pose at frame {frame}"
+            worst = max(worst, abs(float(np.linalg.norm(emitted[3:7])) - 1.0))
+        # float32 output, so the bar is float32 epsilon rather than float64's.
+        assert worst < 1e-6, f"emitted quaternion drifted to |q|-1 = {worst:.3e}"
+
 
 # ===========================================================================
 # JointRateLimiter
