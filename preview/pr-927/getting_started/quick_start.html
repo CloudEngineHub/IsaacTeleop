@@ -521,17 +521,19 @@ remembered for subsequent runs.</p>
 <p>The CloudXR runtime uses the <code class="docutils literal notranslate"><span class="pre">Quest3</span></code> device profile by default; Apple Vision
 Pro needs <code class="docutils literal notranslate"><span class="pre">auto-native</span></code>. The profile is set on the <em>runtime</em>, so applications
 inherit whatever the runtime they connect to was started with. To override it,
-or any other setting, write a <code class="docutils literal notranslate"><span class="pre">KEY=value</span></code> env file and pass it to the example
-with <code class="docutils literal notranslate"><span class="pre">--cloudxr-env-config</span></code>:</p>
+or any other setting, write a <code class="docutils literal notranslate"><span class="pre">KEY=value</span></code> env file and start the service with
+it:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;NV_DEVICE_PROFILE=auto-native&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>custom.env
-python<span class="w"> </span>examples/teleop/python/gripper_retargeting_example_simple.py<span class="w"> </span><span class="se">\</span>
-<span class="w">      </span>--cloudxr-env-config<span class="w"> </span>./custom.env
+python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr.service<span class="w"> </span>start<span class="w"> </span>--cloudxr-env-config<span class="w"> </span>./custom.env
 </pre></div>
 </div>
-<p>The teleop examples under <code class="docutils literal notranslate"><span class="pre">examples/teleop/python/</span></code> all register CloudXR’s
-launcher arguments through <code class="docutils literal notranslate"><span class="pre">CloudXRLauncher.add_launcher_arguments()</span></code>, so
-the same <code class="docutils literal notranslate"><span class="pre">--cloudxr-env-config</span></code> flag is available on each of them. (The ROS 2
-example takes the equivalent <code class="docutils literal notranslate"><span class="pre">cloudxr_env_config</span></code> ROS parameter instead.)
+<p>The same <code class="docutils literal notranslate"><span class="pre">--cloudxr-env-config</span></code> flag is available on the teleop examples under
+<code class="docutils literal notranslate"><span class="pre">examples/teleop/python/</span></code>, which register CloudXR’s launcher arguments through
+<code class="docutils literal notranslate"><span class="pre">CloudXRLauncher.add_launcher_arguments()</span></code> — but it applies only when the
+example is the one starting the runtime. With a service already running the
+example attaches to it instead, and prints which settings it had to ignore (see
+<a class="reference internal" href="../references/cloudxr.html"><span class="doc">CloudXR Service</span></a>). (The ROS 2 example takes the equivalent
+<code class="docutils literal notranslate"><span class="pre">cloudxr_env_config</span></code> ROS parameter instead.)
 To inspect the resolved settings after startup:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>~/.cloudxr/run/cloudxr.env
 </pre></div>
