@@ -637,11 +637,16 @@ reports the ones that would have changed, and uses the running configuration.</p
   Restart the service to apply it:
     python -m isaacteleop.cloudxr.service stop
     python -m isaacteleop.cloudxr.service start --cloudxr-env-config ./custom.env
+  Continuing with the running configuration in 5s — press any key to abort.
 </pre></div>
 </div>
 <p>Only settings that actually differ are listed, so passing the same
 <code class="docutils literal notranslate"><span class="pre">--cloudxr-env-config</span></code> on every run stays quiet. Restart the service as the
 message says to apply a change.</p>
+<p>The five-second hold keeps the notice from scrolling away under a chatty
+application; press any key to stop there instead. It is skipped when nothing
+could be watching — a non-interactive stdin, or <code class="docutils literal notranslate"><span class="pre">CI</span></code> set — so container
+entrypoints and automated runs continue immediately rather than waiting.</p>
 <p>On Jetson Orin the service already selects the experimental runtime package
 and main-thread join. The following are Isaac Teleop launcher overrides only
 (not CloudXR native settings). Export them in the process environment, or add
