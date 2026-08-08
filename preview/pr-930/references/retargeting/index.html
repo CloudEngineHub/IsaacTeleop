@@ -474,23 +474,29 @@ and <code class="docutils literal notranslate"><span class="pre">controller_thre
 </div>
 </details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
 <summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">AnalogGripperRetargeter</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Outputs a single float jaw <em>closedness</em> in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> (<code class="docutils literal notranslate"><span class="pre">0</span></code> = open, <code class="docutils literal notranslate"><span class="pre">1</span></code> = closed) from the
+controller’s analog trigger, with a released-end deadzone, so a half-pressed trigger leaves the
+jaw half-closed. The closedness is unitless; the mapping onto joint angles or jaw travel belongs
+to the consumer. See <a class="reference internal" href="so101.html"><span class="doc">Retargeters: SO-101 (5-DOF arm)</span></a> for a worked pipeline.</p>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
 <span class="sd-summary-text">WujiHandRetargeter</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
 <p class="sd-card-text">Maps OpenXR hand tracking to the 20 joint commands of a Wuji Hand or Wuji Hand 2 through
 <code class="docutils literal notranslate"><span class="pre">wuji_sdk</span></code>. See <a class="reference internal" href="wuji.html"><span class="doc">Retargeter: Wuji Glove to Wuji Hand</span></a> for installation, configuration, and hardware examples.</p>
 </div>
 </details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
 <summary class="sd-summary-title sd-card-header">
-<span class="sd-summary-text">SO101ClutchRetargeter / AnalogGripperRetargeter</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
-<p class="sd-card-text">Retargeters for the SO-101 5-DOF arm under full-pose SE3 IK. <code class="docutils literal notranslate"><span class="pre">SO101ClutchRetargeter</span></code>
+<span class="sd-summary-text">SO101ClutchRetargeter</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Retargeter for the SO-101 5-DOF arm under full-pose SE3 IK. <code class="docutils literal notranslate"><span class="pre">SO101ClutchRetargeter</span></code>
 outputs a 7-D <code class="docutils literal notranslate"><span class="pre">ee_pose</span></code> like <code class="docutils literal notranslate"><span class="pre">Se3AbsRetargeter</span></code> but clutch-rebases the <strong>full pose</strong> around
 an origin captured on engage (no teleport): it re-latches both the home position and the home
 orientation on every engage and composes the orientation delta on the <strong>left</strong> (base frame),
 with no fixed calibration offset. It engages on <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> <strong>and</strong>
 <code class="docutils literal notranslate"><span class="pre">squeeze</span> <span class="pre">&gt;</span> <span class="pre">squeeze_threshold</span></code>, re-seeds its held pose from the configured home on <code class="docutils literal notranslate"><span class="pre">reset</span></code>,
-and can latch its home position from the arm’s measured EE pose.
-<code class="docutils literal notranslate"><span class="pre">AnalogGripperRetargeter</span></code> maps the trigger to a proportional jaw closedness in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>
-(was <code class="docutils literal notranslate"><span class="pre">SO101GripperRetargeter</span></code> through 1.5).
-See <a class="reference internal" href="so101.html"><span class="doc">Retargeters: SO-101 (5-DOF arm)</span></a> for the full setup.</p>
+and can latch its home position from the arm’s measured EE pose. Pair it with
+<code class="docutils literal notranslate"><span class="pre">AnalogGripperRetargeter</span></code> for the jaw. See <a class="reference internal" href="so101.html"><span class="doc">Retargeters: SO-101 (5-DOF arm)</span></a> for the full setup.</p>
 </div>
 </details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
 <summary class="sd-summary-title sd-card-header">

@@ -16,9 +16,8 @@ cube-stacking task):
   orientation) clutched as a *full pose*: both the home position and the home orientation are
   re-latched on every engage, so there is no teleport when the operator engages.
 * :class:`~isaacteleop.retargeters.AnalogGripperRetargeter` -- proportional (analog) jaw
-  closedness from the controller trigger. Not SO-101-specific despite living in this page's
-  pipeline; it shipped as ``SO101GripperRetargeter`` through 1.5, which is still accepted as
-  a deprecated alias.
+  closedness from the controller trigger. The closedness is unitless, so this one is not
+  SO-101-specific.
 
 Together they flatten (via :class:`~isaacteleop.retargeters.TensorReorderer`) into an 8-D action
 ``[pos_x, pos_y, pos_z, quat_x, quat_y, quat_z, quat_w, gripper]``.

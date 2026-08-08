@@ -444,9 +444,8 @@ cube-stacking task):</p>
 orientation) clutched as a <em>full pose</em>: both the home position and the home orientation are
 re-latched on every engage, so there is no teleport when the operator engages.</p></li>
 <li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AnalogGripperRetargeter</span></code> – proportional (analog) jaw
-closedness from the controller trigger. Not SO-101-specific despite living in this page’s
-pipeline; it shipped as <code class="docutils literal notranslate"><span class="pre">SO101GripperRetargeter</span></code> through 1.5, which is still accepted as
-a deprecated alias.</p></li>
+closedness from the controller trigger. The closedness is unitless, so this one is not
+SO-101-specific.</p></li>
 </ul>
 <p>Together they flatten (via <code class="xref py py-class docutils literal notranslate"><span class="pre">TensorReorderer</span></code>) into an 8-D action
 <code class="docutils literal notranslate"><span class="pre">[pos_x,</span> <span class="pre">pos_y,</span> <span class="pre">pos_z,</span> <span class="pre">quat_x,</span> <span class="pre">quat_y,</span> <span class="pre">quat_z,</span> <span class="pre">quat_w,</span> <span class="pre">gripper]</span></code>.</p>
