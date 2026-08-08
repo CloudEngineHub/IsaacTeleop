@@ -375,16 +375,28 @@ def _resolve_ghost(model) -> _GhostChannels:
 
 
 def _pose(result, key: str) -> np.ndarray | None:
-    """One of the pipeline's 7-D pose channels, or None when it is absent.
+    """One of the pipeline's 7-D pose channels, or None when it carries nothing.
 
-    RAW_POSE_KEY goes absent on every untracked frame. EE_POSE_KEY is absent only
-    until the limiter is first handed a valid grip; from then on it holds its last
-    emitted pose through tracking loss.
+    Carrying nothing has two spellings here and `is_none` is only one of them.
+    RAW_POSE_KEY is an Optional group, so it goes absent on every untracked
+    frame and `is_none` says so. EE_POSE_KEY is NOT optional -- the limiter
+    declares it required, TensorGroup.is_none is therefore hardcoded False, and
+    the group reads as present from the very first frame while the tensor inside
+    it stays UNSET until the limiter has had a valid grip to latch. Every
+    session starts there: the grip pose is not localizable for the first frames,
+    so the limiter is handed nothing and writes nothing.
+
+    Reading an unset tensor raises, and Tensor exposes no "has it been set"
+    predicate, so that raise is the only signal available.
     """
     pose = result[key]
     if pose.is_none:
         return None
-    return np.asarray(np.from_dlpack(pose[0]), dtype=float)
+    try:
+        tensor = pose[0]
+    except ValueError:
+        return None
+    return np.asarray(np.from_dlpack(tensor), dtype=float)
 
 
 def _update_ghost(data, ghost: _GhostChannels, pose: np.ndarray, result) -> None:

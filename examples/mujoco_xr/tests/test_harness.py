@@ -322,15 +322,8 @@ def test_a_teleport_is_refused_rather_than_approached():
 # ── The graph the app actually builds ──────────────────────────────────────
 
 
-def test_the_pipeline_carries_both_the_governed_pose_and_its_input():
-    """The wiring, executed rather than inspected.
-
-    `_build_pipeline` fans the controller out to two consumers and exposes one
-    GripPoseSource port under two combiner names -- neither is obviously legal,
-    and a connect-time rejection would otherwise surface only on a headset. The
-    keys matter as much: `_loop` reads them by name and would silently place
-    nothing if either moved.
-    """
+def _run_pipeline(*, grip_valid: bool):
+    """One frame of the real `_build_pipeline()` graph, driven by a DeviceIO snapshot."""
     from isaacteleop.retargeting_engine.deviceio_source_nodes import ControllersSource
     from isaacteleop.schema import (
         ControllerInputState,
@@ -353,11 +346,8 @@ def test_the_pipeline_carries_both_the_governed_pose_and_its_input():
         squeeze_value=0.0,
         trigger_value=0.0,
     )
-    snapshot = ControllerSnapshotTrackedT(
-        ControllerSnapshot(
-            ControllerPose(grip, True), ControllerPose(grip, True), state
-        )
-    )
+    pose = ControllerPose(grip, grip_valid)
+    snapshot = ControllerSnapshotTrackedT(ControllerSnapshot(pose, pose, state))
 
     pipeline = app._build_pipeline()
     spec = ControllersSource(name="controllers").input_spec()
@@ -366,7 +356,19 @@ def test_the_pipeline_carries_both_the_governed_pose_and_its_input():
         group = TensorGroup(spec[name])
         group[0] = snapshot
         inputs[name] = group
-    out = pipeline.execute_pipeline({"controllers": inputs})
+    return pipeline.execute_pipeline({"controllers": inputs})
+
+
+def test_the_pipeline_carries_both_the_governed_pose_and_its_input():
+    """The wiring, executed rather than inspected.
+
+    `_build_pipeline` fans the controller out to two consumers and exposes one
+    GripPoseSource port under two combiner names -- neither is obviously legal,
+    and a connect-time rejection would otherwise surface only on a headset. The
+    keys matter as much: `_loop` reads them by name and would silently place
+    nothing if either moved.
+    """
+    out = _run_pipeline(grip_valid=True)
 
     for key in (
         app.GHOST_HAND,
@@ -379,7 +381,28 @@ def test_the_pipeline_carries_both_the_governed_pose_and_its_input():
     # First frame: the limiter latches and passes through, so the two pose
     # channels agree. They are still distinct ports -- test_a_fast_sweep_clamps
     # is where they come apart.
-    given = np.asarray(np.from_dlpack(out[app.RAW_POSE_KEY][0]), dtype=float)
-    emitted = np.asarray(np.from_dlpack(out[EE_POSE_KEY][0]), dtype=float)
+    given = app._pose(out, app.RAW_POSE_KEY)
+    emitted = app._pose(out, EE_POSE_KEY)
     np.testing.assert_allclose(given[:3], (0.1, 1.2, -0.4), atol=1e-6)
     assert harness.classify(given, emitted, None) is harness.HarnessBand.PASS_THROUGH
+
+
+def test_the_governed_channel_reads_as_absent_before_the_first_valid_grip():
+    """Regression: every session started by crashing on its first frame.
+
+    The grip pose is not localizable for the first frames of a session, so
+    GripPoseSource goes absent and the limiter has nothing to latch -- and it
+    leaves its output tensor UNSET rather than writing. That output is a
+    REQUIRED group, whose `is_none` is hardcoded False, so the absence is
+    invisible to the check that catches it on RAW_POSE_KEY and `_pose` walked
+    straight into "Tensor 'pose' value has not been set".
+    """
+    out = _run_pipeline(grip_valid=False)
+
+    assert out[app.RAW_POSE_KEY].is_none
+    assert not out[EE_POSE_KEY].is_none, (
+        "a required group reporting absent would mean the engine changed and "
+        "this test no longer covers the case it was written for"
+    )
+    assert app._pose(out, app.RAW_POSE_KEY) is None
+    assert app._pose(out, EE_POSE_KEY) is None
