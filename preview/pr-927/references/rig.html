@@ -423,8 +423,8 @@
                   
   <section id="rig-launcher">
 <span id="id1"></span><h1>Rig Launcher<a class="headerlink" href="#rig-launcher" title="Link to this heading">#</a></h1>
-<p>A typical Isaac Teleop setup is three processes on one machine: the CloudXR
-runtime, one or more <strong>producer</strong> plugins that publish device data, and one or
+<p>A typical Isaac Teleop setup is one or more <strong>producer</strong> plugins that publish
+device data, and one or
 more <strong>consumer</strong> apps (a Python <code class="docutils literal notranslate"><span class="pre">TeleopSession</span></code> script or a C++ example
 binary) that read the streams. Such a configured set is a <em>rig</em> — the same
 shape serves demos, production teleop, and data collection.
@@ -465,9 +465,6 @@ so whatever environment you launch from is the one the rig runs in.</p></li>
 <h2>Run a rig<a class="headerlink" href="#run-a-rig" title="Link to this heading">#</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from the Teleop repository root</span>
 python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.rig<span class="w"> </span>rigs/se3_tracker.yaml
-
-<span class="c1"># a CloudXR runtime is already running elsewhere (skip the runtime pane):</span>
-python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.rig<span class="w"> </span>rigs/se3_tracker.yaml<span class="w"> </span>--no-runtime
 </pre></div>
 </div>
 <p>What happens:</p>
@@ -507,7 +504,7 @@ stay put and nothing nests. Run from a plain shell, it gets a session of
 its own (named after the rig) and the launcher attaches to it.</p></li>
 </ol>
 <p>Re-running the same rig just switches to the running one — in whichever
-session it lives; it does <strong>not</strong> re-apply <code class="docutils literal notranslate"><span class="pre">--no-runtime</span></code> or pick up edits
+session it lives; it does <strong>not</strong> pick up edits
 to the rig file. Start over with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.rig<span class="w"> </span>rigs/se3_tracker.yaml<span class="w"> </span>--kill
 </pre></div>
@@ -556,8 +553,6 @@ own:</p>
 <span class="nt">params</span><span class="p">:</span><span class="w">                        </span><span class="c1"># shared values, substituted into the commands below</span>
 <span class="w">  </span><span class="nt">hand</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">right</span>
 <span class="w">  </span><span class="nt">collection_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">se3_tracker</span><span class="w">   </span><span class="c1"># defined ONCE, referenced by both sides below</span>
-<span class="c1"># runtime: optional full-command override for the runtime pane; default:</span>
-<span class="c1">#   {python} -m isaacteleop.cloudxr --accept-eula</span>
 <span class="nt">producers</span><span class="p">:</span><span class="w">                     </span><span class="c1"># publish device data into the runtime</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">se3 tracker plugin (requires headset + controller)</span>
 <span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{install}/plugins/controller_se3_tracker/controller_se3_tracker_plugin</span><span class="nv"> </span><span class="s">{hand}</span><span class="nv"> </span><span class="s">{collection_id}&quot;</span>
@@ -603,13 +598,7 @@ YAML’s directory).</p></td>
 below — the rig file is the single source of configuration; edit it
 (and relaunch with <code class="docutils literal notranslate"><span class="pre">--kill</span></code>) to change them.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">runtime</span></code></p></td>
-<td><p>no</p></td>
-<td><p>Full-command override for the runtime pane (e.g. to add
-<code class="docutils literal notranslate"><span class="pre">--host-client</span></code> or a different device profile). Default:
-<code class="docutils literal notranslate"><span class="pre">{python}</span> <span class="pre">-m</span> <span class="pre">isaacteleop.cloudxr</span> <span class="pre">--accept-eula</span></code>.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">producers</span></code> / <code class="docutils literal notranslate"><span class="pre">consumers</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">producers</span></code> / <code class="docutils literal notranslate"><span class="pre">consumers</span></code></p></td>
 <td><p>at least one entry total</p></td>
 <td><p>Lists of <code class="docutils literal notranslate"><span class="pre">{name,</span> <span class="pre">command}</span></code> entries. <code class="docutils literal notranslate"><span class="pre">name</span></code> is free text shown in
 the pane title (a good place for hardware prerequisites); <code class="docutils literal notranslate"><span class="pre">command</span></code>
@@ -632,15 +621,12 @@ shared <code class="docutils literal notranslate"><span class="pre">collection_i
 Define it once under <code class="docutils literal notranslate"><span class="pre">params</span></code> and reference it as <code class="docutils literal notranslate"><span class="pre">{collection_id}</span></code> in
 every command — then one edit in one place changes both sides together.</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Python <code class="docutils literal notranslate"><span class="pre">TeleopSession</span></code> example scripts launch their <strong>own</strong> CloudXR
-runtime by default (<code class="docutils literal notranslate"><span class="pre">--launch-cloudxr-runtime</span></code> defaults to true). The
-runtime is a host singleton, so auto-running such a consumer kills the
-runtime pane — the headset drops and every producer stalls. Always add
-<code class="docutils literal notranslate"><span class="pre">--no-launch-cloudxr-runtime</span></code> to Python consumer commands in a rig; the
-launcher prints a warning (and repeats it in the pane banner) when a
-command looks like it is missing the flag.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The CloudXR runtime is a service, not a rig pane. The rig makes sure one
+is serving before any pane starts, and every pane sources its environment,
+so Python consumers attach to that same runtime instead of starting their
+own.</p>
 <p>See <a class="reference internal" href="cloudxr.html#dedicated-cloudxr-runtime"><span class="std std-ref">Dedicated CloudXR Runtime</span></a> for more on standalone runtime
 workflows.</p>
 </div>
@@ -668,8 +654,8 @@ activate the right venv (or <code class="docutils literal notranslate"><span cla
 </tr>
 <tr class="row-even"><td><p>A worker pane sits idle without running its command</p></td>
 <td><p>The pane is still waiting for the runtime’s <code class="docutils literal notranslate"><span class="pre">runtime_started</span></code>
-sentinel; check the runtime pane. After the (two-minute) wait times
-out, the pane prints a remedy and leaves the command pre-typed.</p></td>
+CloudXR env file. Check that a runtime is serving with
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">isaacteleop.cloudxr.service</span> <span class="pre">status</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">[cloudxr]</span> <span class="pre">runtime</span> <span class="pre">is</span> <span class="pre">up</span> <span class="pre">but</span> <span class="pre">loading</span> <span class="pre">...</span> <span class="pre">failed</span></code></p></td>
 <td><p>The runtime came up but its <code class="docutils literal notranslate"><span class="pre">cloudxr.env</span></code> could not be sourced;
@@ -685,7 +671,7 @@ already pre-typed at the prompt.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Runtime pane dies when a consumer starts</p></td>
 <td><p>The consumer self-launched a second runtime; add
-<code class="docutils literal notranslate"><span class="pre">--no-launch-cloudxr-runtime</span></code> to its command in the rig.</p></td>
+nothing — consumers attach to the running service automatically.</p></td>
 </tr>
 <tr class="row-even"><td><p>Edits to the rig file seem ignored</p></td>
 <td><p>The rig was already running; relaunch after
