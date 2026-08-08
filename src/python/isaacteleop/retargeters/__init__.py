@@ -104,15 +104,16 @@ _LAZY_IMPORTS: dict[str, tuple[str, str, str | None]] = {
     # .gripper_retargeter
     "GripperRetargeter": (".gripper_retargeter", "GripperRetargeter", None),
     "GripperRetargeterConfig": (".gripper_retargeter", "GripperRetargeterConfig", None),
-    # .SO101 (SO-101 5-DOF arm: clutch EE-pose, analog gripper)
+    # .analog_gripper_retargeter
+    "SO101GripperRetargeter": (
+        ".analog_gripper_retargeter",
+        "SO101GripperRetargeter",
+        None,
+    ),
+    # .SO101 (SO-101 5-DOF arm: clutch EE-pose)
     "SO101ClutchRetargeter": (
         ".SO101.clutch_retargeter",
         "SO101ClutchRetargeter",
-        None,
-    ),
-    "SO101GripperRetargeter": (
-        ".SO101.gripper_retargeter",
-        "SO101GripperRetargeter",
         None,
     ),
     # .wuji_hand_retargeter  (requires wuji extra: wuji-sdk[retarget],

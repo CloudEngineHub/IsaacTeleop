@@ -50,7 +50,7 @@ from isaacteleop.retargeters.SO101.clutch_retargeter import (
     _quat_inv,
     _quat_mul,
 )
-from isaacteleop.retargeters.SO101.gripper_retargeter import (
+from isaacteleop.retargeters.analog_gripper_retargeter import (
     GRIPPER_COMMAND_KEY,
     _TRIGGER_DEADZONE,
     _trigger_to_closedness,
