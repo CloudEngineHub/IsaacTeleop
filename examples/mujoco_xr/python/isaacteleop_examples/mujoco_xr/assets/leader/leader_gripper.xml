@@ -4,8 +4,8 @@ SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All 
 SPDX-License-Identifier: Apache-2.0
 
 An SO-101 leader gripper locked to the operator's controller grip pose, and the
-whole of the shipped scene. It shows app.py's grip calibration -- whether the
-tool sits in the hand the way a hand holds one -- but not cpp/frames.hpp, whose
+whole of `--robot=so101`. It shows app.py's grip calibration -- whether the tool
+sits in the hand the way a hand holds one -- but not cpp/frames.hpp, whose
 constants place the eye pose through the same transform and so cancel.
 
 Opaque, which makes draw order free. A scene that drops the alpha back must
