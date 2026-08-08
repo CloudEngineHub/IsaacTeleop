@@ -439,7 +439,7 @@ web client page and the <code class="docutils literal notranslate"><span class="
 baseline works, add <code class="docutils literal notranslate"><span class="pre">--setup-oob</span></code> to automate the full flow.</p>
 <p>Launch the CloudXR runtime with the <code class="docutils literal notranslate"><span class="pre">--setup-oob</span></code> flag (add <code class="docutils literal notranslate"><span class="pre">--accept-eula</span></code>
 on first run):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr<span class="w"> </span>--accept-eula<span class="w"> </span>--setup-oob
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr.service<span class="w"> </span>run<span class="w"> </span>--accept-eula<span class="w"> </span>--setup-oob
 </pre></div>
 </div>
 <p>This will:</p>
@@ -454,7 +454,7 @@ via Chrome DevTools Protocol (CDP)</p></li>
 CI, or wireless-only environments — set <code class="docutils literal notranslate"><span class="pre">TELEOP_OOB_HUB_ONLY=1</span></code> and open
 the teleop URL on the headset manually. This mode supports WiFi setup only
 and is <strong>not compatible with</strong> <code class="docutils literal notranslate"><span class="pre">--usb-local</span></code>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">TELEOP_OOB_HUB_ONLY</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr<span class="w"> </span>--accept-eula<span class="w"> </span>--setup-oob
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">TELEOP_OOB_HUB_ONLY</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr.service<span class="w"> </span>run<span class="w"> </span>--accept-eula<span class="w"> </span>--setup-oob
 </pre></div>
 </div>
 <p>You should see output confirming the hub is running:</p>
@@ -578,7 +578,7 @@ bookmark URL above to <code class="docutils literal notranslate"><span class="pr
 periodically (default every 500 ms), receives config pushes.</p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>Streaming host</strong></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">isaacteleop.cloudxr</span> <span class="pre">--setup-oob</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">isaacteleop.cloudxr.service</span> <span class="pre">run</span> <span class="pre">--setup-oob</span></code></p></td>
 <td><p>Runs CloudXR runtime + WSS proxy + OOB hub on a single TLS port.
 Opens the teleop page and clicks CONNECT via USB adb + CDP.</p></td>
 </tr>
@@ -926,7 +926,7 @@ over the USB cable on the headset’s loopback via <code class="docutils literal
 <code class="docutils literal notranslate"><span class="pre">--setup-oob</span></code> because the OOB hub is the only path that delivers TURN relay
 configuration to the client (without it the headset has no way to discover the
 coturn endpoint).  Always use both flags together:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr<span class="w"> </span>--accept-eula<span class="w"> </span>--setup-oob<span class="w"> </span>--usb-local
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr.service<span class="w"> </span>run<span class="w"> </span>--accept-eula<span class="w"> </span>--setup-oob<span class="w"> </span>--usb-local
 </pre></div>
 </div>
 <p>On startup the launcher:</p>
