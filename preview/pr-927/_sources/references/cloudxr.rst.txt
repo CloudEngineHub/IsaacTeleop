@@ -192,6 +192,40 @@ whatever runtime is serving, so with a service running they use it:
 The example leaves the service running when it exits, so the headset stays
 connected and the next run reattaches to the same session.
 
+Run the service in a container or CI
+------------------------------------
+
+Use ``run``, never ``start``. ``start`` detaches and returns, so as a
+container's main process it would exit immediately and take the runtime with
+it; ``run`` stays in the foreground where signals reach it and the runtime's
+lifetime is the container's. This is what ``deps/cloudxr/runtime/entrypoint.sh``
+does:
+
+.. code-block:: bash
+
+   exec python -m isaacteleop.cloudxr.service run
+
+Nothing can answer an EULA prompt without a terminal, so accept it up front —
+either pass ``--accept-eula`` or pre-write the marker, as that image does:
+
+.. code-block:: bash
+
+   mkdir -p ~/.cloudxr/run && printf 'accepted\n' > ~/.cloudxr/run/eula_accepted
+
+When the application *is* the entrypoint, it can own the runtime in-process
+instead of running a second one beside it — construct
+``CloudXRLauncher(run_embedded=True)``, as the ROS 2 example node does. A
+runtime that is already serving still wins, so this stays safe on a host where
+a service is up.
+
+To let other containers attach, share the run directory as a volume and point
+them at it with ``XR_RUNTIME_JSON`` and ``NV_CXR_RUNTIME_DIR``;
+``deps/cloudxr/docker-compose.test.yaml`` mounts it read-only into the test
+container that way.
+
+Setting ``CI`` skips the interactive pause described under `Configuration`_,
+alongside the check for a non-interactive stdin, so automated runs never wait.
+
 Configuration
 -------------
 
