@@ -13,6 +13,8 @@
 # No OpenGL on the link line either: cpp/gl.hpp resolves what it calls through
 # the platform GetProcAddress, against the context `mujoco.GLContext` created.
 # Adding libGL here would introduce a second dispatch path for the same context.
+# Its HEADERS are needed and are not a new dependency -- cuda_gl_interop.h
+# includes <GL/gl.h> unconditionally, so CUDA::cudart already implies libgl-dev.
 #
 # Inherited-scope inputs, all set by ../CMakeLists.txt:
 #   _mujoco_library, _mujoco_include_dir, _mujoco_xr_root, _mujoco_xr_standalone
@@ -28,6 +30,7 @@ pybind11_add_module(mujoco_xr_py
     scene_renderer.cpp
     frames.hpp
     gl.hpp
+    gl_functions.inc
     glcamera.hpp
     gl_readback.hpp
     scene_renderer.hpp
