@@ -40,9 +40,10 @@ The working example, including the assets referenced below, lives in :code-dir:`
    * - :code-file:`start-gateway.sh <examples/rebot/start-gateway.sh>`
      - Launches the motorbridge WebSocket gateway for Studio.
    * - :code-file:`assets/set_can_pinmux.py <examples/rebot/assets/set_can_pinmux.py>`
-     - Sets and verifies the CAN0 pinmux via ``/dev/mem``. Idempotent; needs sudo.
+     - Routes the header pins to the CAN controller, via ``/dev/mem``. Required on every boot;
+       idempotent; needs sudo.
    * - :code-file:`assets/can0-rebot.service <examples/rebot/assets/can0-rebot.service>`
-     - systemd oneshot that brings ``can0`` up at 1 Mbit on boot.
+     - systemd oneshot that redoes the pinmux and brings ``can0`` up at 1 Mbit on boot.
 
 What you need
 -------------
@@ -169,7 +170,23 @@ Install the example's dependencies and check the CLI is reachable:
    uv sync
    uv run motorbridge-cli --help
 
-Create ``can0`` at the RobStride bitrate of 1 Mbit and bring it up:
+The Orin's 40-pin header pins are not routed to the CAN controller out of the box — the pinmux
+registers have to be programmed before ``can0`` can carry any traffic. Do that first:
+
+.. code-block:: bash
+
+   sudo ./assets/set_can_pinmux.py
+
+It prints each register's value before and after the write, so a wrong read-back is immediately
+visible. It uses only the system Python, so it needs no ``uv run``, and it is idempotent — safe to
+re-run any time you want to confirm the pinmux.
+
+.. warning::
+
+   The pinmux lives in live registers and is **cleared on every reboot**. Re-run the script after
+   each boot, or install the systemd unit below, which does it for you.
+
+Then create ``can0`` at the RobStride bitrate of 1 Mbit and bring it up:
 
 .. code-block:: bash
 
@@ -187,19 +204,33 @@ scan for the seven motors:
 
 A healthy bus reports ``scan done: 7 motor(s) found``.
 
-The ``ip link`` configuration does not survive a reboot. To make it persistent, install the unit
-shipped with the example:
+Neither the pinmux nor the ``ip link`` configuration survives a reboot. Install the script somewhere
+stable and enable the unit, which redoes both on every boot:
 
 .. code-block:: bash
 
+   sudo install -D -m 755 assets/set_can_pinmux.py /opt/rebot/set_can_pinmux.py
    sudo cp assets/can0-rebot.service /etc/systemd/system/
    sudo systemctl daemon-reload && sudo systemctl enable --now can0-rebot.service
+   systemctl --no-pager status can0-rebot.service
+
+A healthy oneshot reports ``active (exited)``. The unit runs the pinmux script by absolute path from
+``/opt/rebot``, so install it there before enabling the unit — otherwise the unit fails and the bus
+never comes up.
 
 Two arms
 --------
 
 The two controllers are independent, so a second arm needs no more than a second transceiver on the
-``can1`` pins. Bring both buses up the same way:
+``can1`` pins.
+
+.. note::
+
+   ``set_can_pinmux.py`` programs the **CAN0** pins only (``0x0c303010`` and ``0x0c303018``). The
+   CAN1 pins live in their own registers in the same AON block, which the script does not touch —
+   extend ``REGS`` with them before relying on ``can1``.
+
+Bring both buses up the same way:
 
 .. code-block:: bash
 
@@ -262,9 +293,9 @@ does not need a checkout of this repository to start:
 
    Follow the procedure at
    https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/SKILL.md
-   Read it first, then work through it in order: environment, can0 bring-up at
-   1 Mbit, bus verification, reboot persistence, motor IDs 1-7, and zero
-   calibration.
+   Read it first, then work through it in order: environment, CAN0 pinmux, can0
+   bring-up at 1 Mbit, bus verification, reboot persistence, motor IDs 1-7, and
+   zero calibration.
 
    The arm is wired to CAN0 on J30 pins 31 (TX) and 29 (RX). I have a multimeter.
    Any step needing sudo, hand me the exact command to run myself.
@@ -293,6 +324,6 @@ transceiver, or wiring — it never leaves the chip:
    sudo ip link set can0 type can bitrate 1000000 loopback off restart-ms 100 && sudo ip link set can0 up
 
 If that echoes but a real scan stays silent, the problem is downstream of the controller: motor
-power, transceiver supply, wiring, or the CAN0 pinmux registers. ``assets/set_can_pinmux.py`` (run
-with sudo) reads back and sets those registers; on a stock AGX Orin devkit the bootloader already
-programs them correctly.
+power, transceiver supply, wiring, or the pinmux. Re-run ``sudo ./assets/set_can_pinmux.py`` — it
+reports the value it read *before* writing, so a register that comes back wrong is a pinmux that
+was never set, or one a reboot cleared.

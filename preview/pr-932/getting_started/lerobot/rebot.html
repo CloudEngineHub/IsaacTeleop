@@ -472,10 +472,11 @@ rather than SocketCAN. For that model, start from the
 <td><p>Launches the motorbridge WebSocket gateway for Studio.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/assets/set_can_pinmux.py" rel="noopener noreferrer" target="_blank">assets/set_can_pinmux.py</a></p></td>
-<td><p>Sets and verifies the CAN0 pinmux via <code class="docutils literal notranslate"><span class="pre">/dev/mem</span></code>. Idempotent; needs sudo.</p></td>
+<td><p>Routes the header pins to the CAN controller, via <code class="docutils literal notranslate"><span class="pre">/dev/mem</span></code>. Required on every boot;
+idempotent; needs sudo.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/assets/can0-rebot.service" rel="noopener noreferrer" target="_blank">assets/can0-rebot.service</a></p></td>
-<td><p>systemd oneshot that brings <code class="docutils literal notranslate"><span class="pre">can0</span></code> up at 1 Mbit on boot.</p></td>
+<td><p>systemd oneshot that redoes the pinmux and brings <code class="docutils literal notranslate"><span class="pre">can0</span></code> up at 1 Mbit on boot.</p></td>
 </tr>
 </tbody>
 </table>
@@ -622,7 +623,20 @@ uv<span class="w"> </span>sync
 uv<span class="w"> </span>run<span class="w"> </span>motorbridge-cli<span class="w"> </span>--help
 </pre></div>
 </div>
-<p>Create <code class="docutils literal notranslate"><span class="pre">can0</span></code> at the RobStride bitrate of 1 Mbit and bring it up:</p>
+<p>The Orin’s 40-pin header pins are not routed to the CAN controller out of the box — the pinmux
+registers have to be programmed before <code class="docutils literal notranslate"><span class="pre">can0</span></code> can carry any traffic. Do that first:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>./assets/set_can_pinmux.py
+</pre></div>
+</div>
+<p>It prints each register’s value before and after the write, so a wrong read-back is immediately
+visible. It uses only the system Python, so it needs no <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span></code>, and it is idempotent — safe to
+re-run any time you want to confirm the pinmux.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The pinmux lives in live registers and is <strong>cleared on every reboot</strong>. Re-run the script after
+each boot, or install the systemd unit below, which does it for you.</p>
+</div>
+<p>Then create <code class="docutils literal notranslate"><span class="pre">can0</span></code> at the RobStride bitrate of 1 Mbit and bring it up:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>modprobe<span class="w"> </span>can<span class="w"> </span>can_raw<span class="w"> </span>mttcan
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>can0<span class="w"> </span><span class="nb">type</span><span class="w"> </span>can<span class="w"> </span>bitrate<span class="w"> </span><span class="m">1000000</span><span class="w"> </span>restart-ms<span class="w"> </span><span class="m">100</span>
 sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>up<span class="w"> </span>can0
@@ -635,17 +649,29 @@ scan for the seven motors:</p>
 </pre></div>
 </div>
 <p>A healthy bus reports <code class="docutils literal notranslate"><span class="pre">scan</span> <span class="pre">done:</span> <span class="pre">7</span> <span class="pre">motor(s)</span> <span class="pre">found</span></code>.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">ip</span> <span class="pre">link</span></code> configuration does not survive a reboot. To make it persistent, install the unit
-shipped with the example:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>cp<span class="w"> </span>assets/can0-rebot.service<span class="w"> </span>/etc/systemd/system/
+<p>Neither the pinmux nor the <code class="docutils literal notranslate"><span class="pre">ip</span> <span class="pre">link</span></code> configuration survives a reboot. Install the script somewhere
+stable and enable the unit, which redoes both on every boot:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>install<span class="w"> </span>-D<span class="w"> </span>-m<span class="w"> </span><span class="m">755</span><span class="w"> </span>assets/set_can_pinmux.py<span class="w"> </span>/opt/rebot/set_can_pinmux.py
+sudo<span class="w"> </span>cp<span class="w"> </span>assets/can0-rebot.service<span class="w"> </span>/etc/systemd/system/
 sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>can0-rebot.service
+systemctl<span class="w"> </span>--no-pager<span class="w"> </span>status<span class="w"> </span>can0-rebot.service
 </pre></div>
 </div>
+<p>A healthy oneshot reports <code class="docutils literal notranslate"><span class="pre">active</span> <span class="pre">(exited)</span></code>. The unit runs the pinmux script by absolute path from
+<code class="docutils literal notranslate"><span class="pre">/opt/rebot</span></code>, so install it there before enabling the unit — otherwise the unit fails and the bus
+never comes up.</p>
 </section>
 <section id="two-arms">
 <h2>Two arms<a class="headerlink" href="#two-arms" title="Link to this heading">#</a></h2>
 <p>The two controllers are independent, so a second arm needs no more than a second transceiver on the
-<code class="docutils literal notranslate"><span class="pre">can1</span></code> pins. Bring both buses up the same way:</p>
+<code class="docutils literal notranslate"><span class="pre">can1</span></code> pins.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">set_can_pinmux.py</span></code> programs the <strong>CAN0</strong> pins only (<code class="docutils literal notranslate"><span class="pre">0x0c303010</span></code> and <code class="docutils literal notranslate"><span class="pre">0x0c303018</span></code>). The
+CAN1 pins live in their own registers in the same AON block, which the script does not touch —
+extend <code class="docutils literal notranslate"><span class="pre">REGS</span></code> with them before relying on <code class="docutils literal notranslate"><span class="pre">can1</span></code>.</p>
+</div>
+<p>Bring both buses up the same way:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="m">1</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
 <span class="w">    </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>can<span class="nv">$i</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span>can<span class="w"> </span>bitrate<span class="w"> </span><span class="m">1000000</span><span class="w"> </span>restart-ms<span class="w"> </span><span class="m">100</span>
 <span class="w">    </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>up<span class="w"> </span>can<span class="nv">$i</span>
@@ -695,9 +721,9 @@ CAN (mttcan) and an SN65HVD230 transceiver — no USB-CAN adapter.
 
 Follow the procedure at
 https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/SKILL.md
-Read it first, then work through it in order: environment, can0 bring-up at
-1 Mbit, bus verification, reboot persistence, motor IDs 1-7, and zero
-calibration.
+Read it first, then work through it in order: environment, CAN0 pinmux, can0
+bring-up at 1 Mbit, bus verification, reboot persistence, motor IDs 1-7, and
+zero calibration.
 
 The arm is wired to CAN0 on J30 pins 31 (TX) and 29 (RX). I have a multimeter.
 Any step needing sudo, hand me the exact command to run myself.
@@ -724,9 +750,9 @@ sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </spa
 </pre></div>
 </div>
 <p>If that echoes but a real scan stays silent, the problem is downstream of the controller: motor
-power, transceiver supply, wiring, or the CAN0 pinmux registers. <code class="docutils literal notranslate"><span class="pre">assets/set_can_pinmux.py</span></code> (run
-with sudo) reads back and sets those registers; on a stock AGX Orin devkit the bootloader already
-programs them correctly.</p>
+power, transceiver supply, wiring, or the pinmux. Re-run <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">./assets/set_can_pinmux.py</span></code> — it
+reports the value it read <em>before</em> writing, so a register that comes back wrong is a pinmux that
+was never set, or one a reboot cleared.</p>
 </section>
 </section>
 
