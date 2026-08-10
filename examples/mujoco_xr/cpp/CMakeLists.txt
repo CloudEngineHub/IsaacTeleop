@@ -4,15 +4,13 @@
 # The pybind11 module `_mujoco_xr` -- MuJoCo's own OpenGL renderer, read back
 # into CUDA-visible buffers for viz::ProjectionLayer.
 #
-# Protocol-only linkage: this module links no viz:: target. It hands back
-# __cuda_array_interface__ objects, so linking viz would buy a dependency on its
-# ABI for nothing. For the same reason the pybind11 need not be the one the root
-# build FetchContents -- nothing pybind11-registered crosses this boundary. Do
-# not pin them together.
+# Protocol-only linkage: no viz:: target, because __cuda_array_interface__ is
+# the whole interface, and for the same reason this pybind11 need not be the one
+# the root build FetchContents. Do not pin them together.
 #
-# No OpenGL on the link line either: cpp/gl.hpp resolves what it calls through
-# the platform GetProcAddress, against the context `mujoco.GLContext` created.
-# Adding libGL here would introduce a second dispatch path for the same context.
+# No OpenGL on the link line either -- gl.hpp resolves through the platform
+# GetProcAddress, and libGL here would be a second dispatch path for one
+# context. Its HEADERS are already implied by CUDA::cudart.
 #
 # Inherited-scope inputs, all set by ../CMakeLists.txt:
 #   _mujoco_library, _mujoco_include_dir, _mujoco_xr_root, _mujoco_xr_standalone
@@ -28,6 +26,7 @@ pybind11_add_module(mujoco_xr_py
     scene_renderer.cpp
     frames.hpp
     gl.hpp
+    gl_functions.inc
     glcamera.hpp
     gl_readback.hpp
     scene_renderer.hpp

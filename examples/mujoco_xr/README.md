@@ -117,14 +117,18 @@ Both wheels must land in **one** environment, and that is the environment
 compiles the extension through scikit-build-core and does not read the CMake
 build tree at all.
 
-You need `uv`, CMake ≥ 3.21, a C++ compiler and CUDA. No Vulkan and no
-`glslangValidator`: the readback shader is a string compiled at runtime by the
-driver, and the module links no Vulkan and no OpenGL (`cpp/gl.hpp` resolves the
-~30 GL entry points it calls through the platform `GetProcAddress`, against the
-context `mujoco.GLContext` created). Running the app additionally needs a GPU
-with EGL + CUDA and a headset. **Build isolation does not cover the non-Python
-half of that list**: on a host missing CUDA the install fails *inside* the
-isolated PEP-517 build, with the CMake error wrapped in backend output.
+You need `uv`, CMake ≥ 3.21, a C++ compiler, CUDA, and the OpenGL headers
+(`libgl-dev` on Debian/Ubuntu — `cuda_gl_interop.h` includes `<GL/gl.h>`
+unconditionally, so this is CUDA's requirement as much as ours). No Vulkan and
+no `glslangValidator`: the readback shader is a string the driver compiles at
+runtime. Nothing is *linked* against OpenGL either — `cpp/gl.hpp` takes the
+enums and the `PFNGL...PROC` typedefs from `<GL/glcorearb.h>`, which declares no
+symbol, and resolves the 45 entry points in `cpp/gl_functions.inc` through the
+platform `GetProcAddress` against the context `mujoco.GLContext` created.
+Running the app additionally needs a GPU with EGL + CUDA and a headset. **Build
+isolation does not cover the non-Python half of that list**: on a host missing
+CUDA or the GL headers the install fails *inside* the isolated PEP-517 build,
+with the CMake or compiler error wrapped in backend output.
 
 **On a multi-GPU host, set `MUJOCO_EGL_DEVICE_ID`.** The OpenGL context has to
 land on the same card viz picked, and nothing makes that happen by default —

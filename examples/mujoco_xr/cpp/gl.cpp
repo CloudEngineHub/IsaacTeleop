@@ -12,14 +12,16 @@ namespace mujoco_xr
 namespace gl
 {
 
-#define MUJOCO_XR_GL_DEFINE(ret, name, args) ret(*name) args = nullptr;
-MUJOCO_XR_GL_FUNCTIONS(MUJOCO_XR_GL_DEFINE)
-#undef MUJOCO_XR_GL_DEFINE
+#define MUJOCO_XR_GL(name, upper) PFNGL##upper##PROC name = nullptr;
+#include "gl_functions.inc"
+#undef MUJOCO_XR_GL
 
 namespace
 {
 
 using ProcLoader = void* (*)(const char*);
+
+bool loaded_ = false;
 
 // RTLD_NOLOAD first: we want the copy the process already loaded, since that is
 // the one `mujoco.GLContext` made a context on -- a second copy resolves against
@@ -34,71 +36,73 @@ void* open_already_loaded(const char* soname)
     return handle;
 }
 
-// eglGetProcAddress / glXGetProcAddress, whichever this process has. Both
-// return the libglvnd dispatch stub for the calling thread's current context,
-// so either serves whatever MUJOCO_GL selected; we try EGL first because
-// headless (the only mode this example runs in) is the EGL path.
+// eglGetProcAddress / glXGetProcAddress, whichever this process has: both
+// return the libglvnd stub for the calling thread's current context, so either
+// serves whatever MUJOCO_GL selected. EGL first because headless is this
+// example's only mode.
 ProcLoader find_proc_loader()
 {
-    struct Candidate
+    static constexpr struct
     {
         const char* soname;
         const char* symbol;
-    };
-    static constexpr Candidate kCandidates[] = {
+    } kCandidates[] = {
         { "libEGL.so.1", "eglGetProcAddress" },
         { "libGLX.so.0", "glXGetProcAddressARB" },
         { "libGL.so.1", "glXGetProcAddressARB" },
         { "libGL.so.1", "glXGetProcAddress" },
     };
-    for (const Candidate& c : kCandidates)
+    for (const auto& candidate : kCandidates)
     {
-        void* handle = open_already_loaded(c.soname);
+        void* handle = open_already_loaded(candidate.soname);
         if (handle == nullptr)
         {
             continue;
         }
-        void* sym = dlsym(handle, c.symbol);
-        if (sym != nullptr)
+        if (void* sym = dlsym(handle, candidate.symbol))
         {
             return reinterpret_cast<ProcLoader>(sym);
         }
     }
     throw std::runtime_error(
-        "mujoco_xr: found neither eglGetProcAddress nor glXGetProcAddress. The OpenGL context must be "
-        "created (mujoco.GLContext) BEFORE the renderer, on this thread.");
+        "mujoco_xr: found neither eglGetProcAddress nor glXGetProcAddress. The OpenGL "
+        "context must be created (mujoco.GLContext) BEFORE the renderer, on this thread.");
 }
 
-bool loaded = false;
+// Deduces the pointer type from the target, so no caller repeats a cast.
+template <typename Fn>
+void resolve(ProcLoader get_proc, Fn& out, const char* name)
+{
+    void* sym = get_proc(name);
+    if (sym == nullptr)
+    {
+        throw std::runtime_error(std::string("mujoco_xr: OpenGL entry point ") + name +
+                                 " is unavailable. Either no context is current on this thread, or it is older "
+                                 "than OpenGL 3.3.");
+    }
+    out = reinterpret_cast<Fn>(sym);
+}
 
 } // namespace
 
 void load()
 {
-    if (loaded)
+    if (loaded_)
     {
         return;
     }
     const ProcLoader get_proc = find_proc_loader();
 
-    // Assigned through a void* rather than a reinterpret_cast per line: the
-    // -Wall build rejects casting an object pointer straight to a function
-    // pointer, and GetProcAddress is defined to return one anyway.
-#define MUJOCO_XR_GL_LOAD(ret, name, args)                                                                             \
-    {                                                                                                                  \
-        void* sym = get_proc("gl" #name);                                                                              \
-        if (sym == nullptr)                                                                                            \
-        {                                                                                                              \
-            throw std::runtime_error(std::string("mujoco_xr: OpenGL entry point gl" #name                              \
-                                                 " is unavailable. Either no context is current on this thread, "      \
-                                                 "or it is older than OpenGL 3.3."));                                  \
-        }                                                                                                              \
-        name = reinterpret_cast<ret(*) args>(sym);                                                                     \
-    }
-    MUJOCO_XR_GL_FUNCTIONS(MUJOCO_XR_GL_LOAD)
-#undef MUJOCO_XR_GL_LOAD
+#define MUJOCO_XR_GL(name, upper) resolve(get_proc, name, "gl" #name);
+#include "gl_functions.inc"
+#undef MUJOCO_XR_GL
 
-    loaded = true;
+    loaded_ = true;
+}
+
+bool loaded()
+{
+    return loaded_;
 }
 
 void check(const char* what)
@@ -111,21 +115,17 @@ void check(const char* what)
             first = err;
         }
     }
-    if (first != GL_NO_ERROR)
+    if (first == GL_NO_ERROR)
     {
-        throw std::runtime_error(std::string("mujoco_xr: OpenGL error 0x") +
-                                 [](GLenum e)
-                                 {
-                                     static const char* kHex = "0123456789abcdef";
-                                     std::string s;
-                                     for (int shift = 12; shift >= 0; shift -= 4)
-                                     {
-                                         s.push_back(kHex[(e >> shift) & 0xF]);
-                                     }
-                                     return s;
-                                 }(first) +
-                                 " during " + what);
+        return;
     }
+    static const char kHex[] = "0123456789abcdef";
+    std::string code = "0x";
+    for (int shift = 12; shift >= 0; shift -= 4)
+    {
+        code.push_back(kHex[(first >> shift) & 0xF]);
+    }
+    throw std::runtime_error("mujoco_xr: OpenGL error " + code + " during " + what);
 }
 
 } // namespace gl

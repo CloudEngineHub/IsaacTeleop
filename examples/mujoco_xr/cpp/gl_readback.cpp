@@ -364,9 +364,9 @@ void Readback::destroy()
         {
             (void)cudaGraphicsUnregisterResource(static_cast<cudaGraphicsResource_t>(v.depth_resource));
         }
-        // GL deletes only if a context is still current; the caller owns that
-        // ordering (Renderer.close() before mujoco.GLContext.free()).
-        if (BindFramebuffer != nullptr)
+        // Only if the entry points were ever resolved. The caller owns the
+        // ordering: Renderer.close() before mujoco.GLContext.free().
+        if (loaded())
         {
             const GLuint buffers[2] = { v.color_pbo, v.depth_pbo };
             DeleteBuffers(2, buffers);
@@ -378,7 +378,7 @@ void Readback::destroy()
     }
     views_.clear();
 
-    if (BindFramebuffer != nullptr)
+    if (loaded())
     {
         if (vao_ != 0)
         {
