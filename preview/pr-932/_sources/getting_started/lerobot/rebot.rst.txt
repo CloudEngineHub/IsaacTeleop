@@ -85,42 +85,56 @@ written from the host's point of view, so this is **straight-through — do not 
    The complete signal path. The Orin drives logic-level TX/RX; the transceiver turns it into the
    differential pair the arm's motors share.
 
+**Pin 1 is at the top right of J30**, so the numbering runs right to left — count from the far end
+of the header, not the near one.
+
+The Orin exposes two independent CAN controllers on the same header, so a second transceiver on
+``can1`` drives a second arm with no extra hardware beyond the transceiver itself:
+
 .. list-table::
    :header-rows: 1
-   :widths: 22 30 24 24
+   :widths: 26 18 18 20 18
 
-   * - Orin J30 pin
-     - Signal
+   * - Signal
+     - ``can0`` pin
+     - ``can1`` pin
      - Direction
      - SN65HVD230
-   * - 31
-     - ``CAN0_DOUT``
+   * - ``CANx_DOUT``
+     - 31
+     - 33
      - Orin → board
      - ``TX``
-   * - 29
-     - ``CAN0_DIN``
+   * - ``CANx_DIN``
+     - 29
+     - 37
      - board → Orin
      - ``RX``
-   * - 1 or 17
-     - **3.3 V**
+   * - **3.3 V**
+     - 17
+     - 1
      - —
      - ``3V3``
-   * - any GND
-     - GND
+   * - GND
+     - 30
+     - 34
      - —
      - ``GND``
 
-Then wire the transceiver to the arm: ``CANH`` → ``CAN_H``, ``CANL`` → ``CAN_L``, and a shared
-ground. For background on wiring a transceiver to a Jetson and the SocketCAN setup that follows,
-see Ramin Nabati's writeup, `Enabling CAN on NVIDIA Jetson Xavier Developer Kit
+3.3 V is available on pins 1 and 17 only, so two transceivers take one each. Ground is not scarce —
+pins 6, 9, 14, 20, 25, 30, 34 and 39 all work.
+
+Then wire the transceiver to the arm: ``CANH`` → ``CAN_H`` and ``CANL`` → ``CAN_L``. For background
+on wiring a transceiver to a Jetson and the SocketCAN setup that follows, see Ramin Nabati's
+writeup, `Enabling CAN on NVIDIA Jetson Xavier Developer Kit
 <https://medium.com/@ramin.nabati/enabling-can-on-nvidia-jetson-xavier-developer-kit-aaaa3c4d99c9>`_.
 It targets the Xavier devkit, so confirm the pin numbers against your own carrier board's pinout —
 the table above is for the AGX Orin devkit.
 
 .. note::
 
-   ``CAN1`` is on different pins (33 and 37). If you wire to those, every command below becomes
-   ``can1``.
+   Every command on this page uses ``can0``. For an arm on the second bus, substitute ``can1``
+   throughout — ``ip link``, ``--channel``, and the systemd unit.
 
 Two checks with a multimeter save hours of debugging:
 
@@ -165,6 +179,30 @@ shipped with the example:
 
    sudo cp assets/can0-rebot.service /etc/systemd/system/
    sudo systemctl daemon-reload && sudo systemctl enable --now can0-rebot.service
+
+Two arms
+--------
+
+The two controllers are independent, so a second arm needs no more than a second transceiver on the
+``can1`` pins. Bring both buses up the same way:
+
+.. code-block:: bash
+
+   for i in 0 1; do
+       sudo ip link set can$i type can bitrate 1000000 restart-ms 100
+       sudo ip link set up can$i
+   done
+
+Each arm then keeps its own motor IDs 1–7 — the buses never see each other, so the IDs may repeat.
+Give each one its own gateway on its own port, since a gateway owns exactly one bus:
+
+.. code-block:: bash
+
+   BIND=127.0.0.1:9002 ./start-gateway.sh --channel can0
+   BIND=127.0.0.1:9003 ./start-gateway.sh --channel can1
+
+For reboot persistence, copy ``can0-rebot.service`` to a second unit, replacing ``can0`` with
+``can1`` throughout, and enable both.
 
 Calibrate and drive
 -------------------
