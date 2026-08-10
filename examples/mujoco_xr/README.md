@@ -13,28 +13,46 @@ Single process, single thread, **one** OpenXR session:
 ```
 VizSession(kXr)  ──get_oxr_handles()──▶  TeleopSession
      │                                        │
-     │ vk_device / vk_physical_device         │ controller grip poses
+     │ recommended resolution                 │ controller grip poses
      ▼                                        ▼
-_mujoco_xr.Renderer  ──__cuda_array_interface__──▶  ProjectionLayer.submit()
+mjr_render ─blit─▶ flip + depth-invert ─glReadPixels─▶ PBO ═CUDA═▶ submit()
 ```
 
 That is the thesis: `VizSession` (rendering) and `TeleopSession` (input) share
-one OpenXR session via `get_oxr_handles()`, and a MuJoCo scene drawn with
-Vulkan into images viz owns reaches `ProjectionLayer.submit()` by CUDA pointer
-with no copy through host memory. Nothing else in this repository does that.
+one OpenXR session via `get_oxr_handles()`, and **MuJoCo's own renderer**
+reaches `ProjectionLayer.submit()` by CUDA pointer with no copy through host
+memory. Nothing else in this repository does that.
 
-**`cpp/` exists because of depth, not because of Vulkan.**
-`ProjectionLayer.submit()` takes a CUDA-linear buffer rather than a Vulkan
-image, so MuJoCo's own OpenGL renderer could in principle reach it through
-GL→CUDA interop. What stops that is depth: `cudaGraphicsGLRegisterImage`
-registers no depth format and no multisampled renderbuffer, while
-`mjrContext.offDepthStencil` is a combined depth+stencil renderbuffer and
-`offsamples` defaults to 4. Colour would register; the per-eye D32F this layer
-submits for CloudXR reprojection would need a host round-trip through
-`mjr_readPixels` or a patched `mjr_makeContext`. It is the assumption here most
-worth re-testing — MuJoCo's renderer draws every geom type, with the scene
-XML's materials, lights and shadows, where this one draws lit meshes and
-nothing else.
+**`cpp/` is a readback, not a renderer.** `mjr_render` draws into MuJoCo's
+offscreen framebuffer; `cpp/gl_readback.cpp` blits that into a sampleable pair,
+runs one fullscreen pass, and reads the result into a pixel-pack buffer that
+CUDA imports. Every step stays in video memory. The whole module is ~700 lines
+and owns no shading, no meshes and no camera maths beyond six frustum numbers.
+
+The trick is which CUDA entry point is used. `cudaGraphicsGLRegisterImage`
+registers no depth format and no multisampled renderbuffer, and
+`mjrContext.offDepthStencil` is both — that is the wall a naive port hits.
+`cudaGraphicsGLRegisterBuffer` has neither restriction, and `glReadPixels` into
+a bound `GL_PIXEL_PACK_BUFFER` is a device-to-device transfer, so the CUDA-linear
+buffer `submit()` already wants falls straight out of it.
+
+The fullscreen pass exists for two conversions, both of which are silent
+failures on anything short of a headset:
+
+| | MuJoCo writes | ProjectionLayer is promised |
+|---|---|---|
+| row 0 | bottom (`glClipControl(GL_LOWER_LEFT, ...)`) | top |
+| depth | reverse Z, near → 1 (`GL_GEQUAL`, `glClearDepth(0)`) | near → 0 |
+
+The depth line is `1.0 - d`, which is exactly what MuJoCo's own
+`mjr_readPixels` does on the CPU (`flipDepthIfRequired`, render_gl2.c); doing it
+in the shader is what keeps the host out of the loop.
+
+**What this costs.** One blit, one fullscreen pass and one pack-buffer copy per
+eye per frame, all in VRAM, against a path that already copies image → staging
+buffer → mailbox array → swapchain. **What it buys:** every geom type, the scene
+XML's materials, lights, shadows and reflections, and MuJoCo's own mesh
+handling.
 
 `_mujoco_xr` links `libmujoco`, so this example ships as its own wheel rather
 than inside `isaacteleop` — otherwise that wheel's contents would depend on
@@ -47,8 +65,8 @@ extension and asserts both report the same version.
 
 | | |
 |---|---|
-| **Covered by tests** | [`ctest -L mujoco_xr`](#tests) — the frame conventions, the projection convention, the clock, the ghost overlay and its jaw channel. All **pure CPU**: no GPU, no headset, no runtime, no window system. |
-| **Never executed anywhere** | **The app itself.** `kXr` is the only display mode and it needs a headset plus a CloudXR runtime, so the frame loop, the renderer, OpenXR session sharing via `oxr_handles`, controllers on a shared session, the Vulkan→CUDA→`submit()` path and whether the runtime accepts the depth layer are run by no test and by no developer here. |
+| **Covered by tests** | [`ctest -L mujoco_xr`](#tests) — the frame conventions, the frustum, the clock, the ghost overlay and its jaw channel, all pure CPU; **plus `test_readback.py`, which drives the real GPU path** (mjr_render → blit → flip/invert → PBO → CUDA) on any machine with a GPU, and skips loudly without one. |
+| **Never executed anywhere** | **The XR half.** `kXr` is the only display mode and needs a headset plus a CloudXR runtime, so the frame loop, `ProjectionLayer.submit()`, OpenXR session sharing via `oxr_handles`, controllers on a shared session and whether the runtime accepts the depth layer are run by no test and by no developer here. |
 | **Wrong by construction until calibrated** | The workspace translation, for any scene that adds static content — see [Frames](#frames-cppframeshpp). The shipped ghost-only scene does not show it. |
 
 Nothing in `.github/workflows/` installs `mujoco`, so the example is never
@@ -99,13 +117,20 @@ Both wheels must land in **one** environment, and that is the environment
 compiles the extension through scikit-build-core and does not read the CMake
 build tree at all.
 
-You need `uv`, CMake ≥ 3.21, a C++ compiler, the Vulkan SDK/loader, CUDA, and
-`glslangValidator` (`apt install glslang-tools`; the scene shaders are compiled
-to SPIR-V at build time, and its absence is a hard `FATAL_ERROR` here). Running
-the app additionally needs a GPU with Vulkan + CUDA and a headset. **Build
-isolation does not cover the non-Python half of that list**: on a host missing
-CUDA, the Vulkan loader or `glslangValidator`, the install fails *inside* the
-isolated PEP-517 build with the CMake error wrapped in backend output.
+You need `uv`, CMake ≥ 3.21, a C++ compiler and CUDA. No Vulkan and no
+`glslangValidator`: the readback shader is a string compiled at runtime by the
+driver, and the module links no Vulkan and no OpenGL (`cpp/gl.hpp` resolves the
+~30 GL entry points it calls through the platform `GetProcAddress`, against the
+context `mujoco.GLContext` created). Running the app additionally needs a GPU
+with EGL + CUDA and a headset. **Build isolation does not cover the non-Python
+half of that list**: on a host missing CUDA the install fails *inside* the
+isolated PEP-517 build, with the CMake error wrapped in backend output.
+
+**On a multi-GPU host, set `MUJOCO_EGL_DEVICE_ID`.** The OpenGL context has to
+land on the same card viz picked, and nothing makes that happen by default —
+`MUJOCO_EGL_DEVICE_ID` indexes EGL devices, which need not agree with CUDA's
+ordering. The renderer checks at construction and names both device numbers
+rather than render into the wrong card's memory.
 
 **`pip install -e` is not supported.** An editable install redirects the package
 back to the source tree, which is exactly where the in-tree CMake build drops
@@ -204,8 +229,9 @@ lines at all** is the tell.
 
 There is one scene and no flag to change it: `assets/scene.xml` is package data
 beside the module, and editing it is how you load something else. There is no
-desktop or headless mode either; without a headset the only verification path is
-[`ctest -L mujoco_xr`](#tests), which exercises no GPU code at all.
+desktop or headless display mode; without a headset the verification path is
+[`ctest -L mujoco_xr`](#tests), which does now exercise the GPU path — but
+nothing downstream of `ProjectionLayer.submit()`.
 
 ## Conventions you can break
 
@@ -228,7 +254,7 @@ scene that puts static content on the work surface owns re-tuning it.
 **Neither term may be zeroed.**
 
 It places static content only. The ghost goes out through `mj_from_xr` and the
-renderer folds it back through `xr_from_mj`, so both constants cancel on it and
+eye pose goes out through the same transform, so both constants cancel on it and
 the shipped scene — which is the ghost and nothing else — is blind to a wrong
 value. Judging one means a scene with something world-locked in it.
 
@@ -236,10 +262,10 @@ There is no recentre keypress and no runtime override: changing the datum means
 editing the constant and rebuilding (~8 s). The procedure is to stand where you
 intend to work, start the app on such a scene, read the `frames:` line in the
 startup log, compare the virtual surface against the real one, and adjust `z`. A
-`--workspace-offset` flag was considered and rejected — `Renderer` bakes
-`xr_from_mj_` at construction while the ghost's pose is converted per frame, so
-a Python-side offset would move the gripper and leave the scene put, which is
-precisely the symptom this example exists to disambiguate.
+`--workspace-offset` flag was considered and rejected: a Python-side offset
+applied to one of the two conversions and not the other would move the gripper
+and leave the scene put, which is precisely the symptom this example exists to
+disambiguate.
 
 ### Where the ghost sits on the hand (`app.py`)
 
@@ -288,21 +314,25 @@ near-isotropic blob (σ₀/σ₁ = 1.26), so its principal direction is noise.
 
 ### Scene assets
 
-The renderer draws `mjGEOM_MESH` and nothing else (this is an AR scene;
-passthrough is the background, so there is no ground plane to draw), which means
-a box, sphere or capsule in the XML renders as nothing. Lighting declared in the
-XML is inert —
-`cpp/shaders/scene.frag` has one hardcoded directional light and `mjvGLCamera`
-is bypassed.
+Every geom type draws, and the XML's materials, lights, shadows and
+reflections are live — this is `mjr_render`, so the scene file means what the
+MuJoCo docs say it means. `scene.xml` declares no lights, so what lights it is
+`model.vis.headlight`, on by default.
 
-**`cpp/mesh_buffers.cpp` computes its own vertex normals, and must.** MuJoCo
-welds an STL's vertices and keeps one averaged normal per welded vertex, so on a
-CAD part every crease gets a normal smeared across it; lit one-sided, those
-corners drop to `scene.frag`'s 0.35 ambient floor and the gripper renders as
-**shattered facets**, which reads as a broken mesh and is not one. Normals are
-instead area-averaged over the faces round each corner that lie within
-`kCreaseCos`. The measured counts are in `cpp/mesh_buffers.hpp`, and
-`test_ghost.py` fails if anyone reverts to `mjModel`'s.
+**Open risk: the ghost may render as shattered facets.** MuJoCo stores one
+averaged normal per welded vertex (`mesh_normalnum == mesh_vertnum`,
+`mesh_facenormal == mesh_face`), so a crease on a CAD part gets a normal smeared
+across it, and `render_gl3.c` lights one-sided
+(`glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0)`). Measured on mujoco 3.11.0 against
+the pinned meshes, the share of face corners whose normal points away from its
+own triangle is 11.4% (`wrist_roll`), 4.5% (`trigger`), 1.0% (`handle`) and
+16.6% (the servo); `test_ghost.py` pins those numbers.
+
+Drawing with MuJoCo's renderer means drawing with those normals, and **no
+headless test can say how it looks**. If it does shatter, the fix belongs in the
+asset or the compiler — `smoothnormal` on the `<mesh>`, or upstream winding —
+not in a hand-written renderer. An earlier revision of this example carried one
+for exactly this reason; see `git log` for what that cost.
 
 The ghost's four STLs are **fetched, not vendored** — 2.3 MB of binary in a
 source tree is a poor trade when upstream publishes them at a stable commit, and
@@ -333,10 +363,9 @@ that `mj_step` integrates gravity into, and a mocap body is kinematic by
 construction.
 
 The ghost is **opaque**, and `test_ghost.py` asserts it. That removes the
-draw-order constraint (at alpha 1.0 the depth test decides everything), the
-ghost-writes-depth-into-the-reprojection-buffer concern, and the self-overlap
-darkening from `cullMode = VK_CULL_MODE_NONE`. A scene that puts a robot under
-the ghost and drops the alpha back takes all three on again: `mjv_updateScene`
+draw-order constraint (at alpha 1.0 the depth test decides everything) and the
+ghost-writes-depth-into-the-reprojection-buffer concern. A scene that puts a
+robot under the ghost and drops the alpha back takes both on again: `mjv_updateScene`
 emits in geom-id order, so the `<include>` must come **last**. Nothing asserts
 that ordering today — it only matters below alpha 1.0, so the test belongs with
 the scene that needs it.
@@ -345,14 +374,6 @@ the scene that needs it.
 model path mis-composes the mesh paths of an `<include>`d file in a
 subdirectory and fails with `Error opening file '<a path that exists>'`.
 `DEFAULT_SCENE` in `app.py` is absolute for this reason.
-
-### Culling
-
-`cullMode` is `VK_CULL_MODE_NONE` during bring-up, and that is a decision, not
-an omission. The projection flips Y (`P[1][1] < 0`), which inverts the effective
-winding; get that wrong with culling on and the scene renders **black**, which
-is routinely misdiagnosed as a depth or submit bug. Turn it on only after a
-headset has confirmed the scene is visible.
 
 ## Tests
 
@@ -363,21 +384,26 @@ ctest --test-dir build/cmake-cpython-312 -L mujoco_xr --output-on-failure
 | file | covers |
 |---|---|
 | `test_frames.py` | the XR→MuJoCo axis map and quaternion order |
-| `test_projection.py` | the clip-space convention (Y flip, standard Z, degenerate-fov rejection) |
-| `test_app_helpers.py` | the NaN-safe `dt` clamp, the zeroed-`predicted_display_time` guard, the single near/far pair, and that the first-frame projection assertion actually fires |
-| `test_ghost.py` | the overlay: that the ghost is opaque, collision-free and carries no mass, that both its bodies are kinematic mocap bodies with no joint anywhere, that the four leader parts form one assembly with sub-mm gaps at the bolted joints and the servo seated in its bracket, that the print STLs are scaled from millimetres and the servo is not, that every corner normal the renderer builds faces the same way as its own triangle (mjModel's do not, and that is what made the ghost render as shattered facets), that the ghost is *rigidly attached* to the grip frame whatever the calibration, that squeezing swings the trigger monotonically from the URDF joint's upper limit to its authored zero without driving the lever through the body, that the shipped `SO101GripperRetargeter` really is the thing driving that channel (built as a real pipeline and fed synthetic DeviceIO snapshots), and that an untracked controller freezes the whole gripper rather than parking it at the scene origin |
+| `test_projection.py` | the mjvGLCamera frustum (that it is the fov projected onto the near plane, and that the half-width is set so mjr_render's aspect fallback stays off) and the standard-Z depth contract |
+| `test_app_helpers.py` | the NaN-safe `dt` clamp, the zeroed-`predicted_display_time` guard, the single near/far pair, and that the first-frame frustum assertion passes on the real thing and fires on each way it can go wrong |
+| `test_readback.py` | **the GPU path**: that something is drawn at all, that row 0 is the top of the operator's view and the image is not mirrored, that the depth handed to `submit()` is standard Z with the background at exactly 1.0, and that the two eyes carry parallax of the right sign. Skips with a reason when there is no GPU |
+| `test_ghost.py` | the overlay: that the ghost is opaque, collision-free and carries no mass, that both its bodies are kinematic mocap bodies with no joint anywhere, that the four leader parts form one assembly with sub-mm gaps at the bolted joints and the servo seated in its bracket, that the print STLs are scaled from millimetres and the servo is not, the measured share of mjModel normals that face away from their own triangle (a pin on a known defect, not a property we want -- see [Scene assets](#scene-assets)), that the ghost is *rigidly attached* to the grip frame whatever the calibration, that squeezing swings the trigger monotonically from the URDF joint's upper limit to its authored zero without driving the lever through the body, that the shipped `SO101GripperRetargeter` really is the thing driving that channel (built as a real pipeline and fed synthetic DeviceIO snapshots), and that an untracked controller freezes the whole gripper rather than parking it at the scene origin |
 
-Every one runs on a CPU with no GPU, no headset, no CloudXR runtime and no
-window system. Keep it that way: a permanently-skipping test reports green while
-covering nothing.
+All but `test_readback.py` run on a CPU with no GPU, no headset, no CloudXR
+runtime and no window system; keep it that way, because a permanently-skipping
+test reports green while covering nothing. `test_readback.py` is the deliberate
+exception: what it covers is otherwise invisible until someone is wearing a
+headset, and it needs no headset itself.
 
 ## Not verified anywhere in CI or on a developer desktop
 
-**Everything the GPU touches.** The renderer, the Vulkan→CUDA export,
-`ProjectionLayer.submit()`, the frame loop that sequences them, OpenXR session
-sharing via `oxr_handles`, whether the runtime accepts the depth layer, and
-**controllers on a shared session** — none of it is executed by any test or on
-any machine here. The grip-to-gripper calibration is a headset-only judgement
+**Everything downstream of the readback.** `ProjectionLayer.submit()`, the
+frame loop that sequences it, OpenXR session sharing via `oxr_handles`, whether
+the runtime accepts the depth layer, and **controllers on a shared session** —
+none of it is executed by any test or on any machine here. `test_readback.py`
+covers the render and the CUDA hand-off and stops at `submit()`. How the ghost
+*looks* is unverified too, and there is a named reason to expect trouble: see
+the normals warning under [Scene assets](#scene-assets). The grip-to-gripper calibration is a headset-only judgement
 by construction: it is a claim about how a hand holds a tool, and no headless
 test can confirm it — `tests/test_ghost.py` pins the *machinery* against a
 reference calibration and deliberately leaves the shipped constants free to be

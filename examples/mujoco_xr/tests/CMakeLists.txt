@@ -4,12 +4,17 @@
 # mujoco_xr tests. Each test_*.py registers as its own ctest entry under the
 # `mujoco_xr` label -- same shape as examples/camera_viz/tests/CMakeLists.txt.
 #
-# Keep every test here unit-level: no GPU, no headset, no CloudXR runtime, no
-# window system. A test gated on hardware one developer has reports green by
-# skipping, and examples have no CI to run it in (NVIDIA/IsaacTeleop#880). The
-# cost is that the Vulkan -> CUDA -> submit path is covered nowhere, which
-# README.md states under "Not verified anywhere in CI or on a developer
-# desktop".
+# Keep tests here unit-level -- no GPU, no headset, no CloudXR runtime, no
+# window system -- because a test gated on hardware one developer has reports
+# green by skipping, and examples have no CI to run it in
+# (NVIDIA/IsaacTeleop#880).
+#
+# test_readback.py is the one exception, and needs a reason to add another: what
+# it covers (the y flip and the depth inversion between mjr_render and
+# ProjectionLayer) is otherwise invisible until someone is wearing a headset,
+# and it needs no headset itself. Everything downstream of submit() is still
+# covered nowhere; README.md says so under "Not verified anywhere in CI or on a
+# developer desktop".
 
 file(GLOB TEST_FILES
     RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"

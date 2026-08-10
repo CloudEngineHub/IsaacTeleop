@@ -3,6 +3,15 @@
 
 """MuJoCo scene rendered into an Isaac Teleop Televiz XR session."""
 
+import os as _os
+
+# mujoco.gl_context reads MUJOCO_GL at import time, so this must precede
+# `import mujoco`. EGL rather than mujoco's GLFW default: this app renders
+# offscreen and typically runs with no display, and it is the EGL path that
+# takes MUJOCO_EGL_DEVICE_ID to land the context on viz's GPU. setdefault, so an
+# explicit MUJOCO_GL still wins.
+_os.environ.setdefault("MUJOCO_GL", "egl")
+
 # Load order is load-bearing -- do not let an import sorter move this.
 # `import mujoco` pulls the wheel's libmujoco into the process first, and
 # `_mujoco_xr` carries a NEEDED entry for that same versioned SONAME with no
