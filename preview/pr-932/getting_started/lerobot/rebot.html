@@ -645,21 +645,33 @@ ip<span class="w"> </span>-details<span class="w"> </span>link<span class="w"> <
 </div>
 <p>You want <code class="docutils literal notranslate"><span class="pre">state</span> <span class="pre">UP</span></code>, <code class="docutils literal notranslate"><span class="pre">can</span> <span class="pre">state</span> <span class="pre">ERROR-ACTIVE</span></code>, and <code class="docutils literal notranslate"><span class="pre">bitrate</span> <span class="pre">1000000</span></code>. With the arm powered,
 scan for the seven motors:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>motorbridge-cli<span class="w"> </span>scan<span class="w"> </span>--vendor<span class="w"> </span>robstride<span class="w"> </span>--channel<span class="w"> </span>can0<span class="w"> </span>--start-id<span class="w"> </span><span class="m">1</span><span class="w"> </span>--end-id<span class="w"> </span><span class="m">127</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>motorbridge-cli<span class="w"> </span>scan<span class="w"> </span>--vendor<span class="w"> </span>robstride<span class="w"> </span>--channel<span class="w"> </span>can0<span class="w"> </span>--start-id<span class="w"> </span><span class="m">1</span><span class="w"> </span>--end-id<span class="w"> </span><span class="m">7</span>
 </pre></div>
 </div>
 <p>A healthy bus reports <code class="docutils literal notranslate"><span class="pre">scan</span> <span class="pre">done:</span> <span class="pre">7</span> <span class="pre">motor(s)</span> <span class="pre">found</span></code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Leave <code class="docutils literal notranslate"><span class="pre">--end-id</span></code> at 7 unless you are hunting a motor whose ID you do not know. Every ID that
+does not answer costs the full probe timeout (80 ms, plus a 120 ms parameter-read fallback), and
+the range is swept once per RobStride host-id candidate — five by default. Sweeping 1–127 spends
+roughly two minutes mostly waiting on silence, which reads exactly like a hung CLI.</p>
+</div>
 <p>Neither the pinmux nor the <code class="docutils literal notranslate"><span class="pre">ip</span> <span class="pre">link</span></code> configuration survives a reboot. Install the script somewhere
 stable and enable the unit, which redoes both on every boot:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>install<span class="w"> </span>-D<span class="w"> </span>-m<span class="w"> </span><span class="m">755</span><span class="w"> </span>assets/set_can_pinmux.py<span class="w"> </span>/opt/rebot/set_can_pinmux.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Not optional: the unit runs this script by absolute path.</span>
+sudo<span class="w"> </span>install<span class="w"> </span>-D<span class="w"> </span>-m<span class="w"> </span><span class="m">755</span><span class="w"> </span>assets/set_can_pinmux.py<span class="w"> </span>/opt/rebot/set_can_pinmux.py
 sudo<span class="w"> </span>cp<span class="w"> </span>assets/can0-rebot.service<span class="w"> </span>/etc/systemd/system/
 sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>can0-rebot.service
 systemctl<span class="w"> </span>--no-pager<span class="w"> </span>status<span class="w"> </span>can0-rebot.service
 </pre></div>
 </div>
-<p>A healthy oneshot reports <code class="docutils literal notranslate"><span class="pre">active</span> <span class="pre">(exited)</span></code>. The unit runs the pinmux script by absolute path from
-<code class="docutils literal notranslate"><span class="pre">/opt/rebot</span></code>, so install it there before enabling the unit — otherwise the unit fails and the bus
-never comes up.</p>
+<p>A healthy oneshot reports <code class="docutils literal notranslate"><span class="pre">active</span> <span class="pre">(exited)</span></code>. Skipping the first line — easy to do when updating an
+already-installed unit — gets you a unit that fails on every boot and a bus that never comes up:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>set_can_pinmux.py (code=exited, status=2)
+python3: can&#39;t open file &#39;/opt/rebot/set_can_pinmux.py&#39;: [Errno 2] No such file or directory
+</pre></div>
+</div>
+<p>Install the script and <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">can0-rebot.service</span></code>.</p>
 </section>
 <section id="two-arms">
 <h2>Two arms<a class="headerlink" href="#two-arms" title="Link to this heading">#</a></h2>

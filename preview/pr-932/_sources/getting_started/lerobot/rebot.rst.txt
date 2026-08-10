@@ -200,23 +200,37 @@ scan for the seven motors:
 
 .. code-block:: bash
 
-   uv run motorbridge-cli scan --vendor robstride --channel can0 --start-id 1 --end-id 127
+   uv run motorbridge-cli scan --vendor robstride --channel can0 --start-id 1 --end-id 7
 
 A healthy bus reports ``scan done: 7 motor(s) found``.
+
+.. tip::
+
+   Leave ``--end-id`` at 7 unless you are hunting a motor whose ID you do not know. Every ID that
+   does not answer costs the full probe timeout (80 ms, plus a 120 ms parameter-read fallback), and
+   the range is swept once per RobStride host-id candidate — five by default. Sweeping 1–127 spends
+   roughly two minutes mostly waiting on silence, which reads exactly like a hung CLI.
 
 Neither the pinmux nor the ``ip link`` configuration survives a reboot. Install the script somewhere
 stable and enable the unit, which redoes both on every boot:
 
 .. code-block:: bash
 
+   # Not optional: the unit runs this script by absolute path.
    sudo install -D -m 755 assets/set_can_pinmux.py /opt/rebot/set_can_pinmux.py
    sudo cp assets/can0-rebot.service /etc/systemd/system/
    sudo systemctl daemon-reload && sudo systemctl enable --now can0-rebot.service
    systemctl --no-pager status can0-rebot.service
 
-A healthy oneshot reports ``active (exited)``. The unit runs the pinmux script by absolute path from
-``/opt/rebot``, so install it there before enabling the unit — otherwise the unit fails and the bus
-never comes up.
+A healthy oneshot reports ``active (exited)``. Skipping the first line — easy to do when updating an
+already-installed unit — gets you a unit that fails on every boot and a bus that never comes up:
+
+.. code-block:: text
+
+   set_can_pinmux.py (code=exited, status=2)
+   python3: can't open file '/opt/rebot/set_can_pinmux.py': [Errno 2] No such file or directory
+
+Install the script and ``sudo systemctl restart can0-rebot.service``.
 
 Two arms
 --------
