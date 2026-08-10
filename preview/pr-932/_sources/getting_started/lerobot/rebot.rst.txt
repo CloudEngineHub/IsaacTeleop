@@ -1,0 +1,234 @@
+.. SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+.. SPDX-License-Identifier: Apache-2.0
+
+reBot B601-RS on Jetson AGX Orin
+================================
+
+The `reBot B601-RS <https://github.com/Welt-liu/reBot-B601-Agent-Guide>`_ is a 6-DOF arm built from
+`RobStride <https://www.robstride.com>`_ quasi-direct-drive actuators, which together with the
+gripper put seven motors on a single CAN bus. This page brings one up from an **NVIDIA Jetson AGX
+Orin** using the Orin's **built-in CAN controller** (``mttcan``) and a cheap external transceiver —
+no USB-CAN or PCAN adapter.
+
+Start from the vendor's `reBot Arm B601-RS Quick Start
+<https://wiki.seeedstudio.com/rebot_b601_rs_getting_started>`_ for assembly, the power supply, and
+the safety notes. That guide drives the arm through a PCAN-USB adapter and a Miniforge/conda
+environment; this page swaps both out for the Orin's own CAN controller and a uv environment.
+Everything downstream of the bus — scanning for motors, assigning IDs, the gateway, Motorbridge
+Studio — is identical either way; the only thing that changes is **how** ``can0`` comes into
+existence.
+
+.. important::
+
+   This procedure has only been tested against the **B601-RS** (RobStride) model, **not the
+   B601-DM** (Damiao). The two builds use different actuators, so at minimum every
+   ``motorbridge-cli`` call below would need ``--vendor damiao`` instead of ``--vendor robstride``,
+   and motorbridge reaches Damiao hardware over its own ``dm-serial`` / ``dm-device`` transports
+   rather than SocketCAN. For that model, start from the
+   `B601-DM quick start <https://wiki.seeedstudio.com/rebot_b601_dm_getting_started>`_.
+
+The working example, including the assets referenced below, lives in
+:file:`examples/rebot/`.
+
+What you need
+-------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 26 74
+
+   * - Item
+     - Notes
+   * - reBot B601-RS arm
+     - Seven RobStride motors (six joints plus the gripper) on one CAN bus, plus its own
+       **24–48 V** motor supply. The arm does not ship with one.
+   * - Jetson AGX Orin devkit
+     - JetPack 6 / L4T R36.x. Verified on R36.5.2, ``5.15.199-tegra``, aarch64.
+   * - SN65HVD230 CAN transceiver
+     - The Orin has a CAN *controller* but no *transceiver* — see below.
+   * - Jumper wires
+     - Orin 40-pin header (J30) to the transceiver's 4-pin header.
+
+The CAN transceiver
+-------------------
+
+The Orin's on-chip CAN controller speaks logic-level TX/RX; it cannot drive a differential CAN bus
+on its own. A **3.3 V** transceiver bridges the two. The Waveshare SN65HVD230 board is the common
+choice — it is 3.3 V native, which matches the Orin's I/O directly.
+
+.. figure:: ../../_static/rebot/sn65hvd230-can-board.jpg
+   :alt: Waveshare SN65HVD230 CAN transceiver board
+   :width: 360px
+   :align: center
+
+   The Waveshare SN65HVD230 CAN board. The 4-pin header carries ``3.3V``, ``GND``, ``RX`` and
+   ``TX``; the screw terminal carries ``CANH`` and ``CANL``.
+
+- Product page: `SN65HVD230 CAN Board <https://www.waveshare.com/sn65hvd230-can-board.htm>`_
+- Buy: `search Amazon for "Waveshare SN65HVD230" <https://www.amazon.com/s?k=Waveshare+SN65HVD230>`_
+
+.. warning::
+
+   Power the board from **3.3 V**, not 5 V. The SN65HVD230 is a 3.3 V part and the Orin's header
+   pins are not 5 V tolerant.
+
+Wiring
+------
+
+Connect the Orin's 40-pin header (**J30**) to the transceiver. The Waveshare header labels are
+written from the host's point of view, so this is **straight-through — do not cross TX and RX**:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 30 24 24
+
+   * - Orin J30 pin
+     - Signal
+     - Direction
+     - SN65HVD230
+   * - 31
+     - ``CAN0_DOUT``
+     - Orin → board
+     - ``TX``
+   * - 29
+     - ``CAN0_DIN``
+     - board → Orin
+     - ``RX``
+   * - 1 or 17
+     - **3.3 V**
+     - —
+     - ``3V3``
+   * - any GND
+     - GND
+     - —
+     - ``GND``
+
+Then wire the transceiver to the arm: ``CANH`` → ``CAN_H``, ``CANL`` → ``CAN_L``, and a shared
+ground. For background on wiring a transceiver to a Jetson and the SocketCAN setup that follows,
+see Ramin Nabati's writeup, `Enabling CAN on NVIDIA Jetson Xavier Developer Kit
+<https://medium.com/@ramin.nabati/enabling-can-on-nvidia-jetson-xavier-developer-kit-aaaa3c4d99c9>`_.
+It targets the Xavier devkit, so confirm the pin numbers against your own carrier board's pinout —
+the table above is for the AGX Orin devkit.
+
+.. note::
+
+   ``CAN1`` is on different pins (33 and 37). If you wire to those, every command below becomes
+   ``can1``.
+
+Two checks with a multimeter save hours of debugging:
+
+- **Termination** — ~60 Ω across ``CANH``–``CANL`` with the bus unpowered. ~120 Ω means only one
+  terminator is present; an open circuit means a broken link.
+- **Motor power** — 24–48 V at the arm's power connector. RobStride motors run their CAN off the
+  motor rail, so an unpowered arm produces **no CAN replies at all**, which looks exactly like a
+  wiring fault.
+
+Bring up the bus
+----------------
+
+Install the example's dependencies:
+
+.. code-block:: bash
+
+   cd examples/rebot
+   uv sync
+
+Create ``can0`` at the RobStride bitrate of 1 Mbit and bring it up:
+
+.. code-block:: bash
+
+   sudo modprobe can can_raw mttcan
+   sudo ip link set can0 type can bitrate 1000000 restart-ms 100
+   sudo ip link set up can0
+   ip -details link show can0
+
+You want ``state UP``, ``can state ERROR-ACTIVE``, and ``bitrate 1000000``. With the arm powered,
+scan for the seven motors:
+
+.. code-block:: bash
+
+   uv run motorbridge-cli scan --vendor robstride --channel can0 --start-id 1 --end-id 127
+
+A healthy bus reports ``scan done: 7 motor(s) found``.
+
+The ``ip link`` configuration does not survive a reboot. To make it persistent, install the unit
+shipped with the example:
+
+.. code-block:: bash
+
+   sudo cp assets/can0-rebot.service /etc/systemd/system/
+   sudo systemctl daemon-reload && sudo systemctl enable --now can0-rebot.service
+
+Calibrate and drive
+-------------------
+
+Start the motorbridge WebSocket gateway and connect
+`Motorbridge Studio <https://motorbridge.github.io/motorbridge-studio/>`_ to it:
+
+.. code-block:: bash
+
+   ./start-gateway.sh
+
+Confirm 7/7 motors online, pose the arm at its home position, and set the current position as zero
+for all seven joints.
+
+.. warning::
+
+   The gateway takes **exclusive** ownership of the CAN bus — stop it before running any
+   ``motorbridge-cli`` command, or the CLI will find nothing.
+
+   ``start-gateway.sh`` defaults to binding ``0.0.0.0:9002`` with the placeholder token ``0000``.
+   That token is the only thing between your network and a moving arm. Outside an isolated bench
+   network, override both:
+
+   .. code-block:: bash
+
+      MOTORBRIDGE_WS_TOKEN=<token> BIND=127.0.0.1:9002 ./start-gateway.sh
+
+Let an agent do it
+------------------
+
+:file:`examples/rebot/SKILL.md` is written as an agent skill: it carries the full procedure plus a
+troubleshooting tree covering the failure modes that actually bite (loopback passes but no motors
+answer, ``MUX UNCLAIMED`` pinmux red herrings, wedged TX FIFOs). Paste this into Claude Code, or any
+agent that can read the repository, from the Orin itself:
+
+.. code-block:: text
+
+   Bring up the reBot B601-RS arm on this Jetson AGX Orin using the Orin's built-in
+   CAN (mttcan) and an SN65HVD230 transceiver — no USB-CAN adapter.
+
+   Follow examples/rebot/SKILL.md in this repository. Read it first, then work
+   through it in order: environment, can0 bring-up at 1 Mbit, bus verification,
+   reboot persistence, motor IDs 1-7, and zero calibration.
+
+   The arm is wired to CAN0 on J30 pins 31 (TX) and 29 (RX). I have a multimeter.
+   Any step needing sudo, hand me the exact command to run myself.
+   If the scan finds no motors, work the troubleshooting tree in that file before
+   changing anything — start by confirming motor power.
+
+Troubleshooting
+---------------
+
+The full tree is in :file:`examples/rebot/SKILL.md`. The rule that resolves most cases:
+
+.. important::
+
+   On a single-node CAN bus, "nothing replies" almost always means **no other powered node is
+   ACKing**. Check motor power before touching software or pinmux.
+
+A controller loopback test proves the driver is alive but says nothing about your pins,
+transceiver, or wiring — it never leaves the chip:
+
+.. code-block:: bash
+
+   sudo ip link set can0 down
+   sudo ip link set can0 type can bitrate 1000000 loopback on && sudo ip link set can0 up
+   ( timeout 2 candump -n 1 can0 & ); sleep 0.4; cansend can0 123#DEADBEEF
+   sudo ip link set can0 down
+   sudo ip link set can0 type can bitrate 1000000 loopback off restart-ms 100 && sudo ip link set can0 up
+
+If that echoes but a real scan stays silent, the problem is downstream of the controller: motor
+power, transceiver supply, wiring, or the CAN0 pinmux registers. ``assets/set_can_pinmux.py`` reads
+back and sets those registers; on a stock AGX Orin devkit the bootloader already programs them
+correctly.
