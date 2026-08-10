@@ -28,7 +28,7 @@ existence.
    `B601-DM quick start <https://wiki.seeedstudio.com/rebot_b601_dm_getting_started>`_.
 
 The working example, including the assets referenced below, lives in
-:file:`examples/rebot/`.
+:code-dir:`examples/rebot`.
 
 What you need
 -------------
@@ -188,19 +188,22 @@ for all seven joints.
 Let an agent do it
 ------------------
 
-:file:`examples/rebot/SKILL.md` is written as an agent skill: it carries the full procedure plus a
-troubleshooting tree covering the failure modes that actually bite (loopback passes but no motors
-answer, ``MUX UNCLAIMED`` pinmux red herrings, wedged TX FIFOs). Paste this into Claude Code, or any
-agent that can read the repository, from the Orin itself:
+:code-file:`examples/rebot/SKILL.md` is written as an agent skill: it carries the full procedure
+plus a troubleshooting tree covering the failure modes that actually bite (loopback passes but no
+motors answer, ``MUX UNCLAIMED`` pinmux red herrings, wedged TX FIFOs). Paste this into Claude Code,
+or any agent that can fetch a URL, from the Orin itself — the prompt is self-contained, so the agent
+does not need a checkout of this repository to start:
 
 .. code-block:: text
 
    Bring up the reBot B601-RS arm on this Jetson AGX Orin using the Orin's built-in
    CAN (mttcan) and an SN65HVD230 transceiver — no USB-CAN adapter.
 
-   Follow examples/rebot/SKILL.md in this repository. Read it first, then work
-   through it in order: environment, can0 bring-up at 1 Mbit, bus verification,
-   reboot persistence, motor IDs 1-7, and zero calibration.
+   Follow the procedure at
+   https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/SKILL.md
+   Read it first, then work through it in order: environment, can0 bring-up at
+   1 Mbit, bus verification, reboot persistence, motor IDs 1-7, and zero
+   calibration.
 
    The arm is wired to CAN0 on J30 pins 31 (TX) and 29 (RX). I have a multimeter.
    Any step needing sudo, hand me the exact command to run myself.
@@ -210,7 +213,7 @@ agent that can read the repository, from the Orin itself:
 Troubleshooting
 ---------------
 
-The full tree is in :file:`examples/rebot/SKILL.md`. The rule that resolves most cases:
+The full tree is in :code-file:`examples/rebot/SKILL.md`. The rule that resolves most cases:
 
 .. important::
 

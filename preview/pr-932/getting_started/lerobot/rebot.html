@@ -454,7 +454,7 @@ rather than SocketCAN. For that model, start from the
 <a class="reference external" href="https://wiki.seeedstudio.com/rebot_b601_dm_getting_started" rel="noopener noreferrer" target="_blank">B601-DM quick start</a>.</p>
 </div>
 <p>The working example, including the assets referenced below, lives in
-<code class="file docutils literal notranslate"><span class="pre">examples/rebot/</span></code>.</p>
+<a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/tree/main/examples/rebot" rel="noopener noreferrer" target="_blank">examples/rebot</a>.</p>
 <section id="what-you-need">
 <h2>What you need<a class="headerlink" href="#what-you-need" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -619,16 +619,19 @@ network, override both:</p>
 </section>
 <section id="let-an-agent-do-it">
 <h2>Let an agent do it<a class="headerlink" href="#let-an-agent-do-it" title="Link to this heading">#</a></h2>
-<p><code class="file docutils literal notranslate"><span class="pre">examples/rebot/SKILL.md</span></code> is written as an agent skill: it carries the full procedure plus a
-troubleshooting tree covering the failure modes that actually bite (loopback passes but no motors
-answer, <code class="docutils literal notranslate"><span class="pre">MUX</span> <span class="pre">UNCLAIMED</span></code> pinmux red herrings, wedged TX FIFOs). Paste this into Claude Code, or any
-agent that can read the repository, from the Orin itself:</p>
+<p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/SKILL.md" rel="noopener noreferrer" target="_blank">examples/rebot/SKILL.md</a> is written as an agent skill: it carries the full procedure
+plus a troubleshooting tree covering the failure modes that actually bite (loopback passes but no
+motors answer, <code class="docutils literal notranslate"><span class="pre">MUX</span> <span class="pre">UNCLAIMED</span></code> pinmux red herrings, wedged TX FIFOs). Paste this into Claude Code,
+or any agent that can fetch a URL, from the Orin itself — the prompt is self-contained, so the agent
+does not need a checkout of this repository to start:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Bring up the reBot B601-RS arm on this Jetson AGX Orin using the Orin&#39;s built-in
 CAN (mttcan) and an SN65HVD230 transceiver — no USB-CAN adapter.
 
-Follow examples/rebot/SKILL.md in this repository. Read it first, then work
-through it in order: environment, can0 bring-up at 1 Mbit, bus verification,
-reboot persistence, motor IDs 1-7, and zero calibration.
+Follow the procedure at
+https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/SKILL.md
+Read it first, then work through it in order: environment, can0 bring-up at
+1 Mbit, bus verification, reboot persistence, motor IDs 1-7, and zero
+calibration.
 
 The arm is wired to CAN0 on J30 pins 31 (TX) and 29 (RX). I have a multimeter.
 Any step needing sudo, hand me the exact command to run myself.
@@ -639,7 +642,7 @@ changing anything — start by confirming motor power.
 </section>
 <section id="troubleshooting">
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
-<p>The full tree is in <code class="file docutils literal notranslate"><span class="pre">examples/rebot/SKILL.md</span></code>. The rule that resolves most cases:</p>
+<p>The full tree is in <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/SKILL.md" rel="noopener noreferrer" target="_blank">examples/rebot/SKILL.md</a>. The rule that resolves most cases:</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>On a single-node CAN bus, “nothing replies” almost always means <strong>no other powered node is
