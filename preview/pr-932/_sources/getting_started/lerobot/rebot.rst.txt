@@ -103,8 +103,9 @@ written from the host's point of view, so this is **straight-through — do not 
 **Pin 1 is at the top right of J30**, so the numbering runs right to left — count from the far end
 of the header, not the near one.
 
-The Orin exposes two independent CAN controllers on the same header, so a second transceiver on
-``can1`` drives a second arm with no extra hardware beyond the transceiver itself:
+The Orin exposes two independent CAN controllers on the same header. The ``can1`` pins are listed
+here for reference — driving a second arm from them takes work the example does not do yet, covered
+in :ref:`rebot-two-arms`:
 
 .. list-table::
    :header-rows: 1
@@ -148,8 +149,8 @@ the table above is for the AGX Orin devkit.
 
 .. note::
 
-   Every command on this page uses ``can0``. For an arm on the second bus, substitute ``can1``
-   throughout — ``ip link``, ``--channel``, and the systemd unit.
+   Everything on this page targets ``can0``. A second arm on ``can1`` is not supported by the
+   example as shipped — see :ref:`rebot-two-arms`.
 
 Two checks with a multimeter save hours of debugging:
 
@@ -232,46 +233,6 @@ already-installed unit — gets you a unit that fails on every boot and a bus th
 
 Install the script and ``sudo systemctl restart can0-rebot.service``.
 
-Two arms
---------
-
-The two controllers are independent, so a second arm needs no more than a second transceiver on the
-``can1`` pins.
-
-.. important::
-
-   ``set_can_pinmux.py`` programs the **CAN0** pins only (``0x0c303010`` and ``0x0c303018``). The
-   CAN1 pins live in their own registers in the same AON block, which the script does not touch, so
-   ``can1`` will go ``UP`` and stay deaf until you extend ``REGS`` with them.
-
-   This is why the shipped unit covers ``can0`` only. ``mttcan`` registers both netdevs on every
-   Orin, so a unit that brought ``can1`` up unconditionally would leave every single-arm machine
-   with a live interface wired to nothing — noise in ``ip -br link``, a candidate for bus-off, and a
-   bus that looks ready when its pins are not even routed.
-
-Once the pinmux covers CAN1, bring both buses up the same way:
-
-.. code-block:: bash
-
-   for i in 0 1; do
-       sudo ip link set can$i type can bitrate 1000000 restart-ms 100
-       sudo ip link set up can$i
-   done
-
-Each arm then keeps its own motor IDs 1–7 — the buses never see each other, so the IDs may repeat.
-Give each one its own gateway on its own port, since a gateway owns exactly one bus:
-
-.. code-block:: bash
-
-   BIND=127.0.0.1:9002 ./start-gateway.sh --channel can0
-   BIND=127.0.0.1:9003 ./start-gateway.sh --channel can1
-
-For reboot persistence, copy ``can0-rebot.service`` to ``can1-rebot.service``, replace the interface
-name throughout, and point its ``ExecStartPre`` at a pinmux step that programs the CAN1 registers —
-the shipped script will not do it. If you end up running both routinely, a systemd template unit
-(``can-rebot@.service``, enabled as ``can-rebot@can0`` and ``can-rebot@can1``) collapses the two
-files back into one.
-
 Calibrate and drive
 -------------------
 
@@ -349,3 +310,39 @@ If that echoes but a real scan stays silent, the problem is downstream of the co
 power, transceiver supply, wiring, or the pinmux. Re-run ``sudo ./assets/set_can_pinmux.py`` — it
 reports the value it read *before* writing, so a register that comes back wrong is a pinmux that
 was never set, or one a reboot cleared.
+
+.. _rebot-two-arms:
+
+Future work: a second arm on ``can1``
+-------------------------------------
+
+The Orin has two independent CAN controllers, so in principle a second arm needs nothing more than
+a second SN65HVD230 on the ``can1`` pins listed in `Wiring`_. **This path is not implemented — the
+example targets ``can0`` only, and making it work is on you.** What follows is the shape of the
+work, not a procedure to follow.
+
+The blocker is the pinmux. ``set_can_pinmux.py`` programs the **CAN0** pins only (``0x0c303010``
+and ``0x0c303018``); the CAN1 pins live in their own registers in the same AON block, which the
+script never touches. Until ``REGS`` covers them, ``can1`` goes ``UP`` and stays deaf — the netdev
+exists because ``mttcan`` registers both, whether or not the pins are routed.
+
+That last detail is also why the shipped unit is ``can0``-only. A unit that brought ``can1`` up
+unconditionally would leave every single-arm machine with a live interface wired to nothing: noise
+in ``ip -br link``, a candidate for bus-off, and a bus that looks ready when its pins are not even
+routed.
+
+Three things to sort out, in order:
+
+#. **Pinmux.** Find the CAN1 register offsets and add them to ``REGS`` in
+   :code-file:`assets/set_can_pinmux.py <examples/rebot/assets/set_can_pinmux.py>`. Without this
+   nothing below matters.
+#. **Bring-up and persistence.** ``ip link`` takes ``can1`` exactly as it takes ``can0``. For
+   reboot persistence, derive a second unit from
+   :code-file:`assets/can0-rebot.service <examples/rebot/assets/can0-rebot.service>` with the
+   interface name replaced and its ``ExecStartPre`` pointing at a CAN1-capable pinmux step. If you
+   run both routinely, a systemd template unit (``can-rebot@.service``, enabled as
+   ``can-rebot@can0`` and ``can-rebot@can1``) collapses the two files back into one.
+#. **Two gateways.** A gateway owns exactly one bus, so each arm needs its own on its own port —
+   ``BIND=127.0.0.1:9002 ./start-gateway.sh --channel can0`` alongside
+   ``BIND=127.0.0.1:9003 ./start-gateway.sh --channel can1``. Motor IDs may repeat across the two
+   arms; the buses never see each other, so each keeps its own 1–7.
