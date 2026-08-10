@@ -58,27 +58,49 @@ def test_near_far_are_a_single_sane_pair():
     assert app.FAR_Z <= 100.0
 
 
-def test_assert_projection_rejects_a_lost_y_flip():
-    """The assertion has to actually fire, or it is decoration."""
+class _Fov:
+    angle_left = -0.7
+    angle_right = 0.7
+    angle_up = 0.7
+    angle_down = -0.7
+
+
+def _good_frustum():
     from isaacteleop_examples.mujoco_xr import _mujoco_xr
 
-    good = _mujoco_xr.projection_from_fov([-0.7, 0.7, 0.7, -0.7], app.NEAR_Z, app.FAR_Z)
-    app._assert_projection(good, app.NEAR_Z, app.FAR_Z)
-
-    flipped = list(good)
-    flipped[5] = -flipped[5]  # P[1][1] positive: the angleUp->bottom swap is gone
-    with pytest.raises(AssertionError, match=r"P\[1\]\[1\]"):
-        app._assert_projection(flipped, app.NEAR_Z, app.FAR_Z)
-
-
-def test_assert_projection_rejects_reverse_z():
-    from isaacteleop_examples.mujoco_xr import _mujoco_xr
-
-    p = list(
-        _mujoco_xr.projection_from_fov([-0.7, 0.7, 0.7, -0.7], app.NEAR_Z, app.FAR_Z)
+    return list(
+        _mujoco_xr.frustum_from_fov(
+            [_Fov.angle_left, _Fov.angle_right, _Fov.angle_up, _Fov.angle_down],
+            app.NEAR_Z,
+            app.FAR_Z,
+        )
     )
-    # Swap the depth endpoints: near -> 1, far -> 0.
-    p[10] = -p[10] - 1.0
-    p[14] = -p[14]
-    with pytest.raises(AssertionError, match="depth encoding"):
-        app._assert_projection(p, app.NEAR_Z, app.FAR_Z)
+
+
+def test_assert_frustum_accepts_what_the_renderer_builds():
+    """Its rejections mean nothing until it passes on the real thing: float32
+    round-tripping alone could make it fire on every frame."""
+    app._assert_frustum(_good_frustum(), _Fov(), app.NEAR_Z, app.FAR_Z)
+
+
+def test_assert_frustum_rejects_a_zeroed_half_width():
+    """Zero is the one wrong value mjr_render does not complain about: it turns
+    the viewport-aspect fallback on."""
+    f = _good_frustum()
+    f[1] = 0.0
+    with pytest.raises(AssertionError, match="degenerate frustum"):
+        app._assert_frustum(f, _Fov(), app.NEAR_Z, app.FAR_Z)
+
+
+def test_assert_frustum_rejects_clip_planes_that_drifted_from_viz():
+    f = _good_frustum()
+    f[5] = app.FAR_Z * 2.0
+    with pytest.raises(AssertionError, match="clip planes drifted"):
+        app._assert_frustum(f, _Fov(), app.NEAR_Z, app.FAR_Z)
+
+
+def test_assert_frustum_rejects_a_frustum_that_does_not_match_its_fov():
+    f = _good_frustum()
+    f[0] += 0.01  # slide the optical axis without touching anything else
+    with pytest.raises(AssertionError, match="frustum left"):
+        app._assert_frustum(f, _Fov(), app.NEAR_Z, app.FAR_Z)

@@ -3,12 +3,18 @@
 
 """MuJoCo scene rendered into an Isaac Teleop Televiz XR session."""
 
-# Load order is load-bearing -- do not let an import sorter move this.
-# `import mujoco` pulls the wheel's libmujoco into the process first, and
-# `_mujoco_xr` carries a NEEDED entry for that same versioned SONAME with no
-# RPATH, so it binds to the already-loaded library. That is what guarantees one
-# libmujoco, and so that the mjModel*/mjData* addresses Python hands the
-# renderer match the layout it was compiled against.
+import os as _os
+
+# Must precede `import mujoco`, which reads MUJOCO_GL at import time. EGL rather
+# than the GLFW default because this renders offscreen, usually with no display,
+# and only the EGL path honours MUJOCO_EGL_DEVICE_ID. setdefault, so an explicit
+# MUJOCO_GL still wins.
+_os.environ.setdefault("MUJOCO_GL", "egl")
+
+# Load order is load-bearing -- do not let an import sorter move this. `import
+# mujoco` pulls the wheel's libmujoco in first, and `_mujoco_xr` has a NEEDED
+# entry for that same SONAME with no RPATH, so it binds to the already-loaded
+# copy. That is what guarantees one libmujoco, and so one mjModel* layout.
 import mujoco as _mujoco
 
 from . import _mujoco_xr

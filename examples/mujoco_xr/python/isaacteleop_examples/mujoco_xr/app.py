@@ -4,22 +4,24 @@
 """A MuJoCo scene drawn into a Televiz XR session.
 
 One OpenXR session shared between VizSession (rendering) and TeleopSession
-(input); the scene is drawn by Vulkan into images viz owns and reaches
+(input); the scene is drawn by MuJoCo's own renderer and reaches
 ProjectionLayer.submit() by CUDA pointer, never through host memory.
 
     VizSession(kXr)  ──get_oxr_handles()──▶  TeleopSession
          │                                        │
-         │ vk_device / vk_physical_device         │ controller grip poses
+         │ recommended resolution                 │ controller grip poses
          ▼                                        ▼                      │
     _mujoco_xr.Renderer  ──__cuda_array_interface__──▶  ProjectionLayer  │
          ▲                                                               │
          └──────────────── mjData.mocap_pos/_quat ◀─────────────────────┘
 
-C++ owns mjvScene/mjvOption/mjvCamera; Python owns mjModel/mjData/mj_step, so
-everything reading a controller and writing mjData is testable without a GPU.
+The renderer needs an OpenGL context current on this thread, made below and torn
+down after it; viz and the renderer meet through CUDA alone, on VizSession's GPU.
 
-Frame order is load-bearing: input is sampled before the physics it feeds, on
-every frame that will step or draw.
+C++ owns mjvScene/mjvOption/mjvCamera/mjrContext; Python owns
+mjModel/mjData/mj_step, so everything reading a controller and writing mjData is
+testable without a GPU. Frame order is load-bearing: input is sampled before the
+physics it feeds, on every frame that will step or draw.
 """
 
 from __future__ import annotations
@@ -216,37 +218,39 @@ def _flatten_xr_views(info) -> tuple[list[float], list[float]]:
     return poses, fovs
 
 
-def _assert_projection(p: list[float], near: float, far: float) -> None:
-    """Per-frame, because the projection is rebuilt from per-frame fov.
+def _assert_frustum(f: list[float], fov, near: float, far: float) -> None:
+    """The frustum handed to mjvGLCamera, checked against the fov it came from.
 
-    `p` is column-major. Depth is asserted as the shipped contract
-    (near -> 0, far -> 1); two viz doc comments claim reverse-Z, the code is
-    standard Z.
+    `f` is (center, half_width, bottom, top, near, far). The projection's shape
+    is MuJoCo's business; which numbers reach it is this app's.
     """
-    p00, p11, p23 = p[0], p[5], p[11]
-    assert p00 > 0.0, (
-        f"P[0][0]={p00}: left/right swapped, or a zeroed Fov reached the projection"
-    )
-    # The load-bearing one: b = n*tan(angleUp) > 0 and t = n*tan(angleDown) < 0
-    # give 2n/(t-b) < 0. That negative is the Y flip, which drives triangle
-    # winding -- a depth-range check touches only P[2][2] / P[2][3] / P[3][2]
-    # and would not notice it going positive.
-    assert p11 < 0.0, (
-        f"P[1][1]={p11}: the angleUp->bottom Y flip is gone; winding will invert"
-    )
-    assert abs(p23 + 1.0) < 1e-6, f"P[2][3]={p23}: not a standard perspective divide"
+    center, half_width, bottom, top, f_near, f_far = f
 
-    # Asserted as the contract we ship rather than as somebody else's formula,
-    # so it survives a viz refactor.
-    for z_view, expected in ((-near, 0.0), (-far, 1.0)):
-        clip_z = p[10] * z_view + p[14]
-        clip_w = p[11] * z_view + p[15]
-        assert abs(clip_z / clip_w - expected) < 1e-4, (
-            f"depth encoding broken: z_view={z_view} maps to {clip_z / clip_w}, expected {expected}"
+    # At zero half_width mjr_render derives the horizontal extent from the
+    # viewport aspect, rendering something plausible from a fov carrying nothing.
+    assert half_width > 0.0 and top > bottom, (
+        f"degenerate frustum {f}: a zeroed Fov reached the camera"
+    )
+    # float32 tolerances throughout: the frustum crosses as C floats, so an
+    # exact comparison against a Python float fails on rounding alone.
+    for name, got, want in (
+        ("left", center - half_width, near * math.tan(fov.angle_left)),
+        ("right", center + half_width, near * math.tan(fov.angle_right)),
+        ("bottom", bottom, near * math.tan(fov.angle_down)),
+        ("top", top, near * math.tan(fov.angle_up)),
+    ):
+        assert abs(got - want) <= 1e-6 * max(1.0, abs(want)), (
+            f"frustum {name}={got}, expected {want}"
         )
 
+    # viz's XrCompositionLayerDepthInfoKHR pair must be the encoding pair, or
+    # the runtime reprojects against the wrong range.
+    assert abs(f_near - near) <= 1e-6 * near and abs(f_far - far) <= 1e-6 * far, (
+        f"clip planes drifted: camera has ({f_near}, {f_far}), viz was told ({near}, {far})"
+    )
 
-def _log_startup(resolution) -> None:
+
+def _log_startup(resolution, gl_backend: str) -> None:
     """One block naming every assumption that is invisible at runtime."""
     try:
         version = importlib.metadata.version("isaacteleop")
@@ -270,6 +274,11 @@ def _log_startup(resolution) -> None:
         _VIEW_COUNT,
         resolution.width,
         resolution.height,
+    )
+    LOG.info(
+        "renderer:   MuJoCo's own (mjr_render), OpenGL backend %s, offsamples=0. Its output is blitted, "
+        "y-flipped and depth-inverted, then read back into a pixel-pack buffer CUDA imports -- no host copy.",
+        gl_backend,
     )
     LOG.info(
         "clip:       near=%.4f far=%.2f (one pair -> VizSessionConfig, projection, submitted depth)",
@@ -408,6 +417,7 @@ def run() -> int:
 
     viz_session = viz.VizSession.create(config)
     renderer = None
+    gl_context = None
     try:
         resolution = viz_session.get_recommended_resolution()
 
@@ -419,10 +429,17 @@ def run() -> int:
         layer_config.stereo = _VIEW_COUNT == 2
         layer = viz_session.add_projection_layer(layer_config)
 
+        # After VizSession.create, which cudaSetDevice's the GPU behind its
+        # Vulkan device; the renderer checks this context landed on that one.
+        gl_context = mujoco.GLContext(resolution.width, resolution.height)
+        gl_context.make_current()
+
+        # MuJoCo resolves multisample renderbuffers only inside mjr_readPixels,
+        # which this path never calls, and a multisample source cannot be
+        # blitted with a y flip in one step.
+        model.vis.quality.offsamples = 0
+
         renderer = _mujoco_xr.Renderer(
-            vk_physical_device=viz_session.vk_physical_device,
-            vk_device=viz_session.vk_device,
-            vk_queue_family_index=viz_session.vk_queue_family_index,
             width=resolution.width,
             height=resolution.height,
             view_count=_VIEW_COUNT,
@@ -431,7 +448,7 @@ def run() -> int:
             model_address=model._address,
         )
 
-        _log_startup(resolution)
+        _log_startup(resolution, type(gl_context).__module__)
 
         # After the startup block, so its line reads as part of the same report.
         ghost = _resolve_ghost(model)
@@ -452,16 +469,18 @@ def run() -> int:
         teleop_config = TeleopSessionConfig(
             app_name="MuJoCoXR",
             pipeline=pipeline,
-            # Never pass trackers=: TeleopSession discovers them from the
-            # pipeline graph, and passing them again duplicates the set.
+            # Never pass trackers=: TeleopSession discovers them from the graph,
+            # and passing them again duplicates the set.
             oxr_handles=OpenXRSessionHandles(*oxr),
         )
         with TeleopSession(teleop_config) as teleop_session:
             _loop(viz_session, layer, renderer, model, data, teleop_session, ghost)
     finally:
-        # The renderer borrows viz_session's device: it must go first.
+        # Innermost first: the renderer's GL objects need a current context.
         if renderer is not None:
             renderer.close()
+        if gl_context is not None:
+            gl_context.free()
         viz_session.destroy()
     return 0
 
@@ -469,27 +488,25 @@ def run() -> int:
 def _loop(viz_session, layer, renderer, model, data, teleop_session, ghost) -> None:
     view_count = renderer.view_count
     previous_clock: float | None = None
-    # Fixed-step accumulator. NOT reset or drained on a non-render frame: the
-    # simulation owes that time regardless of whether anything was displayed.
+    # NOT reset or drained on a non-render frame: the simulation owes that time
+    # whether or not anything was displayed.
     accumulator = 0.0
-    checked_projection = False
+    checked_frustum = False
 
     while not viz_session.should_close():
         info = viz_session.begin_frame()
         try:
-            # None means "this frame carries no usable timestamp" -- skip the
-            # sample entirely rather than recording a zero. See _frame_clock.
+            # None means no usable timestamp -- skip the sample, never record 0.
             now = _frame_clock(info)
             if now is not None:
                 if previous_clock is not None:
                     accumulator += _clamp_dt(now - previous_clock)
                 previous_clock = now
 
-            # Input above the should_render gate and above the step loop, so
-            # it precedes the physics it feeds. Gated on "will step or will
-            # draw" rather than every frame: an ungated teleop_session.step()
-            # calls xrSyncActions on the unthrottled pre-kRunning burst, which
-            # is hundreds of frames in milliseconds.
+            # Above both the should_render gate and the step loop, so it
+            # precedes the physics it feeds. Gated rather than every frame: an
+            # ungated step() calls xrSyncActions on the unthrottled
+            # pre-kRunning burst, hundreds of frames in milliseconds.
             result = None
             will_step = accumulator >= model.opt.timestep
             if will_step or info.should_render:
@@ -516,21 +533,23 @@ def _loop(viz_session, layer, renderer, model, data, teleop_session, ghost) -> N
                     "cpp/scene_renderer.cpp."
                 )
 
-            # A view-count mismatch is rejected by render() below, which sees
-            # the flattened lengths and says so in those terms. There is
-            # deliberately no second check here.
+            # No view-count check here: render() sees the flattened lengths and
+            # rejects a mismatch in those terms.
             poses, fovs = _flatten_xr_views(info)
             renderer.render(poses, fovs)
 
-            # First rendered frame only: the fov changes per frame but the clip
-            # convention does not, and tests/test_projection.py pins it headless.
-            if not checked_projection:
+            # First rendered frame only: the fov changes per frame, the
+            # convention does not.
+            if not checked_frustum:
                 for view in range(view_count):
-                    _assert_projection(renderer.projection(view), NEAR_Z, FAR_Z)
+                    _assert_frustum(
+                        renderer.frustum(view), info.views[view].fov, NEAR_Z, FAR_Z
+                    )
                 LOG.info(
-                    "projection convention verified on the first rendered frame (P[1][1] < 0, near->0, far->1)"
+                    "frustum verified on the first rendered frame (matches FrameInfo fov, clip planes agree "
+                    "with VizSessionConfig)"
                 )
-                checked_projection = True
+                checked_frustum = True
 
             layer.submit(
                 renderer.color(0),

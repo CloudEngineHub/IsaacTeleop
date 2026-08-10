@@ -121,12 +121,6 @@ def _result(controller, closedness=0.0):
     }
 
 
-# ---------------------------------------------------------------------------
-# The transparency design. This is the claim that replaced a second Vulkan
-# pipeline, so it is the one that has to be asserted rather than believed.
-# ---------------------------------------------------------------------------
-
-
 def test_the_ghost_is_opaque_and_collides_with_nothing():
     """Opaque, so draw order and the blending risks stop mattering.
 
@@ -218,32 +212,52 @@ def test_the_servo_fills_the_notch_in_the_wrist_bracket():
     )
 
 
-def test_the_renderers_normals_agree_with_the_geometry_they_shade():
-    """Every corner normal must face the same way as its own triangle.
+# Measured on mujoco 3.11.0 against the pinned SO-ARM100 meshes: the share of
+# face corners whose mjModel normal points away from its own triangle.
+_SMEARED_NORMAL_FRACTION = {
+    "leader_wrist_roll": 0.1143,
+    "leader_trigger": 0.0454,
+    "leader_handle": 0.0101,
+    "leader_motor": 0.1657,
+}
 
-    The renderer computes these; mjModel's own normals are smeared across each
-    crease and fail this test (cpp/mesh_buffers.hpp has the measurements), so
-    reverting cpp/mesh_buffers.cpp to them turns this red.
 
-    The bound is the crease angle itself: smoothing may tilt a corner normal
-    toward its neighbours, but never past 90 degrees from its own face.
+def test_mujocos_own_normals_are_smeared_across_creases():
+    """A pin on a known defect, not on a property we want.
+
+    MuJoCo stores one averaged normal per welded vertex (mesh_normalnum ==
+    mesh_vertnum, mesh_facenormal == mesh_face), so a crease on a CAD part gets
+    a normal smeared across it, and render_gl3.c lights one-sided
+    (``glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0)``). Those corners can therefore
+    shade as if they faced away, which reads as shattered facets rather than as
+    a gripper.
+
+    Drawing with MuJoCo's renderer means drawing with these normals. This test
+    exists so that a mesh refresh, a MuJoCo upgrade or a ``smoothnormal``
+    setting that changes the number is noticed -- if the fractions drop to zero,
+    delete this test and the warning in README.md with it.
     """
     model = _default_scene()
-    for name in ("leader_wrist_roll", "leader_trigger", "leader_handle"):
+    for name, expected in _SMEARED_NORMAL_FRACTION.items():
         mesh = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_MESH, name)
-        pos, normal = _mujoco_xr.mesh_triangles(model._address, mesh)
-        pos = np.asarray(pos, dtype=float).reshape(-1, 3, 3)
-        normal = np.asarray(normal, dtype=float).reshape(-1, 3, 3)
+        vert_adr, vert_num = model.mesh_vertadr[mesh], model.mesh_vertnum[mesh]
+        norm_adr = model.mesh_normaladr[mesh]
+        face_adr, face_num = model.mesh_faceadr[mesh], model.mesh_facenum[mesh]
 
-        geometric = np.cross(pos[:, 1] - pos[:, 0], pos[:, 2] - pos[:, 0])
+        verts = model.mesh_vert[vert_adr : vert_adr + vert_num].astype(float)
+        faces = model.mesh_face[face_adr : face_adr + face_num]
+        corner = model.mesh_normal[norm_adr:][
+            model.mesh_facenormal[face_adr:][:face_num]
+        ]
+
+        tri = verts[faces]
+        geometric = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
         geometric /= np.linalg.norm(geometric, axis=1, keepdims=True) + 1e-30
-        dots = np.einsum("ij,ikj->ik", geometric, normal)
-        assert dots.min() > 0.0, (
-            f"{name}: {int((dots <= 0).sum())} of {dots.size} corner normals face away from "
-            f"their own triangle (worst {dots.min():+.3f})"
-        )
-        assert np.allclose(np.linalg.norm(normal, axis=2), 1.0, atol=1e-5), (
-            f"{name}: normals are not unit length"
+        dots = np.einsum("fc,fkc->fk", geometric, corner)
+
+        assert (dots <= 0).mean() == pytest.approx(expected, abs=5e-4), (
+            f"{name}: {(dots <= 0).mean():.4f} of corner normals face away from their own "
+            f"triangle, was {expected:.4f} when this was measured"
         )
 
 
