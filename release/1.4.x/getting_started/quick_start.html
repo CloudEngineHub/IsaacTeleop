@@ -273,13 +273,13 @@
 <div class="version-switcher">
   <label for="version-select" class="version-switcher__label">Version</label>
   <select id="version-select" class="version-switcher__select" onchange="location = this.value;">
-    <option value="../../1.5.x/getting_started/quick_start.html" >release/1.5.x</option>
+    <option value="quick_start.html" selected>release/1.4.x</option>
     <option value="../../../main/getting_started/quick_start.html" >main</option>
     <option value="../../1.0.x/getting_started/quick_start.html" >release/1.0.x</option>
     <option value="../../1.1.x/getting_started/quick_start.html" >release/1.1.x</option>
     <option value="../../1.2.x/getting_started/quick_start.html" >release/1.2.x</option>
     <option value="../../1.3.x/getting_started/quick_start.html" >release/1.3.x</option>
-    <option value="quick_start.html" selected>release/1.4.x</option>
+    <option value="../../1.5.x/getting_started/quick_start.html" >release/1.5.x</option>
     <option value="../../../v1.3.131/getting_started/quick_start.html" >v1.3.131</option>
     <option value="../../../v1.1.8/getting_started/quick_start.html" >v1.1.8</option>
     <option value="../../../v1.1.5/getting_started/quick_start.html" >v1.1.5</option>
@@ -520,7 +520,7 @@ and an opt-in to pre-release versions — shown here with <a class="reference ex
 </div>
 <p>The two commands above track the newest 1.x release. To follow this version of the documentation
 (1.4.x) exactly, pin to the series it describes instead:</p>
-<pre class="literal-block">uv pip install 'isaacteleop[cloudxr,retargeters]~=1.5.0' \
+<pre class="literal-block">uv pip install 'isaacteleop[cloudxr,retargeters]~=1.4.0' \
       --extra-index-url <a class="reference external" href="https://pypi.nvidia.com" rel="noopener noreferrer" target="_blank">https://pypi.nvidia.com</a> --prerelease=allow</pre>
 <p>Instead of installing the package from PyPI, you can build from source and install the local wheel.
 See <a class="reference internal" href="build_from_source/index.html"><span class="doc">Build from Source</span></a> for more details.</p>
@@ -533,10 +533,13 @@ need to start the runtime in a separate terminal or source any environment file.
 The first launch downloads the CloudXR Web Client SDK and asks you to review and
 accept the EULA on the terminal; answer the prompt once and the acceptance is
 remembered for subsequent runs.</p>
-<p>The CloudXR runtime uses the <code class="docutils literal notranslate"><span class="pre">auto-webrtc</span></code> device profile by default
-(Pico &amp; Quest). For Apple Vision Pro it defaults to <code class="docutils literal notranslate"><span class="pre">auto-native</span></code>. To
-override settings, write a <code class="docutils literal notranslate"><span class="pre">KEY=value</span></code> env file and pass it to the example
-with <code class="docutils literal notranslate"><span class="pre">--cloudxr-env-config</span></code>:</p>
+<p>The CloudXR runtime uses the <code class="docutils literal notranslate"><span class="pre">Quest3</span></code> device profile by default. The name is
+narrower than the profile: <code class="docutils literal notranslate"><span class="pre">Quest3</span></code> serves every WebXR client — Quest, PICO,
+and the desktop-browser IWER emulator — so PICO users should keep it. Apple
+Vision Pro connects natively and needs <code class="docutils literal notranslate"><span class="pre">auto-native</span></code> instead — the default is
+not derived from the connected headset, so set it yourself. To override the
+profile, or any other setting, write a <code class="docutils literal notranslate"><span class="pre">KEY=value</span></code> env file and pass it to the
+example with <code class="docutils literal notranslate"><span class="pre">--cloudxr-env-config</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;NV_DEVICE_PROFILE=auto-native&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>custom.env
 python<span class="w"> </span>examples/teleop/python/gripper_retargeting_example_simple.py<span class="w"> </span><span class="se">\</span>
 <span class="w">      </span>--cloudxr-env-config<span class="w"> </span>./custom.env
@@ -574,7 +577,7 @@ like <code class="docutils literal notranslate"><span class="pre">--host-client<
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">NV_DEVICE_PROFILE</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">auto-webrtc</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Quest3</span></code></p></td>
 <td><p>Device profile</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">auto-webrtc</span></code>, <code class="docutils literal notranslate"><span class="pre">auto-native</span></code>, <code class="docutils literal notranslate"><span class="pre">Quest3</span></code>, <code class="docutils literal notranslate"><span class="pre">AppleVisionPro</span></code></p></td>
 </tr>
