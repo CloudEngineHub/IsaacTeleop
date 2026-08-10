@@ -78,6 +78,13 @@ Wiring
 Connect the Orin's 40-pin header (**J30**) to the transceiver. The Waveshare header labels are
 written from the host's point of view, so this is **straight-through — do not cross TX and RX**:
 
+.. figure:: ../../_static/rebot/orin-sn65hvd230-rebot-wiring.svg
+   :alt: Wiring from the Orin J30 header through the SN65HVD230 transceiver to the reBot arm
+   :width: 100%
+
+   The complete signal path. The Orin drives logic-level TX/RX; the transceiver turns it into the
+   differential pair the arm's motors share.
+
 .. list-table::
    :header-rows: 1
    :widths: 22 30 24 24

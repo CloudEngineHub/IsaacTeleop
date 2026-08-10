@@ -512,6 +512,14 @@ pins are not 5 V tolerant.</p>
 <h2>Wiring<a class="headerlink" href="#wiring" title="Link to this heading">#</a></h2>
 <p>Connect the Orin’s 40-pin header (<strong>J30</strong>) to the transceiver. The Waveshare header labels are
 written from the host’s point of view, so this is <strong>straight-through — do not cross TX and RX</strong>:</p>
+<figure class="align-default" id="id2">
+<a class="reference internal image-reference" href="../../_images/orin-sn65hvd230-rebot-wiring.svg"><img alt="Wiring from the Orin J30 header through the SN65HVD230 transceiver to the reBot arm" src="../../_images/orin-sn65hvd230-rebot-wiring.svg" style="width: 100%;" />
+</a>
+<figcaption>
+<p><span class="caption-text">The complete signal path. The Orin drives logic-level TX/RX; the transceiver turns it into the
+differential pair the arm’s motors share.</span><a class="headerlink" href="#id2" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
 <div class="pst-scrollable-table-container"><table class="table">
 <colgroup>
 <col style="width: 22.0%" />
