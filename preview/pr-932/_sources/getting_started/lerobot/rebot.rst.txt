@@ -27,8 +27,22 @@ existence.
    rather than SocketCAN. For that model, start from the
    `B601-DM quick start <https://wiki.seeedstudio.com/rebot_b601_dm_getting_started>`_.
 
-The working example, including the assets referenced below, lives in
-:code-dir:`examples/rebot`.
+The working example, including the assets referenced below, lives in :code-dir:`examples/rebot`:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 36 64
+
+   * - Path
+     - What it is
+   * - :code-file:`SKILL.md <examples/rebot/SKILL.md>`
+     - The full procedure and troubleshooting tree, written as an agent skill.
+   * - :code-file:`start-gateway.sh <examples/rebot/start-gateway.sh>`
+     - Launches the motorbridge WebSocket gateway for Studio.
+   * - :code-file:`assets/set_can_pinmux.py <examples/rebot/assets/set_can_pinmux.py>`
+     - Sets and verifies the CAN0 pinmux via ``/dev/mem``. Idempotent; needs sudo.
+   * - :code-file:`assets/can0-rebot.service <examples/rebot/assets/can0-rebot.service>`
+     - systemd oneshot that brings ``can0`` up at 1 Mbit on boot.
 
 What you need
 -------------
@@ -147,12 +161,13 @@ Two checks with a multimeter save hours of debugging:
 Bring up the bus
 ----------------
 
-Install the example's dependencies:
+Install the example's dependencies and check the CLI is reachable:
 
 .. code-block:: bash
 
    cd examples/rebot
    uv sync
+   uv run motorbridge-cli --help
 
 Create ``can0`` at the RobStride bitrate of 1 Mbit and bring it up:
 
@@ -223,8 +238,9 @@ for all seven joints.
    ``motorbridge-cli`` command, or the CLI will find nothing.
 
    ``start-gateway.sh`` defaults to binding ``0.0.0.0:9002`` with the placeholder token ``0000``.
-   That token is the only thing between your network and a moving arm. Outside an isolated bench
-   network, override both:
+   The gateway refuses a non-loopback bind unless ``MOTORBRIDGE_WS_TOKEN`` is set, so that token is
+   the only thing between your network and a moving arm. Outside an isolated bench network,
+   override both:
 
    .. code-block:: bash
 
@@ -277,6 +293,6 @@ transceiver, or wiring — it never leaves the chip:
    sudo ip link set can0 type can bitrate 1000000 loopback off restart-ms 100 && sudo ip link set can0 up
 
 If that echoes but a real scan stays silent, the problem is downstream of the controller: motor
-power, transceiver supply, wiring, or the CAN0 pinmux registers. ``assets/set_can_pinmux.py`` reads
-back and sets those registers; on a stock AGX Orin devkit the bootloader already programs them
-correctly.
+power, transceiver supply, wiring, or the CAN0 pinmux registers. ``assets/set_can_pinmux.py`` (run
+with sudo) reads back and sets those registers; on a stock AGX Orin devkit the bootloader already
+programs them correctly.

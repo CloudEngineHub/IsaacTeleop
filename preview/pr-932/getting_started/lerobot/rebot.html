@@ -453,8 +453,33 @@ and motorbridge reaches Damiao hardware over its own <code class="docutils liter
 rather than SocketCAN. For that model, start from the
 <a class="reference external" href="https://wiki.seeedstudio.com/rebot_b601_dm_getting_started" rel="noopener noreferrer" target="_blank">B601-DM quick start</a>.</p>
 </div>
-<p>The working example, including the assets referenced below, lives in
-<a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/tree/main/examples/rebot" rel="noopener noreferrer" target="_blank">examples/rebot</a>.</p>
+<p>The working example, including the assets referenced below, lives in <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/tree/main/examples/rebot" rel="noopener noreferrer" target="_blank">examples/rebot</a>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 36.0%" />
+<col style="width: 64.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Path</p></th>
+<th class="head"><p>What it is</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/SKILL.md" rel="noopener noreferrer" target="_blank">SKILL.md</a></p></td>
+<td><p>The full procedure and troubleshooting tree, written as an agent skill.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/start-gateway.sh" rel="noopener noreferrer" target="_blank">start-gateway.sh</a></p></td>
+<td><p>Launches the motorbridge WebSocket gateway for Studio.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/assets/set_can_pinmux.py" rel="noopener noreferrer" target="_blank">assets/set_can_pinmux.py</a></p></td>
+<td><p>Sets and verifies the CAN0 pinmux via <code class="docutils literal notranslate"><span class="pre">/dev/mem</span></code>. Idempotent; needs sudo.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/examples/rebot/assets/can0-rebot.service" rel="noopener noreferrer" target="_blank">assets/can0-rebot.service</a></p></td>
+<td><p>systemd oneshot that brings <code class="docutils literal notranslate"><span class="pre">can0</span></code> up at 1 Mbit on boot.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <section id="what-you-need">
 <h2>What you need<a class="headerlink" href="#what-you-need" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="table">
@@ -591,9 +616,10 @@ wiring fault.</p></li>
 </section>
 <section id="bring-up-the-bus">
 <h2>Bring up the bus<a class="headerlink" href="#bring-up-the-bus" title="Link to this heading">#</a></h2>
-<p>Install the example’s dependencies:</p>
+<p>Install the example’s dependencies and check the CLI is reachable:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>examples/rebot
 uv<span class="w"> </span>sync
+uv<span class="w"> </span>run<span class="w"> </span>motorbridge-cli<span class="w"> </span>--help
 </pre></div>
 </div>
 <p>Create <code class="docutils literal notranslate"><span class="pre">can0</span></code> at the RobStride bitrate of 1 Mbit and bring it up:</p>
@@ -649,8 +675,9 @@ for all seven joints.</p>
 <p>The gateway takes <strong>exclusive</strong> ownership of the CAN bus — stop it before running any
 <code class="docutils literal notranslate"><span class="pre">motorbridge-cli</span></code> command, or the CLI will find nothing.</p>
 <p><code class="docutils literal notranslate"><span class="pre">start-gateway.sh</span></code> defaults to binding <code class="docutils literal notranslate"><span class="pre">0.0.0.0:9002</span></code> with the placeholder token <code class="docutils literal notranslate"><span class="pre">0000</span></code>.
-That token is the only thing between your network and a moving arm. Outside an isolated bench
-network, override both:</p>
+The gateway refuses a non-loopback bind unless <code class="docutils literal notranslate"><span class="pre">MOTORBRIDGE_WS_TOKEN</span></code> is set, so that token is
+the only thing between your network and a moving arm. Outside an isolated bench network,
+override both:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">MOTORBRIDGE_WS_TOKEN</span><span class="o">=</span>&lt;token&gt;<span class="w"> </span><span class="nv">BIND</span><span class="o">=</span><span class="m">127</span>.0.0.1:9002<span class="w"> </span>./start-gateway.sh
 </pre></div>
 </div>
@@ -697,9 +724,9 @@ sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </spa
 </pre></div>
 </div>
 <p>If that echoes but a real scan stays silent, the problem is downstream of the controller: motor
-power, transceiver supply, wiring, or the CAN0 pinmux registers. <code class="docutils literal notranslate"><span class="pre">assets/set_can_pinmux.py</span></code> reads
-back and sets those registers; on a stock AGX Orin devkit the bootloader already programs them
-correctly.</p>
+power, transceiver supply, wiring, or the CAN0 pinmux registers. <code class="docutils literal notranslate"><span class="pre">assets/set_can_pinmux.py</span></code> (run
+with sudo) reads back and sets those registers; on a stock AGX Orin devkit the bootloader already
+programs them correctly.</p>
 </section>
 </section>
 
