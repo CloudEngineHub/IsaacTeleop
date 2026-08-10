@@ -634,9 +634,12 @@ either pass <code class="docutils literal notranslate"><span class="pre">--accep
 </div>
 <p>When the application <em>is</em> the entrypoint, it can own the runtime in-process
 instead of running a second one beside it — construct
-<code class="docutils literal notranslate"><span class="pre">CloudXRLauncher(run_embedded=True)</span></code>, as the ROS 2 example node does. A
-runtime that is already serving still wins, so this stays safe on a host where
-a service is up.</p>
+<code class="docutils literal notranslate"><span class="pre">CloudXRLauncher(run_embedded=True)</span></code>, as the ROS 2 example node does. It
+refuses to start where a runtime is already serving the install directory:
+the options that configure the WSS proxy (<code class="docutils literal notranslate"><span class="pre">host_client</span></code>, <code class="docutils literal notranslate"><span class="pre">setup_oob</span></code>,
+<code class="docutils literal notranslate"><span class="pre">usb_local</span></code>) only apply to a proxy the process starts itself, so attaching
+would drop them with nothing to report it. Stop that service, or drop
+<code class="docutils literal notranslate"><span class="pre">run_embedded</span></code> to attach.</p>
 <p>To let other containers attach, share the run directory as a volume and point
 them at it with <code class="docutils literal notranslate"><span class="pre">XR_RUNTIME_JSON</span></code> and <code class="docutils literal notranslate"><span class="pre">NV_CXR_RUNTIME_DIR</span></code>;
 <code class="docutils literal notranslate"><span class="pre">deps/cloudxr/docker-compose.test.yaml</span></code> mounts it read-only into the test
