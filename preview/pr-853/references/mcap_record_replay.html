@@ -537,7 +537,9 @@ contains exactly the matching channels.  To capture more data, add
 additional source nodes (<code class="docutils literal notranslate"><span class="pre">HeadSource</span></code>, <code class="docutils literal notranslate"><span class="pre">ControllersSource</span></code>, …) in
 <code class="docutils literal notranslate"><span class="pre">common.py</span></code>.</p>
 <p>For a live browser view of <strong>all</strong> human DeviceIO trackers at once (hands, head,
-controllers, and full body), see <code class="docutils literal notranslate"><span class="pre">examples/deviceio_live_view/python/</span></code>.</p>
+controllers, and full body), see <code class="docutils literal notranslate"><span class="pre">examples/deviceio_live_view/python/</span></code>.  It is
+set up the same way as this example — the <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> notes under <a class="reference internal" href="#recording">Recording</a>
+apply to it too.</p>
 <p>A C++ recorder lives at <code class="docutils literal notranslate"><span class="pre">examples/mcap_record_replay/cpp/</span></code>:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">record_full_body.cpp</span></code> — records the <code class="docutils literal notranslate"><span class="pre">full_body</span></code> channel by passing a
@@ -549,7 +551,7 @@ runs it together with the CloudXR runtime and the full-body printer (see
 </ul>
 <section id="recording">
 <h3>Recording<a class="headerlink" href="#recording" title="Link to this heading">#</a></h3>
-<p>From the installed example directory:</p>
+<p>From the example directory:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>examples/mcap_record_replay/python
 uv<span class="w"> </span>sync
 uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>record_hand.py<span class="w">            </span><span class="c1"># 5 s → ../recordings/hands_&lt;timestamp&gt;.mcap</span>
@@ -557,8 +559,19 @@ uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </sp
 uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>record_hand.py<span class="w"> </span><span class="m">10</span><span class="w"> </span>out.mcap<span class="w">  </span><span class="c1"># custom output path</span>
 </pre></div>
 </div>
+<p>The example never downloads a published wheel — it runs against the
+<code class="docutils literal notranslate"><span class="pre">isaacteleop</span></code> next to it.  Above, <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> builds it from this checkout; the
+first sync compiles the extension modules and takes a few minutes, later ones
+reuse the cached build, and the install is editable, so edits under
+<code class="docutils literal notranslate"><span class="pre">src/python/</span></code> need no rebuild.  From
+<code class="docutils literal notranslate"><span class="pre">install/examples/mcap_record_replay/python</span></code> (after <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--install</span></code>) it
+picks up the wheel you just built instead — see
+<a class="reference internal" href="../getting_started/build_from_source/index.html"><span class="doc">Build from Source</span></a>.</p>
 <p>An active OpenXR runtime / headset must be connected, just like any other
-live <code class="docutils literal notranslate"><span class="pre">TeleopSession</span></code>.</p>
+live <code class="docutils literal notranslate"><span class="pre">TeleopSession</span></code>.  Recording also needs the CloudXR runtime natives, which
+a from-source build bundles only when the CloudXR SDK tarball is available —
+CMake fetches it automatically, and warns rather than fails if it cannot.  Replay
+has no such requirement.</p>
 </section>
 <section id="replaying">
 <h3>Replaying<a class="headerlink" href="#replaying" title="Link to this heading">#</a></h3>
@@ -760,7 +773,7 @@ When empty, <code class="docutils literal notranslate"><span class="pre">TeleopS
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 01, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 10, 2026.
       <br/>
     
   </p>
