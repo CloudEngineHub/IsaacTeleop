@@ -238,13 +238,18 @@ Two arms
 The two controllers are independent, so a second arm needs no more than a second transceiver on the
 ``can1`` pins.
 
-.. note::
+.. important::
 
    ``set_can_pinmux.py`` programs the **CAN0** pins only (``0x0c303010`` and ``0x0c303018``). The
-   CAN1 pins live in their own registers in the same AON block, which the script does not touch —
-   extend ``REGS`` with them before relying on ``can1``.
+   CAN1 pins live in their own registers in the same AON block, which the script does not touch, so
+   ``can1`` will go ``UP`` and stay deaf until you extend ``REGS`` with them.
 
-Bring both buses up the same way:
+   This is why the shipped unit covers ``can0`` only. ``mttcan`` registers both netdevs on every
+   Orin, so a unit that brought ``can1`` up unconditionally would leave every single-arm machine
+   with a live interface wired to nothing — noise in ``ip -br link``, a candidate for bus-off, and a
+   bus that looks ready when its pins are not even routed.
+
+Once the pinmux covers CAN1, bring both buses up the same way:
 
 .. code-block:: bash
 
@@ -261,8 +266,11 @@ Give each one its own gateway on its own port, since a gateway owns exactly one 
    BIND=127.0.0.1:9002 ./start-gateway.sh --channel can0
    BIND=127.0.0.1:9003 ./start-gateway.sh --channel can1
 
-For reboot persistence, copy ``can0-rebot.service`` to a second unit, replacing ``can0`` with
-``can1`` throughout, and enable both.
+For reboot persistence, copy ``can0-rebot.service`` to ``can1-rebot.service``, replace the interface
+name throughout, and point its ``ExecStartPre`` at a pinmux step that programs the CAN1 registers —
+the shipped script will not do it. If you end up running both routinely, a systemd template unit
+(``can-rebot@.service``, enabled as ``can-rebot@can0`` and ``can-rebot@can1``) collapses the two
+files back into one.
 
 Calibrate and drive
 -------------------

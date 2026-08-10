@@ -677,13 +677,17 @@ python3: can&#39;t open file &#39;/opt/rebot/set_can_pinmux.py&#39;: [Errno 2] N
 <h2>Two arms<a class="headerlink" href="#two-arms" title="Link to this heading">#</a></h2>
 <p>The two controllers are independent, so a second arm needs no more than a second transceiver on the
 <code class="docutils literal notranslate"><span class="pre">can1</span></code> pins.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
 <p><code class="docutils literal notranslate"><span class="pre">set_can_pinmux.py</span></code> programs the <strong>CAN0</strong> pins only (<code class="docutils literal notranslate"><span class="pre">0x0c303010</span></code> and <code class="docutils literal notranslate"><span class="pre">0x0c303018</span></code>). The
-CAN1 pins live in their own registers in the same AON block, which the script does not touch —
-extend <code class="docutils literal notranslate"><span class="pre">REGS</span></code> with them before relying on <code class="docutils literal notranslate"><span class="pre">can1</span></code>.</p>
+CAN1 pins live in their own registers in the same AON block, which the script does not touch, so
+<code class="docutils literal notranslate"><span class="pre">can1</span></code> will go <code class="docutils literal notranslate"><span class="pre">UP</span></code> and stay deaf until you extend <code class="docutils literal notranslate"><span class="pre">REGS</span></code> with them.</p>
+<p>This is why the shipped unit covers <code class="docutils literal notranslate"><span class="pre">can0</span></code> only. <code class="docutils literal notranslate"><span class="pre">mttcan</span></code> registers both netdevs on every
+Orin, so a unit that brought <code class="docutils literal notranslate"><span class="pre">can1</span></code> up unconditionally would leave every single-arm machine
+with a live interface wired to nothing — noise in <code class="docutils literal notranslate"><span class="pre">ip</span> <span class="pre">-br</span> <span class="pre">link</span></code>, a candidate for bus-off, and a
+bus that looks ready when its pins are not even routed.</p>
 </div>
-<p>Bring both buses up the same way:</p>
+<p>Once the pinmux covers CAN1, bring both buses up the same way:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="m">1</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
 <span class="w">    </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>can<span class="nv">$i</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span>can<span class="w"> </span>bitrate<span class="w"> </span><span class="m">1000000</span><span class="w"> </span>restart-ms<span class="w"> </span><span class="m">100</span>
 <span class="w">    </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>up<span class="w"> </span>can<span class="nv">$i</span>
@@ -696,8 +700,11 @@ Give each one its own gateway on its own port, since a gateway owns exactly one 
 <span class="nv">BIND</span><span class="o">=</span><span class="m">127</span>.0.0.1:9003<span class="w"> </span>./start-gateway.sh<span class="w"> </span>--channel<span class="w"> </span>can1
 </pre></div>
 </div>
-<p>For reboot persistence, copy <code class="docutils literal notranslate"><span class="pre">can0-rebot.service</span></code> to a second unit, replacing <code class="docutils literal notranslate"><span class="pre">can0</span></code> with
-<code class="docutils literal notranslate"><span class="pre">can1</span></code> throughout, and enable both.</p>
+<p>For reboot persistence, copy <code class="docutils literal notranslate"><span class="pre">can0-rebot.service</span></code> to <code class="docutils literal notranslate"><span class="pre">can1-rebot.service</span></code>, replace the interface
+name throughout, and point its <code class="docutils literal notranslate"><span class="pre">ExecStartPre</span></code> at a pinmux step that programs the CAN1 registers —
+the shipped script will not do it. If you end up running both routinely, a systemd template unit
+(<code class="docutils literal notranslate"><span class="pre">can-rebot&#64;.service</span></code>, enabled as <code class="docutils literal notranslate"><span class="pre">can-rebot&#64;can0</span></code> and <code class="docutils literal notranslate"><span class="pre">can-rebot&#64;can1</span></code>) collapses the two
+files back into one.</p>
 </section>
 <section id="calibrate-and-drive">
 <h2>Calibrate and drive<a class="headerlink" href="#calibrate-and-drive" title="Link to this heading">#</a></h2>
