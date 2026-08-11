@@ -546,7 +546,7 @@ MCAP channel names, and class names; override only genuine exceptions (<code cla
 <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/core/codegen/generate_trackers.py" rel="noopener noreferrer" target="_blank">src/core/codegen/generate_trackers.py</a> and wires generated sources into
 <code class="docutils literal notranslate"><span class="pre">deviceio_trackers</span></code>, <code class="docutils literal notranslate"><span class="pre">live_trackers</span></code>, and <code class="docutils literal notranslate"><span class="pre">replay_trackers</span></code>.</p></li>
 </ol>
-<p>Use <code class="docutils literal notranslate"><span class="pre">direction</span> <span class="pre">=</span> <span class="pre">&quot;out&quot;</span></code> when Teleop <strong>pushes</strong> a typed table to a plugin (e.g.
+<p>Use <code class="docutils literal notranslate"><span class="pre">direction</span> <span class="pre">=</span> <span class="pre">&quot;push&quot;</span></code> when Teleop <strong>pushes</strong> a typed table to a plugin (e.g.
 <code class="docutils literal notranslate"><span class="pre">HapticCommandPushTracker</span></code>). Cross-process <strong>consumers</strong> that bucket multiple
 <code class="docutils literal notranslate"><span class="pre">HapticCommand.endpoint</span></code> samples on one collection (e.g. <code class="docutils literal notranslate"><span class="pre">HapticCommandReaderTracker</span></code> for Manus
 haptics) stay hand-written — see <a class="reference internal" href="../references/generated_trackers.html"><span class="doc">Generated Tracker Code</span></a>.</p>
@@ -825,7 +825,7 @@ trackers during the update loop.</p></li>
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 10, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 11, 2026.
       <br/>
     
   </p>

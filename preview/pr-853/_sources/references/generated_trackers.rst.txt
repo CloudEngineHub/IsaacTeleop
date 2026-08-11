@@ -24,8 +24,8 @@ Three inputs drive the generator:
   ``%placeholder%`` substitutions (``%name%``, ``%name_CamelCase%``, and so on).
 - :code-dir:`src/core/codegen` — ``manifest.py`` resolves the placeholders, ``templates.py``
   derives type and file names, ``templates/`` holds the C++ bodies as ``*.hpp.template`` /
-  ``*.cpp.template`` (``@KEY@`` substitution via ``in_renderer.py``), and ``generate_trackers.py``
-  renders the output.
+  ``*.cpp.template`` under ``pull/`` and ``push/`` (``@KEY@`` substitution via ``template_renderer.py``),
+  and ``generate_trackers.py`` renders the output.
 
 :code-file:`cmake/GenerateTrackers.cmake` runs the generator through ``execute_process`` at
 **configure** time, not build time, because CMake needs the resulting source list before it can
@@ -94,7 +94,7 @@ Generated today
      - Schema lives in ``pedals.fbs``, so ``schema`` and ``channel`` are overridden
    * - ``haptic_command``
      - ``HapticCommandPushTracker``
-     - ``direction = "out"``: a typed producer wrapping ``SchemaPusher``
+     - ``direction = "push"``: a typed producer wrapping ``SchemaPusher``
 
 Still hand-written
 ------------------
@@ -131,7 +131,7 @@ Future work
 ``HapticCommandReaderTracker`` with a ``multi_endpoint`` template (bucket samples by
 ``HapticCommand.endpoint`` on one push-tensor collection). That shape was removed: it made the
 codegen tree branchy for a single device, and a generic multi-endpoint reader does not fit
-``in/`` or ``out``. The hand-written reader remains the supported approach; a future redesign
+``pull/`` or ``push``. The hand-written reader remains the supported approach; a future redesign
 (split tensors/collections per endpoint, or a dedicated generator) is optional follow-up.
 
 **Multi-stream shape (OAK).** ``FrameMetadataTrackerOak`` owns one ``SchemaTracker`` per camera
@@ -153,10 +153,10 @@ still hand-written. They are derivable from the ``.bfbs`` reflection data ``flat
 (``--bfbs-gen-embed --reflect-names --reflect-types``), so this is a viable follow-up, but it is a
 separate generator with its own risks.
 
-**Manifest ``python_accessor`` (pybind method name).** Generated ``in`` trackers use
-``fragments/pybind_in.template``, which binds whatever string ``python_accessor`` holds (default
+**Manifest ``python_accessor`` (pybind method name).** Generated ``pull`` trackers use
+``fragments/pybind_pull.template``, which binds whatever string ``python_accessor`` holds (default
 ``get_data``; ``oglo_tactile`` and ``generic_3axis_pedal`` override with device-specific names).
-``direction = "out"`` uses ``push`` via defaults. Future work: remove the manifest key and
+``direction = "push"`` uses ``push`` via defaults. Future work: remove the manifest key and
 hard-code ``get_data`` on readers (or maybe ``pull``, paired with ``push`` on producers).
 Maybe rename the C++ facade to match if we pick ``pull``, so Python and C++ stay aligned without
 per-tracker overrides.

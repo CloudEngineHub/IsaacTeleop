@@ -124,7 +124,7 @@ stack. Instead:
    :code-file:`src/core/codegen/generate_trackers.py` and wires generated sources into
    ``deviceio_trackers``, ``live_trackers``, and ``replay_trackers``.
 
-Use ``direction = "out"`` when Teleop **pushes** a typed table to a plugin (e.g.
+Use ``direction = "push"`` when Teleop **pushes** a typed table to a plugin (e.g.
 ``HapticCommandPushTracker``). Cross-process **consumers** that bucket multiple
 ``HapticCommand.endpoint`` samples on one collection (e.g. ``HapticCommandReaderTracker`` for Manus
 haptics) stay hand-written — see :doc:`../references/generated_trackers`.

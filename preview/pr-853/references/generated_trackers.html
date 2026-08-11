@@ -441,8 +441,8 @@ carrying only the values that differ from the defaults.</p></li>
 <code class="docutils literal notranslate"><span class="pre">%placeholder%</span></code> substitutions (<code class="docutils literal notranslate"><span class="pre">%name%</span></code>, <code class="docutils literal notranslate"><span class="pre">%name_CamelCase%</span></code>, and so on).</p></li>
 <li><p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/tree/main/src/core/codegen" rel="noopener noreferrer" target="_blank">src/core/codegen</a> — <code class="docutils literal notranslate"><span class="pre">manifest.py</span></code> resolves the placeholders, <code class="docutils literal notranslate"><span class="pre">templates.py</span></code>
 derives type and file names, <code class="docutils literal notranslate"><span class="pre">templates/</span></code> holds the C++ bodies as <code class="docutils literal notranslate"><span class="pre">*.hpp.template</span></code> /
-<code class="docutils literal notranslate"><span class="pre">*.cpp.template</span></code> (<code class="docutils literal notranslate"><span class="pre">&#64;KEY&#64;</span></code> substitution via <code class="docutils literal notranslate"><span class="pre">in_renderer.py</span></code>), and <code class="docutils literal notranslate"><span class="pre">generate_trackers.py</span></code>
-renders the output.</p></li>
+<code class="docutils literal notranslate"><span class="pre">*.cpp.template</span></code> under <code class="docutils literal notranslate"><span class="pre">pull/</span></code> and <code class="docutils literal notranslate"><span class="pre">push/</span></code> (<code class="docutils literal notranslate"><span class="pre">&#64;KEY&#64;</span></code> substitution via <code class="docutils literal notranslate"><span class="pre">template_renderer.py</span></code>),
+and <code class="docutils literal notranslate"><span class="pre">generate_trackers.py</span></code> renders the output.</p></li>
 </ul>
 <p><a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/cmake/GenerateTrackers.cmake" rel="noopener noreferrer" target="_blank">cmake/GenerateTrackers.cmake</a> runs the generator through <code class="docutils literal notranslate"><span class="pre">execute_process</span></code> at
 <strong>configure</strong> time, not build time, because CMake needs the resulting source list before it can
@@ -515,7 +515,7 @@ the built module.</p>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">haptic_command</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">HapticCommandPushTracker</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">direction</span> <span class="pre">=</span> <span class="pre">&quot;out&quot;</span></code>: a typed producer wrapping <code class="docutils literal notranslate"><span class="pre">SchemaPusher</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">direction</span> <span class="pre">=</span> <span class="pre">&quot;push&quot;</span></code>: a typed producer wrapping <code class="docutils literal notranslate"><span class="pre">SchemaPusher</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -568,7 +568,7 @@ the built module.</p>
 <code class="docutils literal notranslate"><span class="pre">HapticCommandReaderTracker</span></code> with a <code class="docutils literal notranslate"><span class="pre">multi_endpoint</span></code> template (bucket samples by
 <code class="docutils literal notranslate"><span class="pre">HapticCommand.endpoint</span></code> on one push-tensor collection). That shape was removed: it made the
 codegen tree branchy for a single device, and a generic multi-endpoint reader does not fit
-<code class="docutils literal notranslate"><span class="pre">in/</span></code> or <code class="docutils literal notranslate"><span class="pre">out</span></code>. The hand-written reader remains the supported approach; a future redesign
+<code class="docutils literal notranslate"><span class="pre">pull/</span></code> or <code class="docutils literal notranslate"><span class="pre">push</span></code>. The hand-written reader remains the supported approach; a future redesign
 (split tensors/collections per endpoint, or a dedicated generator) is optional follow-up.</p>
 <p><strong>Multi-stream shape (OAK).</strong> <code class="docutils literal notranslate"><span class="pre">FrameMetadataTrackerOak</span></code> owns one <code class="docutils literal notranslate"><span class="pre">SchemaTracker</span></code> per camera
 stream, with collection ids derived as <code class="docutils literal notranslate"><span class="pre">{prefix}/{StreamName}</span></code>. It needs a template variant that
@@ -586,10 +586,10 @@ PICO vendor. Its <code class="docutils literal notranslate"><span class="pre">co
 still hand-written. They are derivable from the <code class="docutils literal notranslate"><span class="pre">.bfbs</span></code> reflection data <code class="docutils literal notranslate"><span class="pre">flatc</span></code> already emits
 (<code class="docutils literal notranslate"><span class="pre">--bfbs-gen-embed</span> <span class="pre">--reflect-names</span> <span class="pre">--reflect-types</span></code>), so this is a viable follow-up, but it is a
 separate generator with its own risks.</p>
-<p><strong>Manifest ``python_accessor`` (pybind method name).</strong> Generated <code class="docutils literal notranslate"><span class="pre">in</span></code> trackers use
-<code class="docutils literal notranslate"><span class="pre">fragments/pybind_in.template</span></code>, which binds whatever string <code class="docutils literal notranslate"><span class="pre">python_accessor</span></code> holds (default
+<p><strong>Manifest ``python_accessor`` (pybind method name).</strong> Generated <code class="docutils literal notranslate"><span class="pre">pull</span></code> trackers use
+<code class="docutils literal notranslate"><span class="pre">fragments/pybind_pull.template</span></code>, which binds whatever string <code class="docutils literal notranslate"><span class="pre">python_accessor</span></code> holds (default
 <code class="docutils literal notranslate"><span class="pre">get_data</span></code>; <code class="docutils literal notranslate"><span class="pre">oglo_tactile</span></code> and <code class="docutils literal notranslate"><span class="pre">generic_3axis_pedal</span></code> override with device-specific names).
-<code class="docutils literal notranslate"><span class="pre">direction</span> <span class="pre">=</span> <span class="pre">&quot;out&quot;</span></code> uses <code class="docutils literal notranslate"><span class="pre">push</span></code> via defaults. Future work: remove the manifest key and
+<code class="docutils literal notranslate"><span class="pre">direction</span> <span class="pre">=</span> <span class="pre">&quot;push&quot;</span></code> uses <code class="docutils literal notranslate"><span class="pre">push</span></code> via defaults. Future work: remove the manifest key and
 hard-code <code class="docutils literal notranslate"><span class="pre">get_data</span></code> on readers (or maybe <code class="docutils literal notranslate"><span class="pre">pull</span></code>, paired with <code class="docutils literal notranslate"><span class="pre">push</span></code> on producers).
 Maybe rename the C++ facade to match if we pick <code class="docutils literal notranslate"><span class="pre">pull</span></code>, so Python and C++ stay aligned without
 per-tracker overrides.</p>
@@ -734,7 +734,7 @@ correct outcome — the generator exists to remove mechanical duplication, not t
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 10, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 11, 2026.
       <br/>
     
   </p>
