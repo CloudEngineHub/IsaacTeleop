@@ -5,7 +5,10 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import os
+import sys
 from datetime import datetime, timezone
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "_ext"))
 
 # -- Project information -----------------------------------------------------
 
@@ -37,9 +40,10 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_multiversion",
     "sphinx_design",
+    "partner_grid",
 ]
 
-exclude_patterns = ["build", "_templates", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["build", "_templates", "_data", "_ext", "Thumbs.db", ".DS_Store"]
 
 # sphinx-copybutton only targets highlighted blocks (``div.highlight pre``) by default,
 # which skips ``parsed-literal`` (rendered as a bare ``pre.literal-block``).  Commands
@@ -62,7 +66,7 @@ html_favicon = "_static/favicon.ico"
 html_show_copyright = True
 html_show_sphinx = False
 html_static_path = ["_static"]
-html_css_files = ["css/custom.css"]
+html_css_files = ["css/custom.css", "css/ecosystem.css"]
 
 # Per-version icon link overrides.  Keyed by the git ref name that
 # sphinx-multiversion builds (SPHINX_MULTIVERSION_NAME env var).  Unmatched

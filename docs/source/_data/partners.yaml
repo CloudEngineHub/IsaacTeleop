@@ -1,0 +1,245 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Source of truth for the Ecosystem page partner cards; rendered by the
+# ``partner-grid`` directive (docs/source/_ext/partner_grid.py).
+#
+# Adding a partner:
+#   1. Append a record below. Required: id, organization, product_name, section,
+#      lifecycle, category, description, links, order.
+#   2. Drop the logo in docs/source/_static/partner-logos/ and point logo.src at it.
+#      Omit the whole `logo` key to render a grey placeholder until artwork lands.
+#      Add logo.src_dark when a single-color mark would vanish in the other theme;
+#      the two files are swapped automatically by light/dark mode.
+#
+# Controlled values -- do not invent synonyms:
+#   section             active | upcoming
+#   lifecycle           maintained | upcoming | deprecated
+#   integration_status  planning | in-integration        (optional)
+#   links[].kind        internal | external | tracking
+#     internal needs exactly one of `doc` (a docname) or `ref` (a label);
+#     external and tracking need `url`.
+#     tracking urls must end in an issue or pull number: the card appends it to the
+#     label, so `label: Tracking` renders as "Tracking #274". Do not write the
+#     number into the label yourself.
+#
+# new_until is an unquoted YYYY-MM-DD date. Up to that date the card shows a
+# green "New" badge, after which it falls back to its lifecycle label with no
+# edit required.
+
+partners:
+  # ----------------------------------------------------------------- active --
+  - id: apple-vision-pro
+    organization: Apple
+    product_name: Apple Vision Pro
+    section: active
+    lifecycle: maintained
+    category: XR Headset
+    type: Input Device
+    logo:
+      src: apple.svg
+      src_dark: apple-dark.svg
+      alt: Apple logo
+    description: >
+      Hand tracking (26 joints) and spatial controllers through the Isaac XR Teleop
+      sample client for visionOS.
+    links:
+      - label: Overview
+        kind: external
+        url: https://www.apple.com/apple-vision-pro/
+      - label: Integration
+        kind: internal
+        ref: connect-apple-vision-pro
+    order: 10
+
+  - id: meta-quest
+    organization: Meta
+    product_name: Meta Quest 2 / 3 / 3S
+    section: active
+    lifecycle: maintained
+    category: XR Headset
+    type: Input Device
+    description: >
+      Motion controllers, triggers, thumbsticks, and hand tracking through the
+      browser-based Isaac Teleop Web Client.
+    links:
+      - label: Overview
+        kind: external
+        url: https://www.meta.com/quest/
+      - label: Integration
+        kind: internal
+        ref: connect-quest-pico
+    order: 20
+
+  - id: pico
+    organization: PICO
+    product_name: Pico 4 Ultra & Motion Tracker
+    section: active
+    lifecycle: maintained
+    category: XR Headset
+    type: Body Tracking
+    description: >
+      Motion controllers, hand tracking, and full-body tracking via the Isaac Teleop
+      Web Client. Full-body tracking requires an enterprise-activated headset.
+    links:
+      - label: Overview
+        kind: external
+        url: https://www.picoxr.com/products/pico4-ultra
+      - label: Integration
+        kind: internal
+        ref: connect-quest-pico
+    order: 30
+
+  - id: manus
+    organization: MANUS
+    product_name: MANUS Metagloves Pro
+    section: active
+    lifecycle: maintained
+    category: Hand-Tracking Gloves
+    description: >
+      High-fidelity finger tracking through the MANUS SDK plugin, in both the standard
+      and haptic glove variants.
+    links:
+      - label: Overview
+        kind: external
+        url: https://www.manus-meta.com/robotics#nvidia
+      - label: Integration
+        kind: internal
+        doc: /device/manus
+    order: 40
+
+  - id: haptikos
+    organization: Haptikos
+    product_name: Haptikos Exoskeletons
+    section: active
+    lifecycle: maintained
+    category: Hand Exoskeleton
+    type: Haptics
+    description: >
+      High-fidelity finger tracking with force feedback through the Haptikos
+      Robotics API plugin.
+    links:
+      - label: Overview
+        kind: external
+        url: https://haptikos.tech/product/haptikos/
+      - label: Integration
+        kind: internal
+        doc: /device/haptikos
+    order: 50
+
+  - id: logitech
+    organization: Logitech
+    product_name: Logitech Rudder Pedals
+    section: active
+    lifecycle: maintained
+    category: Foot Pedal
+    type: Input Device
+    description: >
+      Three-axis foot pedal exposed through the generic 3-axis pedal plugin for
+      locomotion and clutch control.
+    links:
+      - label: Overview
+        kind: external
+        url: https://www.logitechg.com/en-us/products/flight/flight-simulator-rudder-pedals.html
+      - label: Integration
+        kind: external
+        url: https://github.com/NVIDIA/IsaacTeleop/tree/main/src/plugins/generic_3axis_pedal
+    order: 60
+
+  - id: luxonis
+    organization: Luxonis
+    product_name: Luxonis OAK-D Camera
+    section: active
+    lifecycle: maintained
+    category: Camera
+    type: Data Capture
+    description: >
+      Offline egocentric data recording through the OAK-D camera plugin.
+    links:
+      - label: Overview
+        kind: external
+        url: https://www.luxonis.com/
+      - label: Acquire
+        kind: external
+        url: https://shop.luxonis.com/products/oak-d
+      - label: Integration
+        kind: internal
+        doc: /device/oak
+    order: 70
+
+  # --------------------------------------------------------------- upcoming --
+  - id: haply
+    organization: Haply
+    product_name: Haply
+    section: upcoming
+    lifecycle: upcoming
+    integration_status: planning
+    category: Master Manipulator
+    type: Haptics
+    description: >
+      Force-feedback master manipulators planned through the USB CLI plugin path.
+    links:
+      - label: Tracking
+        kind: tracking
+        url: https://github.com/NVIDIA/IsaacTeleop/issues/274
+    order: 10
+
+  - id: joylo
+    organization: JoyLo
+    product_name: JoyLo
+    section: upcoming
+    lifecycle: upcoming
+    integration_status: planning
+    category: Master Manipulator
+    description: >
+      Master manipulator over USB, in joint planning with the Isaac Teleop team.
+    links:
+      - label: Tracking
+        kind: tracking
+        url: https://github.com/NVIDIA/IsaacTeleop/issues/272
+    order: 20
+
+  - id: gello
+    organization: Gello
+    product_name: Gello
+    section: upcoming
+    lifecycle: upcoming
+    integration_status: planning
+    category: Master Manipulator
+    description: >
+      Low-cost master manipulator targeting the USB CLI plugin interface.
+    links:
+      - label: Tracking
+        kind: tracking
+        url: https://github.com/NVIDIA/IsaacTeleop/issues/273
+    order: 30
+
+  - id: so-101
+    organization: SO-101
+    product_name: SO-101
+    section: upcoming
+    lifecycle: upcoming
+    integration_status: planning
+    category: Master Manipulator
+    description: >
+      Open master-manipulator arm, integration scoped through the USB CLI plugin.
+    links:
+      - label: Tracking
+        kind: tracking
+        url: https://github.com/NVIDIA/IsaacTeleop/issues/275
+    order: 40
+
+  - id: 3dconnexion
+    organization: 3Dconnexion
+    product_name: 3D Space Mouse
+    section: upcoming
+    lifecycle: upcoming
+    integration_status: planning
+    category: HID Input
+    description: >
+      Six-degree-of-freedom HID input planned through the USB CLI plugin path.
+    links:
+      - label: Tracking
+        kind: tracking
+        url: https://github.com/NVIDIA/IsaacTeleop/issues/276
+    order: 50
