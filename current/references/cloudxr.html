@@ -45,7 +45,7 @@
 
 
 
-    <script src="../_static/documentation_options.js?v=04dcff72"></script>
+    <script src="../_static/documentation_options.js?v=7509b52b"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -64,7 +64,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.5.x" />
+  <meta name="docsearch:version" content="1.4.x" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -355,7 +355,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../device/manus.html">MANUS Gloves</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../device/oak.html">OAK Camera Plugin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../device/oglo.html">OGLO Tactile Glove Plugin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../device/wuji_glove.html">Wuji Glove</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../device/haptikos.html">Haptikos Exoskeletons</a></li>
 </ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
@@ -442,11 +441,9 @@ flags (<code class="docutils literal notranslate"><span class="pre">--setup-oob<
 <ul class="simple">
 <li><p><a class="reference internal" href="#start-the-runtime" id="id5">Start the runtime</a></p></li>
 <li><p><a class="reference internal" href="#optional-launch-modes" id="id6">Optional launch modes</a></p></li>
-<li><p><a class="reference internal" href="#re-open-the-client-on-the-headset" id="id7">Re-open the client on the headset</a></p></li>
-<li><p><a class="reference internal" href="#load-cloudxr-environment-variables" id="id8">Load CloudXR environment variables</a></p></li>
-<li><p><a class="reference internal" href="#run-teleop-examples-against-the-dedicated-runtime" id="id9">Run teleop examples against the dedicated runtime</a></p></li>
-<li><p><a class="reference internal" href="#configuration" id="id10">Configuration</a></p></li>
-<li><p><a class="reference internal" href="#troubleshooting" id="id11">Troubleshooting</a></p></li>
+<li><p><a class="reference internal" href="#load-cloudxr-environment-variables" id="id7">Load CloudXR environment variables</a></p></li>
+<li><p><a class="reference internal" href="#run-teleop-examples-against-the-dedicated-runtime" id="id8">Run teleop examples against the dedicated runtime</a></p></li>
+<li><p><a class="reference internal" href="#configuration" id="id9">Configuration</a></p></li>
 </ul>
 </nav>
 <section id="start-the-runtime">
@@ -520,22 +517,6 @@ HTTPS. Requires <code class="docutils literal notranslate"><span class="pre">cot
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">--usb-local</span></code> requires <code class="docutils literal notranslate"><span class="pre">--setup-oob</span></code>. See
 <a class="reference internal" href="oob_teleop_control.html"><span class="doc">Out-of-Band Teleop Control</span></a> for full OOB documentation.</p>
-</section>
-<section id="re-open-the-client-on-the-headset">
-<h2>Re-open the client on the headset<a class="headerlink" href="#re-open-the-client-on-the-headset" title="Link to this heading">#</a></h2>
-<p>If the headset browser is closed or navigated away, re-open the client from a
-second terminal without restarting the runtime:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>isaacteleop.cloudxr.webclient
-</pre></div>
-</div>
-<p>This opens the versioned client over USB <code class="docutils literal notranslate"><span class="pre">adb</span></code> with this host’s <code class="docutils literal notranslate"><span class="pre">serverIP</span></code>
-and <code class="docutils literal notranslate"><span class="pre">port</span></code> pre-filled. Pass a URL to override the target — one already
-containing <code class="docutils literal notranslate"><span class="pre">oobEnable=</span></code> is opened verbatim, which is how to restore an OOB or
-USB-local session from the URL the launcher printed. <code class="docutils literal notranslate"><span class="pre">--print-only</span></code> resolves
-the URL without touching <code class="docutils literal notranslate"><span class="pre">adb</span></code>. Run with <code class="docutils literal notranslate"><span class="pre">--help</span></code> for the full argument
-handling.</p>
-<p>It only <em>opens</em> the page; accepting the certificate and clicking CONNECT remain
-<code class="docutils literal notranslate"><span class="pre">--setup-oob</span></code>’s CDP automation.</p>
 </section>
 <section id="load-cloudxr-environment-variables">
 <span id="id2"></span><h2>Load CloudXR environment variables<a class="headerlink" href="#load-cloudxr-environment-variables" title="Link to this heading">#</a></h2>
@@ -618,30 +599,6 @@ them to <code class="docutils literal notranslate"><span class="pre">--cloudxr-e
 </pre></div>
 </div>
 </section>
-<section id="troubleshooting">
-<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
-<section id="xrgetsystem-fails-with-xr-error-form-factor-unavailable-35">
-<span id="cloudxr-form-factor-unavailable"></span><h3><code class="docutils literal notranslate"><span class="pre">xrGetSystem</span></code> fails with <code class="docutils literal notranslate"><span class="pre">XR_ERROR_FORM_FACTOR_UNAVAILABLE</span></code> (-35)<a class="headerlink" href="#xrgetsystem-fails-with-xr-error-form-factor-unavailable-35" title="Link to this heading">#</a></h3>
-<p>-35 is returned <em>after</em> <code class="docutils literal notranslate"><span class="pre">xrCreateInstance</span></code> succeeded, so the runtime was
-found and loaded — a missing runtime gives -51 (<code class="docutils literal notranslate"><span class="pre">XR_ERROR_RUNTIME_UNAVAILABLE</span></code>)
-instead. It means the runtime is up but no headset session is attached to it
-yet. Check, in order:</p>
-<ol class="arabic simple">
-<li><p>A client is connected. The headset must have loaded the web client and
-clicked CONNECT; until then there is no system to return.</p></li>
-<li><p>The device profile matches the device: check <code class="docutils literal notranslate"><span class="pre">NV_DEVICE_PROFILE</span></code> in
-<code class="docutils literal notranslate"><span class="pre">~/.cloudxr/run/cloudxr.env</span></code>, which the launcher also prints at startup.</p></li>
-<li><p>The application is talking to the runtime you think it is. Applications that
-do not embed <code class="docutils literal notranslate"><span class="pre">CloudXRLauncher</span></code> need <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">~/.cloudxr/run/cloudxr.env</span></code>
-first, so that <code class="docutils literal notranslate"><span class="pre">XR_RUNTIME_JSON</span></code> and <code class="docutils literal notranslate"><span class="pre">NV_CXR_RUNTIME_DIR</span></code> point at it.</p></li>
-</ol>
-<p>Library defaults are fail-fast: <code class="docutils literal notranslate"><span class="pre">OpenXRSession</span></code> uses <code class="docutils literal notranslate"><span class="pre">wait_for_system=false</span></code>
-and <code class="docutils literal notranslate"><span class="pre">VizSessionConfig</span></code> uses <code class="docutils literal notranslate"><span class="pre">xr_system_wait_seconds</span> <span class="pre">=</span> <span class="pre">0</span></code>, so -35 is raised
-on the first call rather than waited out. Set either one to block until a
-headset connects — that is what the examples do when they let you start the app
-before putting the headset on.</p>
-</section>
-</section>
 </section>
 
 
@@ -695,14 +652,9 @@ before putting the headset on.</p>
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#start-the-runtime">Start the runtime</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#optional-launch-modes">Optional launch modes</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#re-open-the-client-on-the-headset">Re-open the client on the headset</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#load-cloudxr-environment-variables">Load CloudXR environment variables</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#run-teleop-examples-against-the-dedicated-runtime">Run teleop examples against the dedicated runtime</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#xrgetsystem-fails-with-xr-error-form-factor-unavailable-35"><code class="docutils literal notranslate"><span class="pre">xrGetSystem</span></code> fails with <code class="docutils literal notranslate"><span class="pre">XR_ERROR_FORM_FACTOR_UNAVAILABLE</span></code> (-35)</a></li>
-</ul>
-</li>
 </ul>
   </nav></div>
 
@@ -785,7 +737,7 @@ before putting the headset on.</p>
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 10, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 11, 2026.
       <br/>
     
   </p>
