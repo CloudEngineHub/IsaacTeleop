@@ -463,13 +463,15 @@ the generated include path and keep satisfying a stale <code class="docutils lit
 <section id="what-each-entry-produces">
 <h2>What each entry produces<a class="headerlink" href="#what-each-entry-produces" title="Link to this heading">#</a></h2>
 <p>Per manifest entry, in <code class="docutils literal notranslate"><span class="pre">${CMAKE_BINARY_DIR}/generated/trackers/</span></code>:</p>
-<div class="code-100col highlight-text notranslate"><div class="highlight"><pre><span></span>deviceio_base/&lt;name&gt;_tracker_base.hpp              # I&lt;Name&gt;TrackerImpl interface
-deviceio_trackers/inc/deviceio_trackers/&lt;name&gt;_tracker.hpp
-deviceio_trackers/&lt;name&gt;_tracker.cpp               # the ITracker facade
-live_trackers/live_&lt;name&gt;_tracker_impl.{hpp,cpp}   # wraps SchemaTracker / SchemaPusher
-replay_trackers/replay_&lt;name&gt;_tracker_impl.{hpp,cpp}
+<div class="code-100col highlight-text notranslate"><div class="highlight"><pre><span></span>deviceio_base/&lt;header&gt;_base.hpp                    # I&lt;Class&gt;Impl interface
+deviceio_trackers/inc/deviceio_trackers/&lt;header&gt;.hpp
+deviceio_trackers/&lt;header&gt;.cpp                     # the ITracker facade
+live_trackers/live_&lt;header&gt;_impl.{hpp,cpp}         # wraps SchemaTracker / SchemaPusher
+replay_trackers/replay_&lt;header&gt;_impl.{hpp,cpp}
 </pre></div>
 </div>
+<p><code class="docutils literal notranslate"><span class="pre">header</span></code> defaults from <code class="docutils literal notranslate"><span class="pre">name</span></code> (<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_tracker</span></code>, or <code class="docutils literal notranslate"><span class="pre">name</span></code> when it already ends in
+<code class="docutils literal notranslate"><span class="pre">_tracker</span></code>). Override it when the public <code class="docutils literal notranslate"><span class="pre">#include</span></code> stem must keep a historical path.</p>
 <p>The shared registration points stay hand-written and <code class="docutils literal notranslate"><span class="pre">#include</span></code> a generated <code class="docutils literal notranslate"><span class="pre">.inc</span></code> fragment,
 so hand-written trackers keep their own rows. The fragments under <code class="docutils literal notranslate"><span class="pre">generated/trackers/inc/</span></code> cover
 the live and replay factories (includes, forward declarations, try-create thunks, dispatch rows,
@@ -517,6 +519,10 @@ the built module.</p>
 <td><p><code class="docutils literal notranslate"><span class="pre">HapticCommandPushTracker</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">direction</span> <span class="pre">=</span> <span class="pre">&quot;push&quot;</span></code>: a typed producer wrapping <code class="docutils literal notranslate"><span class="pre">SchemaPusher</span></code></p></td>
 </tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">frame_metadata_oak</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">FrameMetadataTrackerOak</span></code></p></td>
+<td><p>Overrides <code class="docutils literal notranslate"><span class="pre">class</span></code> and <code class="docutils literal notranslate"><span class="pre">header</span></code> (file stem <code class="docutils literal notranslate"><span class="pre">frame_metadata_tracker_oak</span></code>)</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -550,10 +556,7 @@ the built module.</p>
 <td><p>Cross-process consumer: <code class="docutils literal notranslate"><span class="pre">read_all_samples</span></code> on one collection, buckets by
 <code class="docutils literal notranslate"><span class="pre">HapticCommand.endpoint</span></code> (left/right). Paired with generated <code class="docutils literal notranslate"><span class="pre">HapticCommandPushTracker</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FrameMetadataTrackerOak</span></code></p></td>
-<td><p>Holds N <code class="docutils literal notranslate"><span class="pre">SchemaTracker</span></code> s, one collection per stream — see below</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TensorPushTracker</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TensorPushTracker</span></code></p></td>
 <td><p>Deliberately kept as the untyped <code class="docutils literal notranslate"><span class="pre">bytes</span></code> escape hatch</p></td>
 </tr>
 </tbody>
@@ -570,11 +573,6 @@ the built module.</p>
 codegen tree branchy for a single device, and a generic multi-endpoint reader does not fit
 <code class="docutils literal notranslate"><span class="pre">pull/</span></code> or <code class="docutils literal notranslate"><span class="pre">push</span></code>. The hand-written reader remains the supported approach; a future redesign
 (split tensors/collections per endpoint, or a dedicated generator) is optional follow-up.</p>
-<p><strong>Multi-stream shape (OAK).</strong> <code class="docutils literal notranslate"><span class="pre">FrameMetadataTrackerOak</span></code> owns one <code class="docutils literal notranslate"><span class="pre">SchemaTracker</span></code> per camera
-stream, with collection ids derived as <code class="docutils literal notranslate"><span class="pre">{prefix}/{StreamName}</span></code>. It needs a template variant that
-emits an N-collection reader plus per-stream accessors. This was sequenced last during the initial
-migration precisely so it could not distort the common template, and it remains the closest
-candidate.</p>
 <p><strong>Vendored shape (Noitom).</strong> <code class="docutils literal notranslate"><span class="pre">LiveFullBodyTrackerNoitomImpl</span></code> reads
 <code class="docutils literal notranslate"><span class="pre">SchemaTracker&lt;FullBodyPoseRecord,</span> <span class="pre">FullBodyPose&gt;</span></code>, so it is passthrough by mechanism, but it is a
 second <em>vendor</em> of the hand-written <code class="docutils literal notranslate"><span class="pre">FullBodyTracker</span></code> rather than its own tracker type. Generating
