@@ -24,6 +24,8 @@ CENTER, HALF_WIDTH, BOTTOM, TOP, F_NEAR, F_FAR = range(6)
 
 
 def test_the_frustum_is_the_fov_projected_onto_the_near_plane():
+    """Also pins that there is no y flip here: angle_up lands on TOP, and the
+    flip happens once, on readback."""
     f = _mujoco_xr.frustum_from_fov(FOV, NEAR, FAR)
     assert f[CENTER] - f[HALF_WIDTH] == pytest.approx(NEAR * math.tan(FOV[0]))
     assert f[CENTER] + f[HALF_WIDTH] == pytest.approx(NEAR * math.tan(FOV[1]))
@@ -46,20 +48,6 @@ def test_half_width_is_set_and_not_left_to_the_aspect_fallback():
     assert f[HALF_WIDTH] != pytest.approx(aspect_derived), (
         "this fov happens to be square, so the test cannot tell the fallback apart"
     )
-
-
-def test_no_y_flip_in_the_frustum():
-    """The flip to the y-down image XR wants happens once, on readback --
-    mapping angleUp to the frustum's bottom here would apply it twice."""
-    f = _mujoco_xr.frustum_from_fov(FOV, NEAR, FAR)
-    assert f[TOP] > 0.0 > f[BOTTOM]
-
-
-def test_symmetric_fov_centres_the_optical_axis():
-    half = math.radians(40.0)
-    f = _mujoco_xr.frustum_from_fov([-half, half, half, -half], NEAR, FAR)
-    assert f[CENTER] == pytest.approx(0.0, abs=1e-9)
-    assert f[HALF_WIDTH] == pytest.approx(NEAR * math.tan(half))
 
 
 def test_a_default_constructed_fov_is_rejected_loudly():

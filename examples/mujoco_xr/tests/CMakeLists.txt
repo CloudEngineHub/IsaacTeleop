@@ -7,14 +7,9 @@
 # Keep tests here unit-level -- no GPU, no headset, no CloudXR runtime, no
 # window system -- because a test gated on hardware one developer has reports
 # green by skipping, and examples have no CI to run it in
-# (NVIDIA/IsaacTeleop#880).
-#
-# test_readback.py is the one exception, and needs a reason to add another: what
-# it covers (the y flip and the depth inversion between mjr_render and
-# ProjectionLayer) is otherwise invisible until someone is wearing a headset,
-# and it needs no headset itself. Everything downstream of submit() is still
-# covered nowhere; README.md says so under "Not verified anywhere in CI or on a
-# developer desktop".
+# (NVIDIA/IsaacTeleop#880). test_readback.py is the one exception and adding a
+# second needs the same justification: what it covers is otherwise invisible
+# until someone is wearing a headset, and it needs no headset itself.
 
 file(GLOB TEST_FILES
     RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"

@@ -206,6 +206,9 @@ void SceneRenderer::render(const std::vector<float>& poses_xyz_qwxyz, const std:
 
         // mjv_updateScene wrote both cameras from mjvCamera; overwrite them
         // after it, and both, because mjSTEREO_NONE renders their average.
+        // Lights are NOT overwritten with them: mjv_updateScene already baked
+        // the headlight from camera_, so it stays a world-fixed directional
+        // light rather than following the eye.
         scene_.camera[0] = cam;
         scene_.camera[1] = cam;
 

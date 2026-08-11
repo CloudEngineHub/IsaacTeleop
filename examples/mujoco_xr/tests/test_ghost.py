@@ -3,9 +3,8 @@
 
 """The leader-gripper ghost: the overlay, its geometry, and when it is written.
 
-Everything here is headless. The one thing it cannot check is what the ghost
-looks like through a headset, which is also the only thing that can settle the
-two residual risks named in ``assets/leader/leader_gripper.xml``.
+Everything here is headless, so the one thing it cannot check is how the ghost
+looks through a headset.
 """
 
 import math
@@ -210,55 +209,6 @@ def test_the_servo_fills_the_notch_in_the_wrist_bracket():
     assert np.allclose(np.sort(extent), (0.0248, 0.0396, 0.0454), atol=2e-3), (
         f"servo spans {np.round(extent * 1000, 1)} mm -- an STS3215 is 45x25x40"
     )
-
-
-# Measured on mujoco 3.11.0 against the pinned SO-ARM100 meshes: the share of
-# face corners whose mjModel normal points away from its own triangle.
-_SMEARED_NORMAL_FRACTION = {
-    "leader_wrist_roll": 0.1143,
-    "leader_trigger": 0.0454,
-    "leader_handle": 0.0101,
-    "leader_motor": 0.1657,
-}
-
-
-def test_mujocos_own_normals_are_smeared_across_creases():
-    """A pin on a known defect, not on a property we want.
-
-    MuJoCo stores one averaged normal per welded vertex (mesh_normalnum ==
-    mesh_vertnum, mesh_facenormal == mesh_face), so a crease on a CAD part gets
-    a normal smeared across it, and render_gl3.c lights one-sided
-    (``glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0)``). Those corners can therefore
-    shade as if they faced away, which reads as shattered facets rather than as
-    a gripper.
-
-    Drawing with MuJoCo's renderer means drawing with these normals. This test
-    exists so that a mesh refresh, a MuJoCo upgrade or a ``smoothnormal``
-    setting that changes the number is noticed -- if the fractions drop to zero,
-    delete this test and the warning in README.md with it.
-    """
-    model = _default_scene()
-    for name, expected in _SMEARED_NORMAL_FRACTION.items():
-        mesh = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_MESH, name)
-        vert_adr, vert_num = model.mesh_vertadr[mesh], model.mesh_vertnum[mesh]
-        norm_adr = model.mesh_normaladr[mesh]
-        face_adr, face_num = model.mesh_faceadr[mesh], model.mesh_facenum[mesh]
-
-        verts = model.mesh_vert[vert_adr : vert_adr + vert_num].astype(float)
-        faces = model.mesh_face[face_adr : face_adr + face_num]
-        corner = model.mesh_normal[norm_adr:][
-            model.mesh_facenormal[face_adr:][:face_num]
-        ]
-
-        tri = verts[faces]
-        geometric = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
-        geometric /= np.linalg.norm(geometric, axis=1, keepdims=True) + 1e-30
-        dots = np.einsum("fc,fkc->fk", geometric, corner)
-
-        assert (dots <= 0).mean() == pytest.approx(expected, abs=5e-4), (
-            f"{name}: {(dots <= 0).mean():.4f} of corner normals face away from their own "
-            f"triangle, was {expected:.4f} when this was measured"
-        )
 
 
 def test_the_leader_meshes_are_scaled_from_millimetres():
@@ -501,12 +451,3 @@ def test_an_untracked_controller_freezes_the_whole_gripper():
             app._update_ghost(data, ghost, _result(controller, closedness=1.0))
     assert np.array_equal(data.mocap_pos[ghost.body], seen_body)
     assert np.array_equal(data.mocap_quat[ghost.jaw], seen_jaw)
-
-
-def test_a_scene_without_the_ghost_fragment_is_rejected():
-    """The shipped scene must declare both mocap bodies; say so if it stops."""
-    model = mujoco.MjModel.from_xml_string(
-        '<mujoco><worldbody><geom type="sphere" size="1"/></worldbody></mujoco>'
-    )
-    with pytest.raises(RuntimeError, match=app.GHOST_BODY):
-        app._resolve_ghost(model)

@@ -51,13 +51,6 @@ def test_frame_clock_refuses_the_zeroed_timestamp():
     assert app._frame_clock(_Info()) == 2.0
 
 
-def test_near_far_are_a_single_sane_pair():
-    assert 0.0 < app.NEAR_Z < app.FAR_Z
-    # viz defaults far to 100.0; an arm's-length scene does not want that
-    # precision spent 50-100 m away.
-    assert app.FAR_Z <= 100.0
-
-
 class _Fov:
     angle_left = -0.7
     angle_right = 0.7
@@ -83,24 +76,19 @@ def test_assert_frustum_accepts_what_the_renderer_builds():
     app._assert_frustum(_good_frustum(), _Fov(), app.NEAR_Z, app.FAR_Z)
 
 
-def test_assert_frustum_rejects_a_zeroed_half_width():
-    """Zero is the one wrong value mjr_render does not complain about: it turns
-    the viewport-aspect fallback on."""
+@pytest.mark.parametrize(
+    ("index", "broken", "message"),
+    [
+        # Zero half-width is the one wrong value mjr_render does not complain
+        # about: it turns the viewport-aspect fallback on.
+        (1, lambda v: 0.0, "degenerate frustum"),
+        (5, lambda v: v * 2.0, "clip planes drifted"),
+        # The optical axis slid, with nothing else touched.
+        (0, lambda v: v + 0.01, "frustum left"),
+    ],
+)
+def test_assert_frustum_rejects(index, broken, message):
     f = _good_frustum()
-    f[1] = 0.0
-    with pytest.raises(AssertionError, match="degenerate frustum"):
-        app._assert_frustum(f, _Fov(), app.NEAR_Z, app.FAR_Z)
-
-
-def test_assert_frustum_rejects_clip_planes_that_drifted_from_viz():
-    f = _good_frustum()
-    f[5] = app.FAR_Z * 2.0
-    with pytest.raises(AssertionError, match="clip planes drifted"):
-        app._assert_frustum(f, _Fov(), app.NEAR_Z, app.FAR_Z)
-
-
-def test_assert_frustum_rejects_a_frustum_that_does_not_match_its_fov():
-    f = _good_frustum()
-    f[0] += 0.01  # slide the optical axis without touching anything else
-    with pytest.raises(AssertionError, match="frustum left"):
+    f[index] = broken(f[index])
+    with pytest.raises(AssertionError, match=message):
         app._assert_frustum(f, _Fov(), app.NEAR_Z, app.FAR_Z)

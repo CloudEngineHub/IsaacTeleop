@@ -111,36 +111,25 @@ GHOST_JAW_BODY = "leader_ghost_jaw"
 
 # ── Where the ghost sits on the hand ───────────────────────────────────────
 # Measured on a headset, not derived: this is a claim about a hand holding a
-# CONTROLLER, so do not re-derive it from the mesh -- a model assuming the hand
-# passes through the handle loop puts the loop centroid 56 mm from the palm.
-#
-# Euler degrees, intrinsic XYZ, i.e. MuJoCo's `euler=` (pinned by a test). To
-# re-tune, change one angle and reinstall: Rz spins the gripper about its long
-# axis, Rx/Ry tilt it, _POS_GRIP_FROM_GHOST slides it along the grip axes
-# (-Z little finger -> thumb, +X into the palm, +Y through the knuckles). No
-# test asserts a posture, so re-tuning cannot turn them red.
+# CONTROLLER, so do not re-derive it from the mesh. Euler degrees, intrinsic
+# XYZ, i.e. MuJoCo's `euler=`. Re-tuning procedure and the mesh trap:
+# README.md#where-the-ghost-sits-on-the-hand-apppy.
 _EULER_GRIP_FROM_GHOST_DEG = (60, 180, 270)
 _POS_GRIP_FROM_GHOST = np.array((0, 0.02, -0.025))
 
 # ── The trigger hinge ──────────────────────────────────────────────────────
 # The follower's `gripper` revolute joint, from SO-ARM100's
 # so101_new_calib.urdf: origin xyz="0.0202 0.0188 -0.0234" rpy="1.5708 0 0",
-# axis "0 0 1". The right source even for the LEADER's trigger, which is
-# mounted in the follower's moving-jaw slot and shares the hinge. The axis
-# below is that "0 0 1" carried through the joint frame's 90-degree roll.
-#
-# Do not re-derive either from the meshes: a pivot from the nearest
-# trigger-to-shank vertex pair and an axis from the grip frame both look right
-# at the joint's zero and are wrong by the far end of its travel.
+# axis "0 0 1" -- the leader's trigger sits in the moving-jaw slot and shares
+# the hinge. The axis below is that "0 0 1" carried through the joint frame's
+# 90-degree roll. Do not re-derive either from the meshes: both look right at
+# the joint's zero and are wrong by the far end of its travel.
 _TRIGGER_HINGE_POS = np.array((0.0202, 0.0188, -0.0234))  # metres, ghost frame
 _TRIGGER_HINGE_AXIS = np.array((0.0, -1.0, 0.0))  # unit, ghost frame
 
 # The travel is the URDF joint's own: `upper="1.74533"` is 100.0 degrees, and
-# squeezed is its authored zero. A released end short of that does not read as
-# an OPEN gripper on a headset, which is the only place this can be judged.
-# Do not extend to the joint's lower limit (-10 deg): that end swings the lever
-# 0.4 mm into the servo. The tightest pass across 0..100 is 2.1 mm, at the
-# squeezed end.
+# squeezed is its authored zero. Do not extend to the joint's lower limit
+# (-10 deg): that end swings the lever 0.4 mm into the servo.
 _TRIGGER_RELEASED_RAD = math.radians(100.0)  # closedness 0, jaw wide open
 _TRIGGER_SQUEEZED_RAD = 0.0  # closedness 1, tucked to the authored pose
 
@@ -276,8 +265,8 @@ def _log_startup(resolution, gl_backend: str) -> None:
         resolution.height,
     )
     LOG.info(
-        "renderer:   MuJoCo's own (mjr_render), OpenGL backend %s, offsamples=0. Its output is blitted, "
-        "y-flipped and depth-inverted, then read back into a pixel-pack buffer CUDA imports -- no host copy.",
+        "renderer:   MuJoCo's own (mjr_render), OpenGL backend %s, offsamples=0; "
+        "blitted, y-flipped, depth-inverted, read back through a PBO CUDA imports",
         gl_backend,
     )
     LOG.info(
@@ -286,18 +275,16 @@ def _log_startup(resolution, gl_backend: str) -> None:
         FAR_Z,
     )
     LOG.info(
-        "frames:     mj_from_xr translation = (%.3f, %.3f, %.3f) m. x is operator standoff; z is a FLOOR datum, "
-        "which the session's reference space does not currently establish -- see cpp/frames.hpp. Neither term may "
-        "be zeroed.",
+        "frames:     mj_from_xr translation = (%.3f, %.3f, %.3f) m -- x is operator standoff, "
+        "z is a FLOOR datum this session's reference space does not establish (cpp/frames.hpp)",
         trans[0],
         trans[1],
         trans[2],
     )
     LOG.info("clock:      %s", _CLOCK_SOURCE)
     LOG.info(
-        "depth submission: requested (ProjectionLayer depth_format=D32F). Whether the runtime ACCEPTED it is "
-        "not queryable -- XrBackend::depth_layer_enabled_ is private with no accessor or binding. The absence "
-        "of errors is NOT confirmation."
+        "depth:      D32F requested. Whether the runtime ACCEPTED it is not queryable, so "
+        "the absence of errors is not confirmation."
     )
 
 

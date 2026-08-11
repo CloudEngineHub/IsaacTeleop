@@ -24,8 +24,8 @@ namespace mujoco_xr
 // A handedness convention, fixed by the two specs (OpenXR is y-up /
 // -z-forward, MuJoCo is REP-103 z-up), so it cannot be wrong at runtime. If a
 // scene's static content appears rotated 90 degrees, this is the bug; the ghost
-// cannot show it, because the rotation that places it is undone when the
-// renderer folds it back into the XR reference space.
+// cannot show it, because it is placed through this transform and the eye pose
+// goes into MuJoCo world through the same one, so it cancels.
 //
 // Deliberately diverges from
 // examples/cloudxr_mujoco_teleop/visualize_poses_mujoco_example.py, which
@@ -62,35 +62,6 @@ inline std::array<double, 3> mj_from_xr_pos(const std::array<double, 3>& p_xr)
         out[i] += kTransMjFromXr[i];
     }
     return out;
-}
-
-// Column-major float mat4 of xr_from_mj (the inverse of the above), for
-// folding MuJoCo-world geometry into the XR reference space in the renderer:
-// p_xr = R^T * (p_mj - t).
-inline void xr_from_mj_mat4(float out[16])
-{
-    mjtNum r[9];
-    mju_quat2Mat(r, kQuatMjFromXr.data()); // row-major R
-    // Rotation part: R^T, column-major out[c*4 + row] = R^T[row][c] = R[c][row].
-    for (int row = 0; row < 3; ++row)
-    {
-        for (int c = 0; c < 3; ++c)
-        {
-            out[c * 4 + row] = static_cast<float>(r[c * 3 + row]);
-        }
-        out[row * 4 + 3] = 0.0f;
-    }
-    // Translation: -R^T * t.
-    for (int row = 0; row < 3; ++row)
-    {
-        mjtNum v = 0;
-        for (int k = 0; k < 3; ++k)
-        {
-            v += r[k * 3 + row] * kTransMjFromXr[k]; // R^T[row][k] = R[k][row]
-        }
-        out[12 + row] = static_cast<float>(-v);
-    }
-    out[12 + 3] = 1.0f;
 }
 
 } // namespace mujoco_xr

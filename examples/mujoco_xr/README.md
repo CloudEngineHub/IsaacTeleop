@@ -26,8 +26,9 @@ memory. Nothing else in this repository does that.
 **`cpp/` is a readback, not a renderer.** `mjr_render` draws into MuJoCo's
 offscreen framebuffer; `cpp/gl_readback.cpp` blits that into a sampleable pair,
 runs one fullscreen pass, and reads the result into a pixel-pack buffer that
-CUDA imports. Every step stays in video memory. The whole module is ~700 lines
-and owns no shading, no meshes and no camera maths beyond six frustum numbers.
+CUDA imports. Every step stays in video memory. The GL half of `cpp/` — `gl.*`,
+`gl_readback.*`, `gl_functions.inc` — is ~700 lines of it, and owns no shading,
+no meshes and no camera maths beyond six frustum numbers.
 
 The trick is which CUDA entry point is used. `cudaGraphicsGLRegisterImage`
 registers no depth format and no multisampled renderbuffer, and
@@ -65,8 +66,8 @@ extension and asserts both report the same version.
 
 | | |
 |---|---|
-| **Covered by tests** | [`ctest -L mujoco_xr`](#tests) — the frame conventions, the frustum, the clock, the ghost overlay and its jaw channel, all pure CPU; **plus `test_readback.py`, which drives the real GPU path** (mjr_render → blit → flip/invert → PBO → CUDA) on any machine with a GPU, and skips loudly without one. |
-| **Never executed anywhere** | **The XR half.** `kXr` is the only display mode and needs a headset plus a CloudXR runtime, so the frame loop, `ProjectionLayer.submit()`, OpenXR session sharing via `oxr_handles`, controllers on a shared session and whether the runtime accepts the depth layer are run by no test and by no developer here. |
+| **Covered by tests** | [`ctest -L mujoco_xr`](#tests) — the frame conventions, the frustum, the clock, the ghost overlay and its jaw channel, all pure CPU; **plus `test_readback.py`, which drives the real GPU path** (mjr_render → blit → flip/invert → PBO → CUDA). That one needs CUDA-OpenGL interop, so it wants a discrete NVIDIA GPU; it skips loudly elsewhere. **Measured on Jetson/Tegra it skips**, because `cudaGLGetDevices` reports the EGL context on no CUDA device — so a green `ctest` there does *not* mean the GPU path ran. |
+| **Never executed anywhere** | **The XR half** — everything downstream of the readback. See [Not verified anywhere](#not-verified-anywhere-in-ci-or-on-a-developer-desktop). |
 | **Wrong by construction until calibrated** | The workspace translation, for any scene that adds static content — see [Frames](#frames-cppframeshpp). The shipped ghost-only scene does not show it. |
 
 Nothing in `.github/workflows/` installs `mujoco`, so the example is never
@@ -84,10 +85,10 @@ is the background.
 The ghost is not decoration. It is a real mesh assembly (4 fetched STLs, so it
 exercises the `mjGEOM_MESH` path), and locking it to the hand makes the *grip*
 calibration visible — whether the tool sits in the hand the way a hand holds
-one. It cannot show a wrong `cpp/frames.hpp`: those constants place it and the
-renderer undoes them folding it back into the XR reference space, so the ghost
-lands in the hand whatever they say. Only static content shows them, and the
-shipped scene has none.
+one. It cannot show a wrong `cpp/frames.hpp`: those constants place it, and the
+eye pose reaches MuJoCo world through the same ones, so they cancel and the
+ghost lands in the hand whatever they say. Only static content shows them, and
+the shipped scene has none.
 
 **Its trigger is driven by the shipped `SO101GripperRetargeter`, as a graph
 edge** — the retargeter is a `BaseRetargeter` node inside `_build_pipeline()`,
@@ -99,8 +100,8 @@ SO-101 that will read the same output arrives with the scene catalogue.
 Two calibrations, and they are different in kind. `cpp/frames.hpp` is a
 *convention* fixed by two specs and cannot be wrong at runtime.
 `_QUAT_GRIP_FROM_GHOST` / `_POS_GRIP_FROM_GHOST` in `app.py` are a *measurement*
-of how a hand holds a tool — where the fist sits on the handle — derived from
-the mesh but only checkable on a headset. See [Frames](#frames-cppframeshpp).
+of how a hand holds a tool, taken on a headset and checkable nowhere else. See
+[Frames](#frames-cppframeshpp).
 
 ## Build
 
@@ -117,7 +118,7 @@ Both wheels must land in **one** environment, and that is the environment
 compiles the extension through scikit-build-core and does not read the CMake
 build tree at all.
 
-You need `uv`, CMake ≥ 3.21, a C++ compiler, CUDA, and the OpenGL headers
+You need `uv`, CMake ≥ 3.20, a C++ compiler, CUDA, and the OpenGL headers
 (`libgl-dev` on Debian/Ubuntu — `cuda_gl_interop.h` includes `<GL/gl.h>`
 unconditionally, so this is CUDA's requirement as much as ours). No Vulkan and
 no `glslangValidator`: the readback shader is a string the driver compiles at
@@ -234,8 +235,7 @@ lines at all** is the tell.
 There is one scene and no flag to change it: `assets/scene.xml` is package data
 beside the module, and editing it is how you load something else. There is no
 desktop or headless display mode; without a headset the verification path is
-[`ctest -L mujoco_xr`](#tests), which does now exercise the GPU path — but
-nothing downstream of `ProjectionLayer.submit()`.
+[`ctest -L mujoco_xr`](#tests).
 
 ## Conventions you can break
 
@@ -320,23 +320,53 @@ near-isotropic blob (σ₀/σ₁ = 1.26), so its principal direction is noise.
 
 Every geom type draws, and the XML's materials, lights, shadows and
 reflections are live — this is `mjr_render`, so the scene file means what the
-MuJoCo docs say it means. `scene.xml` declares no lights, so what lights it is
-`model.vis.headlight`, on by default.
+MuJoCo docs say it means.
 
-**Open risk: the ghost may render as shattered facets.** MuJoCo stores one
-averaged normal per welded vertex (`mesh_normalnum == mesh_vertnum`,
-`mesh_facenormal == mesh_face`), so a crease on a CAD part gets a normal smeared
-across it, and `render_gl3.c` lights one-sided
-(`glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0)`). Measured on mujoco 3.11.0 against
-the pinned meshes, the share of face corners whose normal points away from its
-own triangle is 11.4% (`wrist_roll`), 4.5% (`trigger`), 1.0% (`handle`) and
-16.6% (the servo); `test_ghost.py` pins those numbers.
+**The lighting knob that matters is ambient, not diffuse.** `scene.xml` sets
+`<visual><headlight ambient="0.4 0.4 0.4" diffuse="0.4 0.4 0.4"
+specular="0.3 0.3 0.3"/>`. Ambient is direction-independent, so it is a *floor*
+on how dark a surface can get; diffuse is what carries shape. MuJoCo's own
+defaults are why this scene read as dark — not because they are dim overall, but
+because the floor under them is 0.1. Measured over the ghost from three
+directions, as a share of its material albedo:
 
-Drawing with MuJoCo's renderer means drawing with those normals, and **no
-headless test can say how it looks**. If it does shatter, the fix belongs in the
-asset or the compiler — `smoothnormal` on the `<mesh>`, or upstream winding —
-not in a hand-written renderer. An earlier revision of this example carried one
-for exactly this reason; see `git log` for what that cost.
+| headlight (amb / diff / spec) | shades | dimmest | mean | below ⅓ albedo | above albedo |
+|---|---|---|---|---|---|
+| `0.1 / 0.4 / 0.5` (MuJoCo default) | 437 | 0.10 | 0.25 | **94.0%** | 0% |
+| `0.4 / 0.4 / 0.3` (shipped) | 372 | **0.40** | 0.55 | 0% | 0% |
+
+The trade is explicit: the shipped values give up some tonal range — 372
+distinct shades against the default's 437 — to buy a hard floor. The dimmest
+pixel is 0.40 of albedo, which is the ambient term exactly.
+
+That floor earns its keep twice over. It bounds MuJoCo's smeared crease normals
+— one averaged normal per welded vertex, and `render_gl3.c` lights one-sided, so
+a face corner pointing away from its own triangle (11.4% of them on
+`wrist_roll`) lands on ambient rather than on black, which is a tonal wobble
+instead of shattered facets. And it bounds shadows the same way, so
+`mjRND_SHADOW` needs no attention.
+
+Specular is the one term that spends *outside* that budget: it is additive and
+white rather than scaled by the material `rgba`, and it is gated by the material
+as much as the light — `leader_gripper.xml` declares neither `specular` nor
+`shininess`, so MuJoCo's defaults (0.5 and 0.5) apply and the effective highlight
+is `0.3 × 0.5`. Ambient plus diffuse comes to 0.8, and that 0.2 of headroom is
+what absorbs it: no pixel exceeds the albedo at these values. Raising either
+term without lowering the other is what would start clipping.
+
+**The remaining defect: the headlight is not head-mounted here.**
+`mjv_updateScene` bakes it into `mjvScene.lights[0]` from the `mjvCamera` it is
+passed, and this app passes a fixed `mjv_defaultFreeCamera` and only overwrites
+`mjvScene.camera` afterwards. It is a directional light fixed in MuJoCo world by
+`model.vis.global_.azimuth` / `elevation`, and it never follows the head. The
+ambient floor makes that survivable rather than correct — the ghost stays legible
+at every hand orientation, but which side of it is lit depends on where in the
+room the hand is, not on where the operator is looking. Two ways to fix it
+properly: write `mjvScene.lights[]` in `render()` after the cameras (`mjr_render`
+reads the array as you leave it, and `dir` is the camera's `forward`, un-negated
+— that measures 0.71 mean against the 0.55 above, and independent of hand pose),
+or give the scene its own `<light>` elements, which `mjv_updateScene` does place
+correctly.
 
 The ghost's four STLs are **fetched, not vendored** — 2.3 MB of binary in a
 source tree is a poor trade when upstream publishes them at a stable commit, and
@@ -389,9 +419,9 @@ ctest --test-dir build/cmake-cpython-312 -L mujoco_xr --output-on-failure
 |---|---|
 | `test_frames.py` | the XR→MuJoCo axis map and quaternion order |
 | `test_projection.py` | the mjvGLCamera frustum (that it is the fov projected onto the near plane, and that the half-width is set so mjr_render's aspect fallback stays off) and the standard-Z depth contract |
-| `test_app_helpers.py` | the NaN-safe `dt` clamp, the zeroed-`predicted_display_time` guard, the single near/far pair, and that the first-frame frustum assertion passes on the real thing and fires on each way it can go wrong |
+| `test_app_helpers.py` | the NaN-safe `dt` clamp, the zeroed-`predicted_display_time` guard, and that the first-frame frustum assertion passes on the real thing and fires on each way it can go wrong |
 | `test_readback.py` | **the GPU path**: that something is drawn at all, that row 0 is the top of the operator's view and the image is not mirrored, that the depth handed to `submit()` is standard Z with the background at exactly 1.0, and that the two eyes carry parallax of the right sign. Skips with a reason when there is no GPU |
-| `test_ghost.py` | the overlay: that the ghost is opaque, collision-free and carries no mass, that both its bodies are kinematic mocap bodies with no joint anywhere, that the four leader parts form one assembly with sub-mm gaps at the bolted joints and the servo seated in its bracket, that the print STLs are scaled from millimetres and the servo is not, the measured share of mjModel normals that face away from their own triangle (a pin on a known defect, not a property we want -- see [Scene assets](#scene-assets)), that the ghost is *rigidly attached* to the grip frame whatever the calibration, that squeezing swings the trigger monotonically from the URDF joint's upper limit to its authored zero without driving the lever through the body, that the shipped `SO101GripperRetargeter` really is the thing driving that channel (built as a real pipeline and fed synthetic DeviceIO snapshots), and that an untracked controller freezes the whole gripper rather than parking it at the scene origin |
+| `test_ghost.py` | the overlay: that the ghost is opaque, collision-free and carries no mass, that both its bodies are kinematic mocap bodies with no joint anywhere, that the four leader parts form one assembly with sub-mm gaps at the bolted joints and the servo seated in its bracket, that the print STLs are scaled from millimetres and the servo is not, that the ghost is *rigidly attached* to the grip frame whatever the calibration, that squeezing swings the trigger monotonically from the URDF joint's upper limit to its authored zero without driving the lever through the body, that the shipped `SO101GripperRetargeter` really is the thing driving that channel (built as a real pipeline and fed synthetic DeviceIO snapshots), and that an untracked controller freezes the whole gripper rather than parking it at the scene origin |
 
 All but `test_readback.py` run on a CPU with no GPU, no headset, no CloudXR
 runtime and no window system; keep it that way, because a permanently-skipping
@@ -406,12 +436,9 @@ frame loop that sequences it, OpenXR session sharing via `oxr_handles`, whether
 the runtime accepts the depth layer, and **controllers on a shared session** —
 none of it is executed by any test or on any machine here. `test_readback.py`
 covers the render and the CUDA hand-off and stops at `submit()`. How the ghost
-*looks* is unverified too, and there is a named reason to expect trouble: see
-the normals warning under [Scene assets](#scene-assets). The grip-to-gripper calibration is a headset-only judgement
-by construction: it is a claim about how a hand holds a tool, and no headless
-test can confirm it — `tests/test_ghost.py` pins the *machinery* against a
-reference calibration and deliberately leaves the shipped constants free to be
-tuned.
+*looks* is unverified too, and so is the grip-to-gripper calibration, by
+construction — `tests/test_ghost.py` pins the *machinery* and leaves the shipped
+constants free to be tuned.
 
 Controllers on a shared session have no precedent elsewhere in this repository:
 `xrAttachSessionActionSets` is legal once per `XrSession`, Teleop sidesteps it

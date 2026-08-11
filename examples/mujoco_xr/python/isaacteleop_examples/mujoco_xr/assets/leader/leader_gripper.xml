@@ -3,24 +3,19 @@
 SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
-The leader gripper ghost: an SO-101 leader gripper locked to the operator's
-controller grip pose, and the whole of the shipped scene. It shows the grip
-calibration in app.py -- whether the tool sits in the hand the way a hand holds
-one. It cannot show cpp/frames.hpp: those constants place it and are undone when
-the renderer folds it back into the XR reference space.
+An SO-101 leader gripper locked to the operator's controller grip pose, and the
+whole of the shipped scene. It shows app.py's grip calibration -- whether the
+tool sits in the hand the way a hand holds one -- but not cpp/frames.hpp, whose
+constants place the eye pose through the same transform and so cancel.
 
-Opaque, which makes draw order free (at alpha 1.0 the depth test decides
-everything) and retires two risks: the ghost writing depth into CloudXR's
-reprojection buffer, and back faces blending against front faces under
-VK_CULL_MODE_NONE. A scene that drops the alpha back takes all three on again
-and must include this LAST, since mjv_updateScene emits in geom-id order.
+Opaque, which makes draw order free. A scene that drops the alpha back must
+include this LAST, since mjv_updateScene emits in geom-id order. See
+README.md#scene-assets.
 
 Provenance: all four meshes are TheRobotStudio/SO-ARM100 at commit
 fda892cba81032c46c40976a48c9ceadbf40a9ca, Apache-2.0. Three are leader-specific
-print parts; the fourth is the STS3215 servo, shared with the follower. Fetched,
-not vendored -- scripts/fetch-so-arm.sh pulls them beside this file,
-checksum-verified, with the LICENSE and so101_new_calib.urdf. Only this wrapper
-is tracked; the payload is gitignored at the repository root.
+print parts; the fourth is the STS3215 servo, shared with the follower. Fetched
+by scripts/fetch-so-arm.sh, not vendored; only this wrapper is tracked.
 
 The STLs are not in print orientation -- they sit on a shared CAD datum, which
 is why the transforms below are derived rather than tuned:
