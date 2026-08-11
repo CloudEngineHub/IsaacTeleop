@@ -139,7 +139,7 @@ _SO101_TRIGGER = Part(
 # mesh -- a model assuming the hand passes through the handle loop puts the loop
 # centroid 56 mm from the palm.
 #
-# Euler degrees, intrinsic XYZ, i.e. MuJoCo's `euler=` (pinned by a test). To
+# Euler degrees, intrinsic XYZ, i.e. MuJoCo's `euler=` and NOT URDF's rpy. To
 # re-tune, change one angle and reinstall: Rz spins the gripper about its long
 # axis, Rx/Ry tilt it, the position slides it along the grip axes. No test
 # asserts a posture, so re-tuning cannot turn them red.

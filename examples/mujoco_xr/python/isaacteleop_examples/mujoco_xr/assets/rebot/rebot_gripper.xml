@@ -65,8 +65,8 @@ them.
          NOT copied: URDF rpy is fixed-axis Rz*Ry*Rx while MuJoCo `euler=` is
          intrinsic Rx*Ry*Rz, and these origins have two non-zero angles, so the
          same three numbers in `euler=` are a different rotation. Written exact
-         (+-0.5) where upstream's 1.5708 is pi/2 rounded; tests/test_ghost.py
-         checks these against the fetched URDF to 4 microradians.
+         (+-0.5) where upstream's 1.5708 is pi/2 rounded. Checked against the
+         fetched URDF by hand, not by a test.
 
          app.py slides them along -+y of the root frame, which is where
          joint_left's / joint_right's "0 0 1" axis lands. -->

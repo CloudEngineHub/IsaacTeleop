@@ -67,7 +67,7 @@ extension and asserts both report the same version.
 
 | | |
 |---|---|
-| **Covered by tests** | [`ctest -L mujoco_xr`](#tests) — the frame conventions, the frustum, the clock, both ghost overlays and their jaw channel, all pure CPU; **plus `test_readback.py`, which drives the real GPU path** (mjr_render → blit → flip/invert → PBO → CUDA). That one needs CUDA-OpenGL interop, so it wants a discrete NVIDIA GPU; it skips loudly elsewhere. **Measured on Jetson/Tegra it skips**, because `cudaGLGetDevices` reports the EGL context on no CUDA device — so a green `ctest` there does *not* mean the GPU path ran. |
+| **Covered by tests** | [`ctest -L mujoco_xr`](#tests) — the frame conventions, the frustum, the clock, the ghost machinery over every catalogue entry, and the jaw channel, all pure CPU; **plus `test_readback.py`, which drives the real GPU path** (mjr_render → blit → flip/invert → PBO → CUDA). That one needs CUDA-OpenGL interop, so it wants a discrete NVIDIA GPU; it skips loudly elsewhere. **Measured on Jetson/Tegra it skips**, because `cudaGLGetDevices` reports the EGL context on no CUDA device — so a green `ctest` there does *not* mean the GPU path ran. No gripper's own geometry is asserted anywhere. |
 | **Never executed anywhere** | **The XR half** — everything downstream of the readback. See [Not verified anywhere](#not-verified-anywhere-in-ci-or-on-a-developer-desktop). |
 | **Wrong by construction until calibrated** | The workspace translation, for any scene that adds static content — see [Frames](#frames-cppframeshpp). Neither shipped ghost-only scene shows it. |
 
@@ -328,8 +328,8 @@ side of it, and the jaws run **60.7°** off the loop's long axis. The OpenXR
 finger → thumb, `+X` into the palm, `+Y` forward through the knuckles.
 
 **To re-tune.** The rotation is degrees, intrinsic X-then-Y-then-Z — the same
-convention as a MuJoCo `euler=` attribute, pinned by a test against a compiled
-model rather than asserted here. Change one angle, `uv pip install
+convention as a MuJoCo `euler=` attribute and not URDF's `rpy`, which no test
+asserts. Change one angle, `uv pip install
 --reinstall-package isaacteleop-examples-mujoco-xr ./examples/mujoco_xr`,
 relaunch: `Rz` spins the gripper about its own long axis, `Rx` / `Ry` tilt it in
 the hand, and the position slides it along the grip axes if the angle is right
@@ -363,8 +363,9 @@ pen tip would point), `+Y` out of the fist toward the thumb:
 which is `Rx(90) Ry(0) Rz(270)`. `REBOT_POS_GRIP_FROM_GHOST` then slides the fist
 onto the gripper's **drive motor** rather than onto the link origin, which is out
 at the fingertips — `motor_7` spans x ∈ [−0.1572, −0.0927], so its centre is at
-−0.125 m. Both claims are asserted by `test_ghost.py`, which is the difference
-from the SO-101 above: a change here is a change of convention, not a re-tune.
+−0.125 m. The difference from the SO-101 above is that a change here is a change
+of convention rather than a re-tune — but no test pins either claim, so the
+convention is only as good as this section.
 
 ### Scene assets
 
@@ -372,7 +373,7 @@ Every geom type draws, and the XML's materials, lights, shadows and
 reflections are live — this is `mjr_render`, so the scene file means what the
 MuJoCo docs say it means.
 
-**The lighting knob that matters is ambient, not diffuse.** `scene.xml` sets
+**The lighting knob that matters is ambient, not diffuse.** Both scenes set
 `<visual><headlight ambient="0.4 0.4 0.4" diffuse="0.4 0.4 0.4"
 specular="0.3 0.3 0.3"/>`. Ambient is direction-independent, so it is a *floor*
 on how dark a surface can get; diffuse is what carries shape. MuJoCo's own
@@ -438,9 +439,10 @@ checksum-verified against a pinned commit — a silently substituted mesh render
 as a broken gripper rather than an error, which has already cost a debugging
 session.
 
-Each script also pulls the URDF the ghost's transforms were read out of, so
-`test_ghost.py` can check them against their source rather than against
-themselves.
+Each script also pulls the URDF the ghost's transforms were read out of, so the
+derivation can be re-checked against its source by hand. No test does it: the
+suite is deliberately robot-agnostic, so a URDF that changes upstream drifts
+away from the catalogue silently.
 
 | | SO-101 | reBot |
 |---|---|---|
@@ -460,8 +462,8 @@ assembly has an open notch where the motor belongs and reads as a broken asset.
 rack-driven pair. The tie-breaker is the `cnc7` rail plate: at `0.05` the
 carriage's outer edge stops 3.4 mm inside its end, and at `0.0715` it hangs
 18.1 mm past it. 0.05 per
-jaw is a 100 mm opening, and both upstream numbers are read out of the fetched
-URDF by a test, so a corrected export fails rather than drifting. The joints'
+jaw is a 100 mm opening. Both numbers are copied here from the fetched URDF and
+checked by nothing, so a corrected export drifts silently. The joints'
 authored zero is the **closed** end — the opposite polarity to the SO-101
 trigger, whose zero is squeezed only by coincidence of sign.
 
@@ -495,13 +497,21 @@ ctest --test-dir build/cmake-cpython-312 -L mujoco_xr --output-on-failure
 | `test_projection.py` | the mjvGLCamera frustum (that it is the fov projected onto the near plane, and that the half-width is set so mjr_render's aspect fallback stays off) and the standard-Z depth contract |
 | `test_app_helpers.py` | the NaN-safe `dt` clamp, the zeroed-`predicted_display_time` guard, that the first-frame frustum assertion passes on the real thing and fires on each way it can go wrong, and that `--robot` rejects an unknown value and reports the *selected* robot's fetch script |
 | `test_readback.py` | **the GPU path**: that something is drawn at all, that row 0 is the top of the operator's view and the image is not mirrored, that the depth handed to `submit()` is standard Z with the background at exactly 1.0, and that the two eyes carry parallax of the right sign. Skips with a reason when there is no GPU |
-| `test_ghost.py` | the overlay. **Every robot**: that the ghost is opaque, collision-free and carries no mass, that every one of its bodies is a kinematic mocap body with no joint anywhere, that every mesh is hand-sized (the units trap, from both directions), that the ghost is *rigidly attached* to the grip frame whatever the calibration, that closedness drives every part monotonically from the catalogue's released end to its squeezed end, and that an untracked controller freezes the whole gripper rather than parking it at the scene origin. **SO-101**: that the four leader parts form one assembly with sub-mm gaps at the bolted joints and the servo seated in its bracket, and that the trigger swings from the URDF joint's upper limit to its authored zero without driving the lever through the body. **reBot**: that both jaw frames and slide axes are Seeed's URDF (undoing MuJoCo's rewrite of the mesh into its inertial frame), that the travel is the limit the rail plate supports and upstream still disagrees with itself, that squeezing brings the fingertips together symmetrically from a 100 mm opening without pushing a carriage into the body, and that the placement follows the OpenXR grip convention with the fist on the drive motor. Plus the shipped `SO101GripperRetargeter` really is the thing driving that channel (built as a real pipeline and fed synthetic DeviceIO snapshots) |
+| `test_ghost.py` | the overlay, over **every catalogue entry** and naming no robot: that the ghost is opaque and collision-free, that every one of its bodies is a kinematic mocap body with no joint anywhere, that every mesh is hand-sized (the units trap, from both directions), that the ghost is *rigidly attached* to the grip frame whatever the calibration, that closedness drives every part monotonically from the catalogue's released end to its squeezed end, and that an untracked controller freezes the whole gripper rather than parking it at the scene origin. Plus the shipped `SO101GripperRetargeter` really is the thing driving that channel (built as a real pipeline and fed synthetic DeviceIO snapshots) |
 
 All but `test_readback.py` run on a CPU with no GPU, no headset, no CloudXR
 runtime and no window system; keep it that way, because a permanently-skipping
 test reports green while covering nothing. `test_readback.py` is the deliberate
 exception: what it covers is otherwise invisible until someone is wearing a
 headset, and it needs no headset itself.
+
+**Deliberately not covered: any one gripper's geometry.** Nothing asserts that a
+mesh assembly closes, that a lever clears the body it swings past, or that a
+transform matches the URDF it was read out of — this is an example, and those
+claims belong to whoever ships that robot. The consequence is that every
+per-robot constant in `robots.py` is checked by the fetch scripts' checksums and
+by this README, and by nothing else. A gripper's own repository is where those
+tests should live.
 
 ## Not verified anywhere in CI or on a developer desktop
 

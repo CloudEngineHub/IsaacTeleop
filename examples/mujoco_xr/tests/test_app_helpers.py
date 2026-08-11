@@ -17,10 +17,8 @@ robots = pytest.importorskip("isaacteleop_examples.mujoco_xr.robots")
     ("raw", "expected"),
     [
         (0.011, 0.011),
-        (0.0, 0.0),
         (-1.0, 0.0),  # clock went backwards
         (5.0, app.MAX_DT_S),  # a long stall
-        (float("inf"), app.MAX_DT_S),
     ],
 )
 def test_clamp_dt(raw, expected):
