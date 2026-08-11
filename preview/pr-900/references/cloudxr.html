@@ -446,6 +446,7 @@ flags (<code class="docutils literal notranslate"><span class="pre">--setup-oob<
 <li><p><a class="reference internal" href="#load-cloudxr-environment-variables" id="id8">Load CloudXR environment variables</a></p></li>
 <li><p><a class="reference internal" href="#run-teleop-examples-against-the-dedicated-runtime" id="id9">Run teleop examples against the dedicated runtime</a></p></li>
 <li><p><a class="reference internal" href="#configuration" id="id10">Configuration</a></p></li>
+<li><p><a class="reference internal" href="#troubleshooting" id="id11">Troubleshooting</a></p></li>
 </ul>
 </nav>
 <section id="start-the-runtime">
@@ -617,6 +618,30 @@ them to <code class="docutils literal notranslate"><span class="pre">--cloudxr-e
 </pre></div>
 </div>
 </section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
+<section id="xrgetsystem-fails-with-xr-error-form-factor-unavailable-35">
+<span id="cloudxr-form-factor-unavailable"></span><h3><code class="docutils literal notranslate"><span class="pre">xrGetSystem</span></code> fails with <code class="docutils literal notranslate"><span class="pre">XR_ERROR_FORM_FACTOR_UNAVAILABLE</span></code> (-35)<a class="headerlink" href="#xrgetsystem-fails-with-xr-error-form-factor-unavailable-35" title="Link to this heading">#</a></h3>
+<p>-35 is returned <em>after</em> <code class="docutils literal notranslate"><span class="pre">xrCreateInstance</span></code> succeeded, so the runtime was
+found and loaded — a missing runtime gives -51 (<code class="docutils literal notranslate"><span class="pre">XR_ERROR_RUNTIME_UNAVAILABLE</span></code>)
+instead. It means the runtime is up but no headset session is attached to it
+yet. Check, in order:</p>
+<ol class="arabic simple">
+<li><p>A client is connected. The headset must have loaded the web client and
+clicked CONNECT; until then there is no system to return.</p></li>
+<li><p>The device profile matches the device: check <code class="docutils literal notranslate"><span class="pre">NV_DEVICE_PROFILE</span></code> in
+<code class="docutils literal notranslate"><span class="pre">~/.cloudxr/run/cloudxr.env</span></code>, which the launcher also prints at startup.</p></li>
+<li><p>The application is talking to the runtime you think it is. Applications that
+do not embed <code class="docutils literal notranslate"><span class="pre">CloudXRLauncher</span></code> need <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">~/.cloudxr/run/cloudxr.env</span></code>
+first, so that <code class="docutils literal notranslate"><span class="pre">XR_RUNTIME_JSON</span></code> and <code class="docutils literal notranslate"><span class="pre">NV_CXR_RUNTIME_DIR</span></code> point at it.</p></li>
+</ol>
+<p>Library defaults are fail-fast: <code class="docutils literal notranslate"><span class="pre">OpenXRSession</span></code> uses <code class="docutils literal notranslate"><span class="pre">wait_for_system=false</span></code>
+and <code class="docutils literal notranslate"><span class="pre">VizSessionConfig</span></code> uses <code class="docutils literal notranslate"><span class="pre">xr_system_wait_seconds</span> <span class="pre">=</span> <span class="pre">0</span></code>, so -35 is raised
+on the first call rather than waited out. Set either one to block until a
+headset connects — that is what the examples do when they let you start the app
+before putting the headset on.</p>
+</section>
+</section>
 </section>
 
 
@@ -674,6 +699,10 @@ them to <code class="docutils literal notranslate"><span class="pre">--cloudxr-e
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#load-cloudxr-environment-variables">Load CloudXR environment variables</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#run-teleop-examples-against-the-dedicated-runtime">Run teleop examples against the dedicated runtime</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#xrgetsystem-fails-with-xr-error-form-factor-unavailable-35"><code class="docutils literal notranslate"><span class="pre">xrGetSystem</span></code> fails with <code class="docutils literal notranslate"><span class="pre">XR_ERROR_FORM_FACTOR_UNAVAILABLE</span></code> (-35)</a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 
@@ -756,7 +785,7 @@ them to <code class="docutils literal notranslate"><span class="pre">--cloudxr-e
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 08, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 11, 2026.
       <br/>
     
   </p>
