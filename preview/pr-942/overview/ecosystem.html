@@ -1,0 +1,732 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Ecosystem &#8212; Isaac Teleop Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=a95f357e85573c9b56d5" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/nvidia-sphinx-theme.css?v=933278ad" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=e662b523" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/ecosystem.css?v=296b4a60" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=a95f357e85573c9b56d5"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5" />
+
+
+
+    <script src="../_static/documentation_options.js?v=04dcff72"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=2c21a7a3"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'overview/ecosystem';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+
+    <link rel="icon" href="../_static/favicon.ico"/>
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Quick Start" href="../getting_started/quick_start.html" />
+    <link rel="prev" title="Architecture" href="architecture.html" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="1.5.x" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+
+
+  </head>
+
+  <body data-default-mode="">
+
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="Isaac Teleop Documentation - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="Isaac Teleop Documentation - Home"/>
+  
+  
+    <p class="title logo__title">Isaac Teleop Documentation</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/nvidia-logo-horiz-rgb-blk-for-screen.svg" class="logo__image only-light" alt="Isaac Teleop Documentation - Home"/>
+    <img src="../_static/nvidia-logo-horiz-rgb-wht-for-screen.svg" class="logo__image only-dark pst-js-only" alt="Isaac Teleop Documentation - Home"/>
+  
+  
+    <p class="title logo__title">Isaac Teleop Documentation</p>
+  
+</a>
+
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+</div>
+        <div class="sidebar-primary-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/NVIDIA/IsaacTeleop" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://docs.nvidia.com/cloudxr-sdk" title="CloudXR" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/CloudXR-6.2-green.svg" class="icon-link-image" alt="CloudXR"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://isaac-sim.github.io/IsaacLab" title="Isaac Lab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/IsaacLab-3.0-silver.svg" class="icon-link-image" alt="Isaac Lab"/></a>
+        </li>
+</ul></div>
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+
+
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Table of Contents">
+  <p class="bd-links__title" role="heading" aria-level="1">Table of Contents</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Isaac Teleop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Ecosystem</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quick_start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_from_source/index.html">Build from Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/teleop_session.html">Teleop Session</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/teleop_control_state_machine.html">Teleop Control State Machine</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/televiz.html">Televiz</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/lerobot/index.html">LeRobot and SO-101</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/contributing.html">Contributing</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Devices</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../device/trackers.html">Device Trackers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/add_device.html">Add a New Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/joint_space.html">Generic Joint-Space Device</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/body_tracking.html">Body Tracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/haptic_feedback.html">Haptic Feedback</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/manus.html">MANUS Gloves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/oak.html">OAK Camera Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/oglo.html">OGLO Tactile Glove Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/wuji_glove.html">Wuji Glove</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../device/haptikos.html">Haptikos Exoskeletons</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../references/requirements.html">System Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/build.html">Build System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/retargeting/index.html">Retargeting Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/camera_streaming.html">Camera Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/mcap_record_replay.html">MCAP Recording &amp; Replay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/cloudxr.html">Dedicated CloudXR Runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/rig.html">Rig Launcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/oob_teleop_control.html">Out-of-Band Teleop Control</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/egocentric_hand_reconstruction.html">Egocentric Hand Reconstruction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/license.html">License</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Ecosystem</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="ecosystem">
+<h1>Ecosystem<a class="headerlink" href="#ecosystem" title="Link to this heading">#</a></h1>
+<p>The Isaac Teleop ecosystem brings together the input devices, robot embodiments, and data
+services that work seamlessly with the unified teleoperation stack. Browse every partner and
+follow the link straight to their landing page or acquisition channel.</p>
+<div class="eco-scope"><div class="eco-scope-item"><p><strong>Input devices</strong></p>
+<p>Headsets, controllers, gloves, pedals, and master manipulators.</p>
+</div>
+<div class="eco-scope-item"><p><strong>Robot and simulation integrations</strong></p>
+<p>Embodiments and assets for control and retargeting.</p>
+</div>
+<div class="eco-scope-item"><p><strong>Data workflows</strong></p>
+<p>Tools and services for recording, processing, and managing teleoperation data.</p>
+</div>
+</div>
+<p class="eco-eyebrow">Active in the ecosystem</p>
+<section class="eco-section" id="partners-7">
+<h2>Partners <span class="partner-count">7</span><a class="headerlink" href="#partners-7" title="Link to this heading">#</a></h2>
+<p>Production-ready integrations that partners actively maintain and support across releases.</p>
+<div class="partner-grid partner-grid-active"><div class="partner-card" id="partner-apple-vision-pro"><p class="partner-status is-maintained">Maintained</p>
+<div class="partner-logo"><p class="partner-logo-img"><img alt="Apple logo" class="only-light" src="../_images/apple.svg" /><img alt="Apple logo" class="only-dark pst-js-only" src="../_images/apple-dark.svg" /></p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">XR Headset · Input Device</p>
+<p class="partner-name">Apple Vision Pro</p>
+<p class="partner-desc">Hand tracking (26 joints) and spatial controllers through the Isaac XR Teleop sample client for visionOS.</p>
+<p class="partner-footer"><a class="partner-link is-external reference external" href="https://www.apple.com/apple-vision-pro/" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Overview</span><svg class="partner-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"></path></svg><span class="partner-link-external-label"> (external)</span></a><a class="partner-link is-internal reference internal" href="../getting_started/quick_start.html#connect-apple-vision-pro"><span class="std std-ref">Integration</span></a></p>
+</div>
+</div>
+<div class="partner-card" id="partner-meta-quest"><p class="partner-status is-maintained">Maintained</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">Meta</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">XR Headset · Input Device</p>
+<p class="partner-name">Meta Quest 2 / 3 / 3S</p>
+<p class="partner-desc">Motion controllers, triggers, thumbsticks, and hand tracking through the browser-based Isaac Teleop Web Client.</p>
+<p class="partner-footer"><a class="partner-link is-external reference external" href="https://www.meta.com/quest/" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Overview</span><svg class="partner-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"></path></svg><span class="partner-link-external-label"> (external)</span></a><a class="partner-link is-internal reference internal" href="../getting_started/quick_start.html#connect-quest-pico"><span class="std std-ref">Integration</span></a></p>
+</div>
+</div>
+<div class="partner-card" id="partner-pico"><p class="partner-status is-maintained">Maintained</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">PICO</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">XR Headset · Body Tracking</p>
+<p class="partner-name">Pico 4 Ultra &amp; Motion Tracker</p>
+<p class="partner-desc">Motion controllers, hand tracking, and full-body tracking via the Isaac Teleop Web Client. Full-body tracking requires an enterprise-activated headset.</p>
+<p class="partner-footer"><a class="partner-link is-external reference external" href="https://www.picoxr.com/products/pico4-ultra" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Overview</span><svg class="partner-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"></path></svg><span class="partner-link-external-label"> (external)</span></a><a class="partner-link is-internal reference internal" href="../getting_started/quick_start.html#connect-quest-pico"><span class="std std-ref">Integration</span></a></p>
+</div>
+</div>
+<div class="partner-card" id="partner-manus"><p class="partner-status is-maintained">Maintained</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">MANUS</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">Hand-Tracking Gloves</p>
+<p class="partner-name">MANUS Metagloves Pro</p>
+<p class="partner-desc">High-fidelity finger tracking through the MANUS SDK plugin, in both the standard and haptic glove variants.</p>
+<p class="partner-footer"><a class="partner-link is-external reference external" href="https://www.manus-meta.com/robotics#nvidia" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Overview</span><svg class="partner-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"></path></svg><span class="partner-link-external-label"> (external)</span></a><a class="partner-link is-internal reference internal" href="../device/manus.html"><span class="doc">Integration</span></a></p>
+</div>
+</div>
+<div class="partner-card" id="partner-haptikos"><p class="partner-status is-maintained">Maintained</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">Haptikos</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">Hand Exoskeleton · Haptics</p>
+<p class="partner-name">Haptikos Exoskeletons</p>
+<p class="partner-desc">High-fidelity finger tracking with force feedback through the Haptikos Robotics API plugin.</p>
+<p class="partner-footer"><a class="partner-link is-external reference external" href="https://haptikos.tech/product/haptikos/" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Overview</span><svg class="partner-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"></path></svg><span class="partner-link-external-label"> (external)</span></a><a class="partner-link is-internal reference internal" href="../device/haptikos.html"><span class="doc">Integration</span></a></p>
+</div>
+</div>
+<div class="partner-card" id="partner-logitech"><p class="partner-status is-maintained">Maintained</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">Logitech</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">Foot Pedal · Input Device</p>
+<p class="partner-name">Logitech Rudder Pedals</p>
+<p class="partner-desc">Three-axis foot pedal exposed through the generic 3-axis pedal plugin for locomotion and clutch control.</p>
+<p class="partner-footer"><a class="partner-link is-external reference external" href="https://www.logitechg.com/en-us/products/flight/flight-simulator-rudder-pedals.html" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Overview</span><svg class="partner-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"></path></svg><span class="partner-link-external-label"> (external)</span></a><a class="partner-link is-external reference external" href="https://github.com/NVIDIA/IsaacTeleop/tree/main/src/plugins/generic_3axis_pedal" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Integration</span><svg class="partner-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"></path></svg><span class="partner-link-external-label"> (external)</span></a></p>
+</div>
+</div>
+<div class="partner-card" id="partner-luxonis"><p class="partner-status is-maintained">Maintained</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">Luxonis</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">Camera · Data Capture</p>
+<p class="partner-name">Luxonis OAK-D Camera</p>
+<p class="partner-desc">Offline egocentric data recording through the OAK-D camera plugin.</p>
+<p class="partner-footer"><a class="partner-link is-external reference external" href="https://www.luxonis.com/" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Overview</span><svg class="partner-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"></path></svg><span class="partner-link-external-label"> (external)</span></a><a class="partner-link is-external reference external" href="https://shop.luxonis.com/products/oak-d" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Acquire</span><svg class="partner-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"></path></svg><span class="partner-link-external-label"> (external)</span></a><a class="partner-link is-internal reference internal" href="../device/oak.html"><span class="doc">Integration</span></a></p>
+</div>
+</div>
+</div>
+<p class="eco-eyebrow">Joint plan in place</p>
+</section>
+<section class="eco-section" id="upcoming-partners-5">
+<h2>Upcoming Partners <span class="partner-count">5</span><a class="headerlink" href="#upcoming-partners-5" title="Link to this heading">#</a></h2>
+<p>A joint development plan is in place with NVIDIA and integration work is scoped or underway.</p>
+<div class="partner-grid partner-grid-upcoming"><div class="partner-card is-upcoming" id="partner-haply"><p class="partner-status is-upcoming">Upcoming</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">Haply</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">Master Manipulator · Haptics</p>
+<p class="partner-name">Haply</p>
+<p class="partner-desc">Force-feedback master manipulators planned through the USB CLI plugin path.</p>
+<p class="partner-badges"><span class="partner-badge">Planning</span></p>
+<p class="partner-footer"><a class="partner-link is-tracking reference external" href="https://github.com/NVIDIA/IsaacTeleop/issues/274" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Tracking #274</span><span class="partner-link-external-label"> (external)</span></a></p>
+</div>
+</div>
+<div class="partner-card is-upcoming" id="partner-joylo"><p class="partner-status is-upcoming">Upcoming</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">JoyLo</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">Master Manipulator</p>
+<p class="partner-name">JoyLo</p>
+<p class="partner-desc">Master manipulator over USB, in joint planning with the Isaac Teleop team.</p>
+<p class="partner-badges"><span class="partner-badge">Planning</span></p>
+<p class="partner-footer"><a class="partner-link is-tracking reference external" href="https://github.com/NVIDIA/IsaacTeleop/issues/272" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Tracking #272</span><span class="partner-link-external-label"> (external)</span></a></p>
+</div>
+</div>
+<div class="partner-card is-upcoming" id="partner-gello"><p class="partner-status is-upcoming">Upcoming</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">Gello</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">Master Manipulator</p>
+<p class="partner-name">Gello</p>
+<p class="partner-desc">Low-cost master manipulator targeting the USB CLI plugin interface.</p>
+<p class="partner-badges"><span class="partner-badge">Planning</span></p>
+<p class="partner-footer"><a class="partner-link is-tracking reference external" href="https://github.com/NVIDIA/IsaacTeleop/issues/273" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Tracking #273</span><span class="partner-link-external-label"> (external)</span></a></p>
+</div>
+</div>
+<div class="partner-card is-upcoming" id="partner-so-101"><p class="partner-status is-upcoming">Upcoming</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">SO-101</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">Master Manipulator</p>
+<p class="partner-name">SO-101</p>
+<p class="partner-desc">Open master-manipulator arm, integration scoped through the USB CLI plugin.</p>
+<p class="partner-badges"><span class="partner-badge">Planning</span></p>
+<p class="partner-footer"><a class="partner-link is-tracking reference external" href="https://github.com/NVIDIA/IsaacTeleop/issues/275" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Tracking #275</span><span class="partner-link-external-label"> (external)</span></a></p>
+</div>
+</div>
+<div class="partner-card is-upcoming" id="partner-3dconnexion"><p class="partner-status is-upcoming">Upcoming</p>
+<div class="partner-logo is-placeholder"><p class="partner-logo-placeholder">3Dconnexion</p>
+</div>
+<div class="partner-body"><p class="partner-eyebrow">HID Input</p>
+<p class="partner-name">3D Space Mouse</p>
+<p class="partner-desc">Six-degree-of-freedom HID input planned through the USB CLI plugin path.</p>
+<p class="partner-badges"><span class="partner-badge">Planning</span></p>
+<p class="partner-footer"><a class="partner-link is-tracking reference external" href="https://github.com/NVIDIA/IsaacTeleop/issues/276" rel="noopener noreferrer" target="_blank"><span class="partner-link-text">Tracking #276</span><span class="partner-link-external-label"> (external)</span></a></p>
+</div>
+</div>
+</div>
+</section>
+<section id="become-a-partner">
+<h2>Become a Partner<a class="headerlink" href="#become-a-partner" title="Link to this heading">#</a></h2>
+<div class="eco-cta"><div class="eco-cta-title"><p>Bring your device or service to Isaac Teleop</p>
+</div>
+<p>If you build input devices, robot embodiments, or data services, let’s plan a joint
+integration together. Devices connect through a plugin process, so your SDK stays in your
+own repository under your own license.</p>
+<div class="eco-cta-actions"><p><a class="reference external" href="https://forms.gle/Fo5nRUHZivGN1itg9" rel="noopener noreferrer" target="_blank">Become a Partner</a></p>
+<p><a class="reference internal" href="../device/add_device.html"><span class="doc">Read the integration guide</span></a></p>
+</div>
+<ol class="arabic simple eco-cta-steps">
+<li><p><strong>Joint plan</strong> — agree on scope, devices, and timeline.</p></li>
+<li><p><strong>Implementation</strong> — build the plugin and open a pull request.</p></li>
+<li><p><strong>Maintenance</strong> — keep the integration green across releases.</p></li>
+</ol>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="architecture.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Architecture</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../getting_started/quick_start.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Quick Start</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+
+
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#partners-7">Partners <span class="partner-count">7</span></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upcoming-partners-5">Upcoming Partners <span class="partner-count">5</span></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#become-a-partner">Become a Partner</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=a95f357e85573c9b56d5"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=a95f357e85573c9b56d5"></script>
+
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+<a class="footer-brand logo" href="https://www.nvidia.com">
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-blk-for-screen.svg" class="logo__image only-light" alt="NVIDIA"/>
+  <img src="../_static/nvidia-logo-horiz-rgb-1c-wht-for-screen.svg" class="logo__image only-dark" alt="NVIDIA"/>
+</a></div>
+      
+        <div class="footer-item">
+
+<div class="footer-links">
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/product-security/">Product Security</a>
+   | 
+  
+  
+  
+  <a class="external" href="https://www.nvidia.com/en-us/contact/">Contact</a>
+  
+  
+  
+</div>
+</div>
+      
+        <div class="footer-item">
+
+
+
+
+  <p class="copyright">
+    
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 11, 2026.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
