@@ -4,11 +4,11 @@
 Generated Tracker Code
 ======================
 
-Trackers that only move a FlatBuffer between a plugin and the host — *passthrough* trackers —
-are not hand-written. They are declared in a TOML manifest and their C++ and Python glue is
-generated when you configure the build. Adding one is a ``.fbs`` schema plus roughly ten lines
-of TOML; see :ref:`Passthrough trackers (manifest) <passthrough-tracker-manifest>` for the
-authoring workflow.
+Trackers whose live impl only moves a FlatBuffer between a plugin and the host via
+``SchemaTracker`` or ``SchemaPusher`` — *schema-based* trackers — are not hand-written. They are
+declared in a TOML manifest and their C++ and Python glue is generated when you configure the build.
+Adding one is a ``.fbs`` schema plus roughly ten lines of TOML; see
+:ref:`Schema-based trackers (manifest) <schema-based-tracker-manifest>` for the authoring workflow.
 
 This page records what is generated today, what is deliberately still hand-written, and what
 would have to change to generate the rest.
@@ -112,11 +112,11 @@ Still hand-written
    * - Tracker
      - Why it is not generated
    * - ``HeadTracker``, ``HandTracker``, ``ControllerTracker``
-     - Real ``xrLocate*`` / hand-tracking calls, not FlatBuffer passthrough
+     - Real ``xrLocate*`` / hand-tracking calls, not schema-based FlatBuffer readers
    * - ``FullBodyTracker`` (PICO vendor)
      - Native ``XR_BD_body_tracking``
    * - ``FullBodyTracker`` (Noitom vendor)
-     - Genuinely a passthrough, but a **vendor** of an existing facade — see below
+     - Genuinely schema-based by mechanism, but a **vendor** of an existing facade — see below
    * - ``MessageChannelTracker``
      - ``XR_NV_opaque_data_channel`` with its own connection state machine
    * - ``HapticCommandReaderTracker``
@@ -125,7 +125,7 @@ Still hand-written
    * - ``TensorPushTracker``
      - Deliberately kept as the untyped ``bytes`` escape hatch
 
-A quick way to tell the two groups apart: only passthrough impls mention ``SchemaTracker`` or
+A quick way to tell the two groups apart: only schema-based impls mention ``SchemaTracker`` or
 ``SchemaPusher``. Of the hand-written live impls that use those helpers, each is listed above.
 
 Future work
@@ -139,7 +139,7 @@ codegen tree branchy for a single device, and a generic multi-endpoint reader do
 (split tensors/collections per endpoint, or a dedicated generator) is optional follow-up.
 
 **Vendored shape (Noitom).** ``LiveFullBodyTrackerNoitomImpl`` reads
-``SchemaTracker<FullBodyPoseRecord, FullBodyPose>``, so it is passthrough by mechanism, but it is a
+``SchemaTracker<FullBodyPoseRecord, FullBodyPose>``, so it is schema-based by mechanism, but it is a
 second *vendor* of the hand-written ``FullBodyTracker`` rather than its own tracker type. Generating
 it would need a shape that emits **only** a live impl and a vendor-keyed dispatch row — no facade,
 base interface, recording traits, replay half, or pybind block, since it shares all of those with the

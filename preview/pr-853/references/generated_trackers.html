@@ -366,7 +366,7 @@
 <li class="toctree-l1"><a class="reference internal" href="retargeting/index.html">Retargeting Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="camera_streaming.html">Camera Streaming</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mcap_record_replay.html">MCAP Recording &amp; Replay</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cloudxr.html">Dedicated CloudXR Runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cloudxr.html">CloudXR Service</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rig.html">Rig Launcher</a></li>
 <li class="toctree-l1"><a class="reference internal" href="oob_teleop_control.html">Out-of-Band Teleop Control</a></li>
 <li class="toctree-l1"><a class="reference internal" href="egocentric_hand_reconstruction.html">Egocentric Hand Reconstruction</a></li>
@@ -424,11 +424,11 @@
                   
   <section id="generated-tracker-code">
 <h1>Generated Tracker Code<a class="headerlink" href="#generated-tracker-code" title="Link to this heading">#</a></h1>
-<p>Trackers that only move a FlatBuffer between a plugin and the host — <em>passthrough</em> trackers —
-are not hand-written. They are declared in a TOML manifest and their C++ and Python glue is
-generated when you configure the build. Adding one is a <code class="docutils literal notranslate"><span class="pre">.fbs</span></code> schema plus roughly ten lines
-of TOML; see <a class="reference internal" href="../device/add_device.html#passthrough-tracker-manifest"><span class="std std-ref">Passthrough trackers (manifest)</span></a> for the
-authoring workflow.</p>
+<p>Trackers whose live impl only moves a FlatBuffer between a plugin and the host via
+<code class="docutils literal notranslate"><span class="pre">SchemaTracker</span></code> or <code class="docutils literal notranslate"><span class="pre">SchemaPusher</span></code> — <em>schema-based</em> trackers — are not hand-written. They are
+declared in a TOML manifest and their C++ and Python glue is generated when you configure the build.
+Adding one is a <code class="docutils literal notranslate"><span class="pre">.fbs</span></code> schema plus roughly ten lines of TOML; see
+<a class="reference internal" href="../device/add_device.html#schema-based-tracker-manifest"><span class="std std-ref">Schema-based trackers (manifest)</span></a> for the authoring workflow.</p>
 <p>This page records what is generated today, what is deliberately still hand-written, and what
 would have to change to generate the rest.</p>
 <section id="how-it-works">
@@ -541,13 +541,13 @@ the built module.</p>
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">HeadTracker</span></code>, <code class="docutils literal notranslate"><span class="pre">HandTracker</span></code>, <code class="docutils literal notranslate"><span class="pre">ControllerTracker</span></code></p></td>
-<td><p>Real <code class="docutils literal notranslate"><span class="pre">xrLocate*</span></code> / hand-tracking calls, not FlatBuffer passthrough</p></td>
+<td><p>Real <code class="docutils literal notranslate"><span class="pre">xrLocate*</span></code> / hand-tracking calls, not schema-based FlatBuffer readers</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FullBodyTracker</span></code> (PICO vendor)</p></td>
 <td><p>Native <code class="docutils literal notranslate"><span class="pre">XR_BD_body_tracking</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FullBodyTracker</span></code> (Noitom vendor)</p></td>
-<td><p>Genuinely a passthrough, but a <strong>vendor</strong> of an existing facade — see below</p></td>
+<td><p>Genuinely schema-based by mechanism, but a <strong>vendor</strong> of an existing facade — see below</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MessageChannelTracker</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">XR_NV_opaque_data_channel</span></code> with its own connection state machine</p></td>
@@ -562,7 +562,7 @@ the built module.</p>
 </tbody>
 </table>
 </div>
-<p>A quick way to tell the two groups apart: only passthrough impls mention <code class="docutils literal notranslate"><span class="pre">SchemaTracker</span></code> or
+<p>A quick way to tell the two groups apart: only schema-based impls mention <code class="docutils literal notranslate"><span class="pre">SchemaTracker</span></code> or
 <code class="docutils literal notranslate"><span class="pre">SchemaPusher</span></code>. Of the hand-written live impls that use those helpers, each is listed above.</p>
 </section>
 <section id="future-work">
@@ -574,7 +574,7 @@ codegen tree branchy for a single device, and a generic multi-endpoint reader do
 <code class="docutils literal notranslate"><span class="pre">pull/</span></code> or <code class="docutils literal notranslate"><span class="pre">push</span></code>. The hand-written reader remains the supported approach; a future redesign
 (split tensors/collections per endpoint, or a dedicated generator) is optional follow-up.</p>
 <p><strong>Vendored shape (Noitom).</strong> <code class="docutils literal notranslate"><span class="pre">LiveFullBodyTrackerNoitomImpl</span></code> reads
-<code class="docutils literal notranslate"><span class="pre">SchemaTracker&lt;FullBodyPoseRecord,</span> <span class="pre">FullBodyPose&gt;</span></code>, so it is passthrough by mechanism, but it is a
+<code class="docutils literal notranslate"><span class="pre">SchemaTracker&lt;FullBodyPoseRecord,</span> <span class="pre">FullBodyPose&gt;</span></code>, so it is schema-based by mechanism, but it is a
 second <em>vendor</em> of the hand-written <code class="docutils literal notranslate"><span class="pre">FullBodyTracker</span></code> rather than its own tracker type. Generating
 it would need a shape that emits <strong>only</strong> a live impl and a vendor-keyed dispatch row — no facade,
 base interface, recording traits, replay half, or pybind block, since it shares all of those with the
@@ -732,7 +732,7 @@ correct outcome — the generator exists to remove mechanical duplication, not t
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 11, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 12, 2026.
       <br/>
     
   </p>

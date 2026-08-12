@@ -366,7 +366,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../references/retargeting/index.html">Retargeting Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/camera_streaming.html">Camera Streaming</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/mcap_record_replay.html">MCAP Recording &amp; Replay</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../references/cloudxr.html">Dedicated CloudXR Runtime</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../references/cloudxr.html">CloudXR Service</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/rig.html">Rig Launcher</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/oob_teleop_control.html">Out-of-Band Teleop Control</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../references/egocentric_hand_reconstruction.html">Egocentric Hand Reconstruction</a></li>
@@ -451,7 +451,7 @@ The reference implementation is the <strong>generic 3-axis foot pedal</strong>:<
 </tr>
 <tr class="row-even"><td><p>Tracker facade (<code class="docutils literal notranslate"><span class="pre">Generic3AxisPedalTracker</span></code>)</p></td>
 <td><p>Generated at configure time from <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/core/deviceio_trackers/trackers.toml" rel="noopener noreferrer" target="_blank">src/core/deviceio_trackers/trackers.toml</a>
-(see <a class="reference internal" href="#passthrough-tracker-manifest"><span class="std std-ref">Passthrough tracker manifest</span></a>)</p></td>
+(see <a class="reference internal" href="#schema-based-tracker-manifest"><span class="std std-ref">Schema-based tracker manifest</span></a>)</p></td>
 </tr>
 <tr class="row-odd"><td><p>Live backend (<code class="docutils literal notranslate"><span class="pre">LiveGeneric3AxisPedalTrackerImpl</span></code>)</p></td>
 <td><p>Generated alongside the facade under <code class="docutils literal notranslate"><span class="pre">${CMAKE_BINARY_DIR}/generated/trackers/</span></code></p></td>
@@ -531,11 +531,12 @@ for the local common clock; use the device’s own clock for the raw device cloc
 </section>
 <section id="step-3-implement-a-tracker">
 <h2>Step 3: Implement a tracker<a class="headerlink" href="#step-3-implement-a-tracker" title="Link to this heading">#</a></h2>
-<section id="passthrough-trackers-manifest">
-<span id="passthrough-tracker-manifest"></span><h3>Passthrough trackers (manifest)<a class="headerlink" href="#passthrough-trackers-manifest" title="Link to this heading">#</a></h3>
-<p>If the device is a <strong>pure FlatBuffer passthrough</strong> over OpenXR tensor collections (plugin serializes
-a table; the host reads it unchanged), you usually <strong>do not</strong> hand-write the seven-layer tracker
-stack. Instead:</p>
+<section id="schema-based-trackers-manifest">
+<span id="schema-based-tracker-manifest"></span><h3>Schema-based trackers (manifest)<a class="headerlink" href="#schema-based-trackers-manifest" title="Link to this heading">#</a></h3>
+<p>If the device is a <strong>schema-based FlatBuffer tracker</strong> over OpenXR tensor collections (plugin
+serializes a table; the host reads or writes it via <code class="docutils literal notranslate"><span class="pre">SchemaTracker</span></code> / <code class="docutils literal notranslate"><span class="pre">SchemaPusher</span></code> with no
+<code class="docutils literal notranslate"><span class="pre">xrLocate*</span></code> calls and no custom connection state), you usually <strong>do not</strong> hand-write the
+seven-layer tracker stack. Instead:</p>
 <ol class="arabic simple">
 <li><p>Add or extend the FlatBuffer schema (Step 1).</p></li>
 <li><p>Add a <code class="docutils literal notranslate"><span class="pre">[[tracker]]</span></code> entry to <a class="reference external" href="https://github.com/NVIDIA/IsaacTeleop/blob/main/src/core/deviceio_trackers/trackers.toml" rel="noopener noreferrer" target="_blank">src/core/deviceio_trackers/trackers.toml</a>. Defaults
@@ -566,8 +567,9 @@ skips writing generated sources; temporary paths are fine.)</p>
 </section>
 <section id="hand-written-trackers">
 <h3>Hand-written trackers<a class="headerlink" href="#hand-written-trackers" title="Link to this heading">#</a></h3>
-<p>Non-passthrough trackers (OpenXR <code class="docutils literal notranslate"><span class="pre">xrLocate*</span></code>, multi-stream camera metadata, opaque message
-channels, …) still use the manual facade + live/replay impl pattern below.</p>
+<p>Trackers that are not schema-based FlatBuffer readers/writers (OpenXR <code class="docutils literal notranslate"><span class="pre">xrLocate*</span></code>, opaque message
+channels, multi-endpoint haptic readers, …) still use the manual facade + live/replay impl pattern
+below.</p>
 <p>The tracker runs inside a consumer process (e.g. Teleop pipeline or a small reader app). It
 implements the <strong>ITracker</strong> interface (tracker <strong>facade</strong> in <code class="docutils literal notranslate"><span class="pre">deviceio_trackers</span></code>); the
 <strong>live backend</strong> in <code class="docutils literal notranslate"><span class="pre">live_trackers</span></code> composes <strong>SchemaTracker</strong> to read raw
@@ -602,10 +604,10 @@ Record FlatBuffer (output table + <code class="docutils literal notranslate"><sp
 device disappeared and there are no samples, you may emit one record with null data and
 the update-tick timestamp so the MCAP stream marks absence.</p></li>
 </ul>
-<p>Reference implementation — SchemaTracker passthrough (generated) and a hand-written OpenXR
+<p>Reference implementation — generated <code class="docutils literal notranslate"><span class="pre">SchemaTracker</span></code> reader and a hand-written OpenXR
 locate tracker:</p>
 <ul class="simple">
-<li><p><strong>Generated SchemaTracker passthrough</strong> — after configure, under
+<li><p><strong>Generated schema-based reader</strong> — after configure, under
 <code class="docutils literal notranslate"><span class="pre">${CMAKE_BINARY_DIR}/generated/trackers/</span></code>: facade
 <code class="docutils literal notranslate"><span class="pre">deviceio_trackers/generic_3axis_pedal_tracker.cpp</span></code> (<code class="docutils literal notranslate"><span class="pre">Generic3AxisPedalTracker</span></code>), base
 <code class="docutils literal notranslate"><span class="pre">deviceio_base/generic_3axis_pedal_tracker_base.hpp</span></code>, and live backend
@@ -737,7 +739,7 @@ trackers during the update loop.</p></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-define-the-data-schema">Step 1: Define the data schema</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-implement-a-device-plugin">Step 2: Implement a device plugin</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-implement-a-tracker">Step 3: Implement a tracker</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#passthrough-trackers-manifest">Passthrough trackers (manifest)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#schema-based-trackers-manifest">Schema-based trackers (manifest)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hand-written-trackers">Hand-written trackers</a></li>
 </ul>
 </li>
@@ -825,7 +827,7 @@ trackers during the update loop.</p></li>
 
   <p class="copyright">
     
-      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 11, 2026.
+      Copyright © 2025-2026, NVIDIA CORPORATION &amp; AFFILIATES, last updated on August 12, 2026.
       <br/>
     
   </p>

@@ -25,7 +25,7 @@ The reference implementation is the **generic 3-axis foot pedal**:
      - :code-dir:`src/plugins/generic_3axis_pedal`
    * - Tracker facade (``Generic3AxisPedalTracker``)
      - Generated at configure time from :code-file:`src/core/deviceio_trackers/trackers.toml`
-       (see :ref:`Passthrough tracker manifest <passthrough-tracker-manifest>`)
+       (see :ref:`Schema-based tracker manifest <schema-based-tracker-manifest>`)
    * - Live backend (``LiveGeneric3AxisPedalTrackerImpl``)
      - Generated alongside the facade under ``${CMAKE_BINARY_DIR}/generated/trackers/``
    * - ``SchemaTracker`` / ``SampleResult``
@@ -106,14 +106,15 @@ Reference implementation: :code-dir:`src/plugins/generic_3axis_pedal`. The plugi
 Step 3: Implement a tracker
 ----------------------------
 
-.. _passthrough-tracker-manifest:
+.. _schema-based-tracker-manifest:
 
-Passthrough trackers (manifest)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Schema-based trackers (manifest)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If the device is a **pure FlatBuffer passthrough** over OpenXR tensor collections (plugin serializes
-a table; the host reads it unchanged), you usually **do not** hand-write the seven-layer tracker
-stack. Instead:
+If the device is a **schema-based FlatBuffer tracker** over OpenXR tensor collections (plugin
+serializes a table; the host reads or writes it via ``SchemaTracker`` / ``SchemaPusher`` with no
+``xrLocate*`` calls and no custom connection state), you usually **do not** hand-write the
+seven-layer tracker stack. Instead:
 
 1. Add or extend the FlatBuffer schema (Step 1).
 2. Add a ``[[tracker]]`` entry to :code-file:`src/core/deviceio_trackers/trackers.toml`. Defaults
@@ -147,8 +148,9 @@ skips writing generated sources; temporary paths are fine.)
 Hand-written trackers
 ~~~~~~~~~~~~~~~~~~~~~
 
-Non-passthrough trackers (OpenXR ``xrLocate*``, multi-stream camera metadata, opaque message
-channels, …) still use the manual facade + live/replay impl pattern below.
+Trackers that are not schema-based FlatBuffer readers/writers (OpenXR ``xrLocate*``, opaque message
+channels, multi-endpoint haptic readers, …) still use the manual facade + live/replay impl pattern
+below.
 
 The tracker runs inside a consumer process (e.g. Teleop pipeline or a small reader app). It
 implements the **ITracker** interface (tracker **facade** in ``deviceio_trackers``); the
@@ -184,10 +186,10 @@ In the **Impl**:
   device disappeared and there are no samples, you may emit one record with null data and
   the update-tick timestamp so the MCAP stream marks absence.
 
-Reference implementation — SchemaTracker passthrough (generated) and a hand-written OpenXR
+Reference implementation — generated ``SchemaTracker`` reader and a hand-written OpenXR
 locate tracker:
 
-- **Generated SchemaTracker passthrough** — after configure, under
+- **Generated schema-based reader** — after configure, under
   ``${CMAKE_BINARY_DIR}/generated/trackers/``: facade
   ``deviceio_trackers/generic_3axis_pedal_tracker.cpp`` (``Generic3AxisPedalTracker``), base
   ``deviceio_base/generic_3axis_pedal_tracker_base.hpp``, and live backend
