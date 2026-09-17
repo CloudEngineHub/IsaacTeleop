@@ -38,6 +38,7 @@ TF frames published in hand_teleop and controller_teleop modes (configurable via
   - world_frame -> right_wrist_frame
   - world_frame -> left_wrist_frame
   - world_frame -> head_frame
+  - (With ee_poses_frame=head, world_frame -> head_frame -> left/right_wrist_frame)
 """
 
 import os
@@ -132,6 +133,9 @@ class TeleopRos2Node(Node):
             self._params.transform_rotation,
             self._params.transform_translation,
             self._profile_spec.apply_manus_controller_mount_offset,
+            head=result["head"],
+            head_frame=self._params.head_frame,
+            ee_poses_frame=self._params.ee_poses_frame,
         )
         self._pub_ee_poses.publish(ee_poses_msg)
         if wrist_tfs:
@@ -181,6 +185,9 @@ class TeleopRos2Node(Node):
             self._params.right_wrist_frame,
             self._params.transform_rotation,
             self._params.transform_translation,
+            head=result["head"],
+            head_frame=self._params.head_frame,
+            ee_poses_frame=self._params.ee_poses_frame,
         )
         self._pub_ee_poses.publish(ee_poses_msg)
         if wrist_tfs:
