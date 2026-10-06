@@ -18,6 +18,8 @@ import concurrent.futures.thread  # noqa: F401
 from collections import deque
 import logging
 import json
+import re
+import time
 import uuid
 import os
 import signal
@@ -322,7 +324,13 @@ class CloudXRService:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Stop the service on exiting the ``with`` block."""
-        self.stop()
+        try:
+            self.stop()
+        except RuntimeError:
+            # Fatal status was already reported, and the runtime is gone. A
+            # stalled WSS status writer may still own its thread and log file.
+            if self._fatal_error is None or self._runtime_proc is not None:
+                raise
 
     def stop(self) -> None:
         """Shut down the WSS proxy and terminate the runtime process.
@@ -340,7 +348,14 @@ class CloudXRService:
                 return
             self._stopping = True
             try:
-                self._stop_wss_proxy()
+                wss_error = None
+                try:
+                    self._stop_wss_proxy()
+                except RuntimeError as exc:
+                    if self._fatal_error is None:
+                        raise
+                    # A stalled WSS writer must not keep a failed service alive.
+                    wss_error = exc
 
                 if self._runtime_proc is not None:
                     try:
@@ -368,6 +383,8 @@ class CloudXRService:
                         logger.warning(
                             "Cannot clean OOB status %s: %s", self._oob_status_path, exc
                         )
+                if wss_error is not None:
+                    raise wss_error
             finally:
                 self._restore_signal_handlers()
                 self._stopping = False
@@ -398,6 +415,8 @@ class CloudXRService:
         }
         async with self._oob_publish_lock:
             with self._oob_lock:
+                if self._fatal_error is not None:
+                    return
                 self._oob_snapshot = payload
                 self._oob_updates.append(payload)
             persistence = asyncio.create_task(
@@ -423,16 +442,75 @@ class CloudXRService:
             self._oob_updates.clear()
         return updates
 
-    def _on_oob_fatal(self, error: Exception) -> None:
-        """Transfer fatal teardown to a thread that can safely join WSS."""
+    async def _on_oob_fatal(
+        self, error: Exception, *, component: str = "OOB lifecycle worker"
+    ) -> None:
+        """Publish one terminal transition before the supervisor tears down WSS."""
+        from ..oob_teleop_env import redact_control_token  # noqa: PLC0415
+
+        # Status is operator-facing and persisted; never put a URL or token in it.
+        detail = re.sub(r"https?://\S+", "<URL>", redact_control_token(str(error)))[
+            :180
+        ]
+        reason = (
+            f"{component} failed: {detail}; check "
+            f"{self._wss_log_path or self._oob_status_path} and restart CloudXR service"
+        )
         with self._oob_lock:
-            if self._fatal_error is not None:
+            if self._fatal_error is not None or self._stopping:
                 return
             self._fatal_error = error
+            payload = {
+                **(self._oob_snapshot or {}),
+                "schemaVersion": 1,
+                "health": "fatal",
+                "state": "FATAL",
+                "reason": reason,
+                "updatedAt": time.time(),
+                "writerPid": os.getpid(),
+                "runtimePid": self._runtime_proc.pid if self._runtime_proc else None,
+                "sessionId": self._oob_session_id,
+            }
+            for flag in (
+                "adbReady",
+                "networkPresent",
+                "reverseRulesVerified",
+                "coturnProcessReady",
+                "coturnListenerReady",
+                "turnPrerequisitesReady",
+                "turnEndToEndHealthy",
+                "browserRegistered",
+                "healthProbeAcknowledged",
+                "browserReady",
+                "connectDispatched",
+                "streaming",
+                "clientMetricsFresh",
+            ):
+                payload[flag] = False
+            self._oob_snapshot = payload
+            self._oob_updates.append(payload)
         self._fatal_supervisor = threading.Thread(
-            target=self.stop, name="cloudxr-oob-fatal-supervisor", daemon=True
+            target=self._stop_after_oob_fatal,
+            name="cloudxr-oob-fatal-supervisor",
+            daemon=True,
         )
         self._fatal_supervisor.start()
+        async with self._oob_publish_lock:
+            persistence = asyncio.create_task(
+                asyncio.to_thread(self._persist_oob_status, payload)
+            )
+            try:
+                await asyncio.shield(persistence)
+            except asyncio.CancelledError:
+                await persistence
+                raise
+
+    def _stop_after_oob_fatal(self) -> None:
+        """Stop the runtime even if the WSS status writer cannot finish."""
+        try:
+            self.stop()
+        except RuntimeError as exc:
+            logger.debug("Fatal OOB teardown retained a WSS handle: %s", exc)
 
     def health_check(self) -> None:
         """Verify that the runtime process and WSS proxy are healthy.
@@ -698,6 +776,13 @@ class CloudXRService:
 
         def _run_wss() -> None:
             asyncio.set_event_loop(loop)
+            was_listening = False
+
+            def _on_listening() -> None:
+                nonlocal was_listening
+                was_listening = True
+                listening.set_result(None)
+
             try:
                 loop.run_until_complete(
                     wss_run(
@@ -706,17 +791,39 @@ class CloudXRService:
                         setup_oob=setup_oob,
                         usb_local=usb_local,
                         host_client=host_client,
-                        on_listening=lambda: listening.set_result(None),
+                        on_listening=_on_listening,
                         recovery_config=self._recovery_config,
                         on_oob_status=self._publish_oob_status,
                         on_oob_fatal=self._on_oob_fatal,
                     )
                 )
+                if (
+                    setup_oob
+                    and was_listening
+                    and not self._stopping
+                    and not stop_future.done()
+                ):
+                    loop.run_until_complete(
+                        self._on_oob_fatal(
+                            RuntimeError("WSS proxy exited unexpectedly"),
+                            component="WSS proxy",
+                        )
+                    )
             except Exception as exc:
                 self._wss_error = exc
+                if (
+                    setup_oob
+                    and was_listening
+                    and not self._stopping
+                    and not stop_future.done()
+                ):
+                    loop.run_until_complete(
+                        self._on_oob_fatal(exc, component="WSS proxy")
+                    )
                 if not listening.done():
                     listening.set_exception(exc)
-                logger.exception("WSS proxy thread exited with error")
+                if self._fatal_error is None and not self._stopping:
+                    logger.exception("WSS proxy thread exited with error")
             finally:
                 # A thread that ended without listening leaves nobody to wait
                 # for; unblock the caller rather than hold it to the timeout.
