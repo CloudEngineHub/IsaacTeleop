@@ -6,18 +6,25 @@
 from __future__ import annotations
 
 import asyncio
+import http.server
 import json
 import subprocess
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager, contextmanager
+from typing import ClassVar
 from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from websockets.asyncio.server import serve as ws_serve
 
 from cloudxr_py_test_ns import oob_teleop_adb as adb_module
 from cloudxr_py_test_ns.oob_teleop_adb import (
     OobAdbError,
+    _cdp_session_click_connect,
+    _close_stale_teleop_tabs,
+    _discover_devtools_socket,
     adb_automation_failure_hint,
     adb_device_state,
     assert_adb_device_online,
@@ -836,3 +843,349 @@ async def test_error_banner_monitor_removes_forward_off_event_loop() -> None:
     assert len(cleanup_calls) == 1
     assert cleanup_calls[0][0] == 9222
     assert cleanup_calls[0][1] != loop_thread
+
+
+# ============================================================================
+# CDP: _discover_devtools_socket / _close_stale_teleop_tabs
+#
+# _close_stale_teleop_tabs is driven against a genuine local HTTP server standing in for
+# Chromium's CDP `/json` endpoint, exercising the real tab-matching/close-request logic rather
+# than asserting mocked call arguments.
+# ============================================================================
+
+
+@patch("cloudxr_py_test_ns.oob_teleop_adb._run_adb")
+def test_discover_devtools_socket_prefers_weblayer_over_generic(
+    mock_run_adb: MagicMock,
+) -> None:
+    mock_run_adb.return_value = (
+        "0: 00000003 00000000 00010000 0001 01 12345 @chrome_devtools_remote\n"
+        "1: 00000003 00000000 00010000 0001 01 12346 @weblayer_devtools_remote_777\n"
+    )
+    assert _discover_devtools_socket() == "weblayer_devtools_remote_777"
+
+
+@patch("cloudxr_py_test_ns.oob_teleop_adb._run_adb")
+def test_discover_devtools_socket_falls_back_to_first_candidate(
+    mock_run_adb: MagicMock,
+) -> None:
+    mock_run_adb.return_value = (
+        "0: 00000003 00000000 00010000 0001 01 12345 @some.custom_devtools_remote\n"
+    )
+    assert _discover_devtools_socket() == "some.custom_devtools_remote"
+
+
+@patch("cloudxr_py_test_ns.oob_teleop_adb._run_adb")
+def test_discover_devtools_socket_no_candidates_returns_none(
+    mock_run_adb: MagicMock,
+) -> None:
+    mock_run_adb.return_value = (
+        "0: 00000003 00000000 00010000 0001 01 12345 @unrelated_socket\n"
+    )
+    assert _discover_devtools_socket() is None
+
+
+@patch("cloudxr_py_test_ns.oob_teleop_adb._run_adb")
+def test_discover_devtools_socket_adb_unreachable_returns_none(
+    mock_run_adb: MagicMock,
+) -> None:
+    mock_run_adb.return_value = None
+    assert _discover_devtools_socket() is None
+
+
+class _FakeCdpHandler(http.server.BaseHTTPRequestHandler):
+    """Stands in for Chromium's CDP HTTP endpoint: GET /json (tab list) and GET /json/close/<id>."""
+
+    tabs: ClassVar[list[dict]] = []
+    closed_ids: ClassVar[list[str]] = []
+
+    def do_GET(self) -> None:  # noqa: N802 (BaseHTTPRequestHandler's own naming)
+        if self.path == "/json":
+            body = json.dumps(self.tabs).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        elif self.path.startswith("/json/close/"):
+            self.closed_ids.append(self.path.removeprefix("/json/close/"))
+            self.send_response(200)
+            self.end_headers()
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(
+        self, *args
+    ) -> None:  # silence BaseHTTPRequestHandler's request logging
+        pass
+
+
+@contextmanager
+def _fake_cdp_server(tabs: list[dict]):
+    """Serves *tabs* on an OS-assigned port for the duration of the block; yields the handler
+    class so the test can inspect `.closed_ids` after.
+
+    _close_stale_teleop_tabs() reads the module-level _CDP_LOCAL_PORT constant rather than
+    taking a port parameter, so this patches that constant to the assigned port for the
+    block's lifetime instead of binding the real (production) port - avoids colliding with an
+    actual adb forward or other listener already using it on the test host.
+    """
+    _FakeCdpHandler.tabs = tabs
+    _FakeCdpHandler.closed_ids = []
+    server = http.server.HTTPServer(("localhost", 0), _FakeCdpHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with patch.object(adb_module, "_CDP_LOCAL_PORT", server.server_port):
+            yield _FakeCdpHandler
+    finally:
+        server.shutdown()
+        thread.join(timeout=5)
+        server.server_close()
+
+
+@patch("cloudxr_py_test_ns.oob_teleop_adb._adb_forward_remove")
+@patch("cloudxr_py_test_ns.oob_teleop_adb._adb_forward_cdp")
+@patch("cloudxr_py_test_ns.oob_teleop_adb._discover_devtools_socket")
+def test_close_stale_teleop_tabs_closes_only_oob_tabs(
+    mock_discover: MagicMock,
+    mock_forward: MagicMock,
+    mock_remove: MagicMock,
+) -> None:
+    mock_discover.return_value = "chrome_devtools_remote"
+    tabs = [
+        {"id": "stale-1", "url": "https://headset.local/?oobEnable=1"},
+        {"id": "unrelated", "url": "https://headset.local/some-other-page"},
+        {"id": "stale-2", "url": "https://headset.local/?oobEnable=1&codec=av1"},
+    ]
+    with _fake_cdp_server(tabs) as handler:
+        closed = _close_stale_teleop_tabs()
+        # Read the port while the fixture's patch is still active - it's restored to the
+        # real _CDP_LOCAL_PORT once this block exits.
+        patched_port = adb_module._CDP_LOCAL_PORT
+
+    assert closed == 2
+    assert sorted(handler.closed_ids) == ["stale-1", "stale-2"]
+    mock_forward.assert_called_once_with("chrome_devtools_remote", patched_port)
+    mock_remove.assert_called_once_with(patched_port)
+
+
+@patch("cloudxr_py_test_ns.oob_teleop_adb._adb_forward_remove")
+@patch("cloudxr_py_test_ns.oob_teleop_adb._adb_forward_cdp")
+@patch("cloudxr_py_test_ns.oob_teleop_adb._discover_devtools_socket")
+def test_close_stale_teleop_tabs_no_matches_closes_nothing(
+    mock_discover: MagicMock,
+    mock_forward: MagicMock,
+    mock_remove: MagicMock,
+) -> None:
+    mock_discover.return_value = "chrome_devtools_remote"
+    tabs = [{"id": "unrelated", "url": "https://headset.local/some-other-page"}]
+    with _fake_cdp_server(tabs) as handler:
+        closed = _close_stale_teleop_tabs()
+        patched_port = adb_module._CDP_LOCAL_PORT
+
+    assert closed == 0
+    assert handler.closed_ids == []
+    mock_remove.assert_called_once_with(patched_port)
+
+
+@patch("cloudxr_py_test_ns.oob_teleop_adb._discover_devtools_socket")
+def test_close_stale_teleop_tabs_no_devtools_socket_returns_zero(
+    mock_discover: MagicMock,
+) -> None:
+    mock_discover.return_value = None
+    assert _close_stale_teleop_tabs() == 0
+
+
+@patch("cloudxr_py_test_ns.oob_teleop_adb._adb_forward_remove")
+@patch("cloudxr_py_test_ns.oob_teleop_adb._adb_forward_cdp")
+@patch("cloudxr_py_test_ns.oob_teleop_adb._discover_devtools_socket")
+def test_close_stale_teleop_tabs_forward_failure_returns_zero_without_remove(
+    mock_discover: MagicMock,
+    mock_forward: MagicMock,
+    mock_remove: MagicMock,
+) -> None:
+    """`adb forward` failing means no rule was ever set up - `_adb_forward_remove` (a `--remove`
+    of that rule) is therefore not called, unlike the success-then-cleanup path above."""
+    mock_discover.return_value = "chrome_devtools_remote"
+    mock_forward.side_effect = OobAdbError("adb forward failed")
+    assert _close_stale_teleop_tabs() == 0
+    mock_remove.assert_not_called()
+
+
+# ============================================================================
+# CDP: _cdp_session_click_connect
+#
+# Drives the real function against a genuine local CDP WebSocket server; _CdpScript below is a
+# scripted responder standing in for a real Chromium DevTools target, so the cert-interstitial
+# bypass and readiness-poll state machine run for real rather than being asserted via mocked
+# call arguments.
+# ============================================================================
+
+
+class _CdpScript:
+    """Scripted responder for the CDP calls `_cdp_session_click_connect` makes.
+
+    *readiness_states* is consumed one entry per readiness-poll call (repeating the last entry
+    once exhausted). *interstitial_url* starting with `chrome-error:` forces the DOM
+    click-through fallback instead of the primary `Page.navigate` bypass - the same branch
+    condition the real function itself checks.
+    """
+
+    def __init__(
+        self,
+        *,
+        interstitial: bool = False,
+        interstitial_url: str = "https://headset.local/",
+        readiness_states: list[dict] | None = None,
+    ) -> None:
+        self.interstitial = interstitial
+        self.interstitial_url = interstitial_url
+        self.readiness_states = readiness_states or [
+            {"state": "ready", "text": "CONNECT", "disabled": False, "x": 10, "y": 20}
+        ]
+        self._readiness_index = 0
+        self._reached_ready = False
+        self.calls: list[tuple[str, dict]] = []
+
+    def respond(self, method: str, params: dict) -> dict:
+        self.calls.append((method, params))
+        expr = params.get("expression", "")
+
+        if method == "Input.dispatchMouseEvent":
+            # A real browser can't be clicked before the button is actionable - reject here so
+            # a caller that dispatches too early fails the test instead of silently "succeeding".
+            if not self._reached_ready:
+                raise AssertionError(
+                    "Input.dispatchMouseEvent before CONNECT reached its ready state"
+                )
+            return {}
+        if method in (
+            "Security.setIgnoreCertificateErrors",
+            "Page.bringToFront",
+            "Page.navigate",
+        ):
+            return {}
+        if expr == "!!document.getElementById('details-button')":
+            return {"result": {"value": self.interstitial}}
+        if expr == "window.location.href":
+            return {"result": {"value": self.interstitial_url}}
+        if expr in (
+            "document.getElementById('details-button')?.click()",
+            "document.getElementById('proceed-link')?.click()",
+            "document.getElementById('startButton')?.click()",
+        ):
+            return {}
+        if "getBoundingClientRect" in expr:
+            i = min(self._readiness_index, len(self.readiness_states) - 1)
+            self._readiness_index += 1
+            state = self.readiness_states[i]
+            if state.get("state") == "ready":
+                self._reached_ready = True
+            return {"result": {"value": state}}
+        if "errorMessageBox" in expr:
+            # Reports the session as already active (btnText != 'CONNECT') so the post-click
+            # outcome-monitor loop returns on its first iteration instead of polling for real.
+            return {"result": {"value": {"btnText": "DISCONNECT", "errorText": None}}}
+        raise AssertionError(f"unscripted CDP call: {method} {params}")
+
+
+@asynccontextmanager
+async def _fake_cdp_ws(script: _CdpScript):
+    """Serves *script*'s responses on an OS-assigned port; yields the `ws://` URL to connect to."""
+
+    async def handler(websocket):
+        async for raw in websocket:
+            msg = json.loads(raw)
+            result = script.respond(msg["method"], msg.get("params", {}))
+            await websocket.send(json.dumps({"id": msg["id"], "result": result}))
+
+    async with ws_serve(handler, "localhost", 0) as server:
+        port = server.sockets[0].getsockname()[1]
+        yield f"ws://localhost:{port}"
+
+
+async def test_cdp_session_click_connect_no_interstitial_reaches_ready_and_clicks() -> (
+    None
+):
+    script = _CdpScript(
+        interstitial=False,
+        readiness_states=[
+            {
+                "state": "initializing",
+                "text": "CONNECT (checking capabilities)",
+                "disabled": True,
+            },
+            {"state": "ready", "text": "CONNECT", "disabled": False, "x": 10, "y": 20},
+        ],
+    )
+    async with _fake_cdp_ws(script) as ws_url:
+        await _cdp_session_click_connect(ws_url)
+    methods = [m for m, _ in script.calls]
+    assert "Page.navigate" not in methods
+    # Ordered mousePressed then mouseReleased at the readiness poll's (x, y), followed by the
+    # DOM startButton.click() safety net - not just "a dispatchMouseEvent happened somewhere",
+    # which would also pass for an incomplete click (e.g. missing mouseReleased).
+    mouse_events = [p for m, p in script.calls if m == "Input.dispatchMouseEvent"]
+    assert [e["type"] for e in mouse_events] == ["mousePressed", "mouseReleased"]
+    for event in mouse_events:
+        assert event["x"] == 10
+        assert event["y"] == 20
+        assert event["button"] == "left"
+        assert event["clickCount"] == 1
+    dispatch_index = methods.index("Input.dispatchMouseEvent")
+    click_index = next(
+        i
+        for i, (m, p) in enumerate(script.calls)
+        if m == "Runtime.evaluate"
+        and p.get("expression") == "document.getElementById('startButton')?.click()"
+    )
+    assert click_index > dispatch_index
+
+
+async def test_cdp_session_click_connect_failed_capability_check_raises() -> None:
+    script = _CdpScript(
+        interstitial=False,
+        readiness_states=[
+            {
+                "state": "failed",
+                "text": "CONNECT (capability check failed)",
+                "disabled": True,
+            }
+        ],
+    )
+    async with _fake_cdp_ws(script) as ws_url:
+        with pytest.raises(OobAdbError, match="startButton marked failed"):
+            await _cdp_session_click_connect(ws_url)
+    assert "Input.dispatchMouseEvent" not in [m for m, _ in script.calls]
+
+
+async def test_cdp_session_click_connect_cert_interstitial_primary_bypass() -> None:
+    script = _CdpScript(interstitial=True, interstitial_url="https://headset.local/")
+    async with _fake_cdp_ws(script) as ws_url:
+        await _cdp_session_click_connect(ws_url)
+    methods = [m for m, _ in script.calls]
+    fallback_clicks = [
+        p.get("expression")
+        for m, p in script.calls
+        if m == "Runtime.evaluate" and "proceed-link" in p.get("expression", "")
+    ]
+    assert "Page.navigate" in methods
+    assert fallback_clicks == []
+
+
+async def test_cdp_session_click_connect_cert_interstitial_dom_fallback() -> None:
+    script = _CdpScript(
+        interstitial=True, interstitial_url="chrome-error://chromewebdata/"
+    )
+    async with _fake_cdp_ws(script) as ws_url:
+        await _cdp_session_click_connect(ws_url)
+    methods = [m for m, _ in script.calls]
+    fallback_clicks = [
+        p.get("expression")
+        for m, p in script.calls
+        if m == "Runtime.evaluate" and "proceed-link" in p.get("expression", "")
+    ]
+    assert "Page.navigate" not in methods
+    assert fallback_clicks == ["document.getElementById('proceed-link')?.click()"]
