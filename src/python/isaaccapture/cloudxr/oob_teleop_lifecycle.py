@@ -128,12 +128,15 @@ class OobLifecycle:
         self._usb_wake_confirmed: bool | None = None
         # Only a failed strict wake check permits polling after episode expiry.
         self._usb_waiting_for_awake = False
+        # A failed new-page launch also needs wake polling in WiFi mode.
+        self._browser_waiting_for_awake = False
         self._usb_link: dict | None = None
         self._usb_transfer: dict | None = None
 
-        # Headset selection remains pinned after the first successful choice.
+        # Pin the first sole transport, including one awaiting authorization.
         self.selected = os.environ.get("ANDROID_SERIAL", "").strip() or None
         self.explicit_serial = self.selected is not None
+        self._identity_verified = False
         self.ignored_serials: tuple[str, ...] = ()
         self._cache_cleared = False
 
@@ -157,6 +160,7 @@ class OobLifecycle:
         self._transport_disruption_signature: tuple | None = None
         self._handled_terminal_events: set[str] = set()
         self._soft_click_keys: set[str] = set()
+        self._same_tab_wake_blocked = False
         # Set by _on_cdp_terminal_error (passed to the monitor as on_terminal_error),
         # consumed once per run() iteration by _handle_cdp_terminal_error - see that
         # method's doc comment for why the monitor itself never acts on this.
@@ -190,6 +194,55 @@ class OobLifecycle:
         self.episode_start = self.clock()
         self.episode_wall_start = time.time()
         self.attempts = 0
+
+    async def _remember_browser_wake_failure(self, exc: Exception) -> None:
+        if isinstance(exc, adb.HeadsetNotAwakeError):
+            self._browser_waiting_for_awake = True
+        elif isinstance(exc, TimeoutError):
+            # An episode deadline can cancel a strict wake poll before it raises.
+            try:
+                wake = await asyncio.to_thread(adb.headset_wakefulness)
+            except Exception:
+                wake = ""
+            self._browser_waiting_for_awake = wake != "Awake"
+
+    async def _observe_expired_wake(self) -> bool:
+        waiting = (
+            self._same_tab_wake_blocked
+            or self._browser_waiting_for_awake
+            or (
+                self.usb_local
+                and self.usb_health_policy != "off"
+                and self._usb_waiting_for_awake
+            )
+        )
+        if not waiting:
+            return False
+        try:
+            wake = await asyncio.to_thread(adb.headset_wakefulness)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            log.debug("Passive headset wake observation failed", exc_info=True)
+            wake = ""
+        if wake == "Awake":
+            if self._usb_waiting_for_awake:
+                self._record_usb_event("USB_WAKE_OBSERVED")
+            self._usb_waiting_for_awake = False
+            self._browser_waiting_for_awake = False
+            self._same_tab_wake_blocked = False
+            self._restart_episode()
+        else:
+            self._record_usb_wait("WAITING_FOR_AWAKE", "awake_recovery_deadline")
+            await self._publish(
+                "degraded",
+                "WAITING_FOR_AWAKE",
+                "Recovery episode expired; waiting for selected headset to wake",
+                adbReady=True,
+                networkPresent=True,
+            )
+            await self.sleep(self.config.interval_sec)
+        return True
 
     def _bounded_client_grace_deadline(self) -> float:
         """Fit browser-owned retry grace inside the host recovery episode."""
@@ -345,6 +398,8 @@ class OobLifecycle:
     async def _remember_transport_loss(self) -> None:
         """Drop transport-owned state while preserving the prior browser intent."""
         self._usb_waiting_for_awake = False
+        self._browser_waiting_for_awake = False
+        self._same_tab_wake_blocked = False
         if self._usb_wake_confirmed is not None:
             self._usb_wake_confirmed = None
             if self._usb_health_report is not None:
@@ -402,6 +457,7 @@ class OobLifecycle:
         *,
         adb_ready: bool,
         network_present: bool,
+        adb_diagnostic: str = "",
     ) -> None:
         """Preserve browser intent and publish one USB-loss transition."""
         await self._remember_transport_loss()
@@ -415,6 +471,7 @@ class OobLifecycle:
             reason,
             adbReady=adb_ready,
             networkPresent=network_present,
+            adbDiagnostic=redact_control_token(adb_diagnostic),
         )
 
     def _transport_retry_interval(self) -> float:
@@ -557,7 +614,10 @@ class OobLifecycle:
         self._prerequisite_signature = None
 
     async def _prepare_device(self) -> None:
-        """Wake the selected headset and clear stale browser state once."""
+        """Validate the pinned headset and clear stale browser state once."""
+        if not self._identity_verified:
+            await asyncio.to_thread(adb.assert_supported_headset)
+            self._identity_verified = True
         await asyncio.to_thread(adb.assert_headset_awake, timeout=10.0)
         if not self._cache_cleared:
             try:
@@ -907,6 +967,7 @@ class OobLifecycle:
     async def _automate(self) -> None:
         await self._stop_monitor()
         self._pending_cdp_terminal_error = None
+        self._same_tab_wake_blocked = False
         self._transport_lost = False
         self._restore_existing_browser = False
         self._repair_started_at = None
@@ -999,8 +1060,8 @@ class OobLifecycle:
             return False
         return True
 
-    async def _same_tab_connect(self, key: str) -> bool:
-        """Dispatch at most one trusted CONNECT click for a terminal/grace event."""
+    async def _same_tab_connect(self, key: str) -> bool | None:
+        """Dispatch CONNECT once, or defer without consuming the key while asleep."""
         if key in self._soft_click_keys:
             return False
         self._soft_click_keys.add(key)
@@ -1049,10 +1110,25 @@ class OobLifecycle:
                 host_client=self.host_client,
                 on_terminal_error=self._on_cdp_terminal_error,
             )
+        except adb.HeadsetNotAwakeError:
+            self.monitor = None
+            self.connect_dispatched = False
+            self._soft_click_keys.discard(key)
+            self._same_tab_wake_blocked = True
+            await self._publish(
+                "degraded",
+                "WAITING_FOR_AWAKE",
+                "Selected headset must be Awake before CONNECT; wear or unlock it",
+                adbReady=True,
+                networkPresent=True,
+            )
+            return None
         except adb.OobAdbError:
             self.monitor = None
             self.connect_dispatched = False
+            self._same_tab_wake_blocked = False
             return False
+        self._same_tab_wake_blocked = False
         if not self.connect_dispatched:
             await on_dispatched()
         self._client_grace_deadline = self._bounded_client_grace_deadline()
@@ -1067,6 +1143,15 @@ class OobLifecycle:
             connectDispatched=True,
         )
         return True
+
+    async def _fallback_to_fresh_browser(self) -> None:
+        # _automate clears preservation before its wake gate can fail.
+        try:
+            await self._automate()
+        except (adb.HeadsetNotAwakeError, TimeoutError) as exc:
+            if not self.connect_dispatched:
+                await self._remember_browser_wake_failure(exc)
+            raise
 
     async def _recover_existing_browser(self) -> None:
         """Restore a surviving page after USB repair before mutating browser state."""
@@ -1094,11 +1179,12 @@ class OobLifecycle:
                     turnPrerequisitesReady=True,
                 )
                 return
-            if await self._same_tab_connect(f"grace:{self.generation}"):
+            click = await self._same_tab_connect(f"grace:{self.generation}")
+            if click is None or click:
                 return
             # No usable tab survived the bounded grace. Only now perform the
             # destructive close/navigate/bootstrap path.
-            await self._automate()
+            await self._fallback_to_fresh_browser()
             return
 
         self.browser_client = report["clientId"]
@@ -1160,8 +1246,11 @@ class OobLifecycle:
             )
             return
         if terminal_event and terminal_event not in self._handled_terminal_events:
+            click = await self._same_tab_connect(f"terminal:{terminal_event}")
+            if click is None:
+                return
             self._handled_terminal_events.add(terminal_event)
-            if await self._same_tab_connect(f"terminal:{terminal_event}"):
+            if click:
                 return
         if (
             phase == "terminal"
@@ -1170,20 +1259,21 @@ class OobLifecycle:
         ):
             # The terminal event was handled once, but no usable CDP tab
             # accepted the same-tab click. Fall back only after the grace.
-            await self._automate()
+            await self._fallback_to_fresh_browser()
             return
         if (
             self.clock() >= self._client_grace_deadline
             and phase != "terminal"
             and not self.connect_dispatched
         ):
-            if await self._same_tab_connect(f"grace:{self.generation}"):
+            click = await self._same_tab_connect(f"grace:{self.generation}")
+            if click is None or click:
                 return
             # The control client survived, but without an attachable CDP tab
             # there is nowhere to dispatch the one trusted same-tab click.
             # Leave preservation mode through the normal full bootstrap so a
             # stable report cannot send us around this fallback again.
-            await self._automate()
+            await self._fallback_to_fresh_browser()
             return
         await self._attach_existing_monitor()
         await self._publish(
@@ -1349,7 +1439,11 @@ class OobLifecycle:
                 adb_ready=True,
                 network_present=True,
             )
-        if not await self._same_tab_connect(key):
+        click = await self._same_tab_connect(key)
+        if click is None:
+            self._pending_cdp_terminal_error = banner
+            return
+        if not click:
             self._transport_lost = True
             self._restore_existing_browser = True
             self._repair_started_at = time.time()
@@ -1403,8 +1497,11 @@ class OobLifecycle:
                     adb_ready=True,
                     network_present=True,
                 )
+            click = await self._same_tab_connect(f"terminal:{terminal_event}")
+            if click is None:
+                return
             self._handled_terminal_events.add(terminal_event)
-            if not await self._same_tab_connect(f"terminal:{terminal_event}"):
+            if not click:
                 # Continue the bounded existing-browser path without rebuilding
                 # transport that is already healthy. At grace expiry this may
                 # bootstrap only if no usable CDP tab can be recovered.
@@ -1521,8 +1618,16 @@ class OobLifecycle:
                 # WAITING_FOR_ADB: select once, then wait only for that headset.
                 devices = await asyncio.to_thread(adb.enumerate_adb_devices)
                 ready = devices.ready
-                if self.selected is None and len(ready) == 1:
-                    self.selected = ready[0]
+                if self.selected is None and len(devices.devices) > 1:
+                    serials = ", ".join(
+                        _display_serials(tuple(s for s, _ in devices.devices))
+                    )
+                    raise adb.OobAdbError(
+                        f"Multiple ADB devices observed ({serials}). Set ANDROID_SERIAL "
+                        "to the intended headset serial and restart OOB setup."
+                    )
+                if self.selected is None and len(devices.devices) == 1:
+                    self.selected = devices.devices[0][0]
                     token = adb.SELECTED_ADB_SERIAL.set(self.selected)
                     self._ensure_usb_report()
                 self.ignored_serials = (
@@ -1573,9 +1678,7 @@ class OobLifecycle:
                 if not selected_ready:
                     self._ready_count = 0
                     states = dict(devices.devices)
-                    if len(ready) > 1 and self.selected is None:
-                        reason = "Multiple ready devices; unplug extras or set ANDROID_SERIAL"
-                    elif self.selected and states.get(self.selected) == "unauthorized":
+                    if self.selected and states.get(self.selected) == "unauthorized":
                         reason = "Selected headset unauthorized; accept the USB debugging prompt"
                     elif self.selected and states.get(self.selected) == "offline":
                         reason = "Selected headset offline; reconnect the USB cable"
@@ -1588,9 +1691,7 @@ class OobLifecycle:
                     else:
                         reason = devices.diagnostic or "Waiting for selected headset"
                     wait_code = (
-                        "ambiguous_devices"
-                        if self.selected is None and len(ready) > 1
-                        else "unauthorized"
+                        "unauthorized"
                         if selected_state == "unauthorized"
                         else "offline"
                         if selected_state == "offline"
@@ -1604,6 +1705,7 @@ class OobLifecycle:
                         "WAITING_FOR_ADB",
                         adb_ready=False,
                         network_present=False,
+                        adb_diagnostic=devices.diagnostic,
                     )
                     await self.sleep(self._transport_retry_interval())
                     continue
@@ -1685,6 +1787,9 @@ class OobLifecycle:
                     preserving_browser
                     and self.clock() >= self.episode_start + self.config.timeout_sec
                 ):
+                    # Keep wake-blocked CONNECT on its surviving tab after expiry.
+                    if await self._observe_expired_wake():
+                        continue
                     if self._repair_started_at is not None:
                         await self._observe_passive_recovery()
                     else:
@@ -1728,7 +1833,9 @@ class OobLifecycle:
                         self._client_grace_deadline = None
                         await self._publish(
                             "degraded",
-                            "REBUILDING_USB",
+                            "WAITING_FOR_AWAKE"
+                            if self._browser_waiting_for_awake
+                            else "REBUILDING_USB",
                             str(exc)[:300],
                             adbReady=True,
                             networkPresent=True,
@@ -1740,41 +1847,13 @@ class OobLifecycle:
                     and not self.browser_ready
                     and not self.connect_dispatched
                 ):
-                    waiting_for_awake = (
-                        self.usb_local
-                        and self.usb_health_policy != "off"
-                        and self._usb_waiting_for_awake
-                    )
-                    if waiting_for_awake:
-                        try:
-                            wake = await asyncio.to_thread(adb.headset_wakefulness)
-                        except asyncio.CancelledError:
-                            raise
-                        except Exception:
-                            log.debug(
-                                "Passive USB wake observation failed", exc_info=True
-                            )
-                            wake = ""
-                        if wake == "Awake":
-                            self._usb_waiting_for_awake = False
-                            self._record_usb_event("USB_WAKE_OBSERVED")
-                            self._restart_episode()
-                            continue
-                    wait_state = (
-                        "WAITING_FOR_AWAKE" if waiting_for_awake else "WAITING_FOR_ADB"
-                    )
-                    self._record_usb_wait(
-                        wait_state,
-                        "awake_recovery_deadline"
-                        if waiting_for_awake
-                        else "recovery_deadline",
-                    )
+                    if await self._observe_expired_wake():
+                        continue
+                    self._record_usb_wait("WAITING_FOR_ADB", "recovery_deadline")
                     await self._publish(
                         "degraded",
-                        wait_state,
-                        "Recovery episode expired; waiting for selected headset to wake"
-                        if waiting_for_awake
-                        else "Recovery episode expired; observing for a change",
+                        "WAITING_FOR_ADB",
+                        "Recovery episode expired; observing for a change",
                         adbReady=True,
                         networkPresent=True,
                     )
@@ -1799,6 +1878,7 @@ class OobLifecycle:
                     else:
                         # PREPARING_DEVICE wakes, rebuilds only in USB-local mode, then automates.
                         self.attempts += 1
+                        self._browser_waiting_for_awake = False
                         await self._publish(
                             "degraded",
                             "PREPARING_DEVICE",
@@ -1868,6 +1948,9 @@ class OobLifecycle:
                 except asyncio.CancelledError:
                     raise
                 except Exception as exc:
+                    fresh_bootstrap = (
+                        not self.browser_ready and not self.connect_dispatched
+                    )
                     await self._stop_monitor()
                     self.browser_ready = False
                     self.browser_client = None
@@ -1882,6 +1965,10 @@ class OobLifecycle:
                         await self.sleep(self.config.interval_sec)
                         continue
                     self.connect_dispatched = False
+                    if isinstance(exc, adb.HeadsetNotAwakeError) or (
+                        fresh_bootstrap and isinstance(exc, TimeoutError)
+                    ):
+                        await self._remember_browser_wake_failure(exc)
                     reason = (
                         "Recovery attempt timed out"
                         if isinstance(exc, TimeoutError)
@@ -1889,7 +1976,9 @@ class OobLifecycle:
                     )
                     await self._publish(
                         "degraded",
-                        "DEGRADED",
+                        "WAITING_FOR_AWAKE"
+                        if self._browser_waiting_for_awake
+                        else "DEGRADED",
                         reason[:300],
                         adbReady=True,
                         networkPresent=True,

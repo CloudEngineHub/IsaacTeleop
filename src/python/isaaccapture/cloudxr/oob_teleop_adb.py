@@ -56,6 +56,13 @@ class OobAdbError(Exception):
     """``--setup-oob`` adb step failed; ``str(exception)`` is formatted for users (print without traceback)."""
 
 
+class HeadsetNotAwakeError(OobAdbError):
+    """A CONNECT or browser launch must wait for confirmed headset wakefulness."""
+
+
+HEADSET_NOT_AWAKE_DIAGNOSTIC = "Headset wakefulness was not confirmed as Awake"
+
+
 SELECTED_ADB_SERIAL: ContextVar[str | None] = ContextVar(
     "selected_adb_serial", default=None
 )
@@ -388,7 +395,7 @@ def assert_headset_awake(*, timeout: float = 15.0, require_awake: bool = False) 
         "aborting USB transfer" if require_awake else "continuing anyway",
     )
     if require_awake:
-        raise OobAdbError("Headset wakefulness was not confirmed as Awake")
+        raise HeadsetNotAwakeError(HEADSET_NOT_AWAKE_DIAGNOSTIC)
 
 
 def adb_device_state() -> str:
@@ -640,6 +647,29 @@ def _first_installed_pkg(candidates: tuple[str, ...]) -> str | None:
     return None
 
 
+def assert_supported_headset() -> None:
+    """Reject a selected Android device that is not a supported WebXR HMD."""
+    manufacturer = _adb_getprop("ro.product.manufacturer")
+    brand = _adb_getprop("ro.product.brand")
+    model = _adb_getprop("ro.product.model")
+    vendor = f"{manufacturer} {brand}".lower()
+    if model and any(name in vendor for name in ("meta", "oculus", "pico")):
+        return
+    identity = ", ".join(
+        f"{name}={value[:80]!r}"
+        for name, value in (
+            ("manufacturer", manufacturer),
+            ("brand", brand),
+            ("model", model),
+        )
+    )
+    raise OobAdbError(
+        f"Selected ADB device is not a supported Meta Quest or PICO headset "
+        f"({identity}). Connect a supported HMD, or set ANDROID_SERIAL to its "
+        "serial and restart OOB setup."
+    )
+
+
 def headset_browser_package() -> str | None:
     """Return the Android package of the full-fat WebXR browser on this headset.
 
@@ -705,6 +735,11 @@ def open_url_on_headset(url: str) -> tuple[int, str]:
     except OobAdbError as exc:
         return 99, str(exc)
 
+    try:
+        assert_headset_awake(timeout=10.0, require_awake=True)
+    except OobAdbError as exc:
+        return 99, str(exc)
+
     package = headset_browser_package()
     if package:
         log.info("ADB automation: launching into %s (bypass WebLayer)", package)
@@ -730,10 +765,10 @@ def open_url_on_headset(url: str) -> tuple[int, str]:
         if isinstance(partial, bytes):
             partial = partial.decode(errors="replace")
         diag = f"adb shell timed out after 30s. {partial}".strip()
-        return 1, diag
+        return 1, redact_control_token(diag)
     if proc.returncode != 0:
         diag = _adb_output_text(proc)
-        return proc.returncode, diag
+        return proc.returncode, redact_control_token(diag)
     log.info("ADB automation: am start completed")
     return 0, ""
 
@@ -1311,7 +1346,11 @@ def _close_stale_teleop_tabs() -> int:
                 ) as resp:
                     resp.read()
                 closed += 1
-                log.info("stale-tab cleanup: closed tab id=%s url=%s", tab_id, url)
+                log.info(
+                    "stale-tab cleanup: closed tab id=%s url=%s",
+                    tab_id,
+                    redact_control_token(url),
+                )
             except Exception as exc:
                 log.warning(
                     "stale-tab cleanup: failed to close tab id=%s: %s", tab_id, exc
@@ -1557,14 +1596,16 @@ async def _cdp_session_click_connect(
                 )
                 current_url = r2.get("result", {}).get("value", "")
                 if current_url and not current_url.startswith("chrome-error"):
-                    log.info("CDP: re-navigating to %s", current_url)
+                    log.info(
+                        "CDP: re-navigating to %s", redact_control_token(current_url)
+                    )
                     await send(ws, "Page.navigate", {"url": current_url})
                     await asyncio.sleep(3.0)
                     navigated = True
                 else:
                     log.warning(
                         "CDP: interstitial URL is %r, falling back to DOM click-through",
-                        current_url,
+                        redact_control_token(current_url),
                     )
 
             if not navigated:
@@ -1720,6 +1761,8 @@ async def _cdp_session_click_connect(
         #    but does not fire React's onClick handler (touch-first routing).
         #    By running inside the user-activation window opened in phase 1,
         #    requestSession() still sees activation when onClick runs.
+        # Both fresh-page and same-tab recovery reach this boundary.
+        await asyncio.to_thread(assert_headset_awake, timeout=10.0, require_awake=True)
         x, y = val["x"], val["y"]
         log.info("CDP: clicking CONNECT at (%.0f, %.0f)", x, y)
         for event_type in ("mousePressed", "mouseReleased"):
@@ -1954,7 +1997,11 @@ async def _find_and_click_teleop_tab(
                 if not _is_candidate_tab(tab):
                     continue
                 ws_url = tab["webSocketDebuggerUrl"]
-                log.info("CDP: new tab %r url=%s", tab.get("title"), current_url)
+                log.info(
+                    "CDP: new tab %r url=%s",
+                    redact_control_token(str(tab.get("title") or "")),
+                    redact_control_token(current_url),
+                )
                 break
             # Case B: existing tab whose URL changed after am start — this
             # is ours (the VIEW intent just navigated it).  Trust the diff
@@ -1963,9 +2010,9 @@ async def _find_and_click_teleop_tab(
                 ws_url = tab["webSocketDebuggerUrl"]
                 log.info(
                     "CDP: navigated tab %r url=%s (was %s)",
-                    tab.get("title"),
-                    current_url,
-                    old_url or "<new>",
+                    redact_control_token(str(tab.get("title") or "")),
+                    redact_control_token(current_url),
+                    redact_control_token(old_url) if old_url else "<new>",
                 )
                 break
             # Case C: existing tab whose URL was already our teleop URL
@@ -1979,8 +2026,8 @@ async def _find_and_click_teleop_tab(
                 ws_url = tab["webSocketDebuggerUrl"]
                 log.info(
                     "CDP: existing teleop tab %r url=%s (snapshot already current)",
-                    tab.get("title"),
-                    current_url,
+                    redact_control_token(str(tab.get("title") or "")),
+                    redact_control_token(current_url),
                 )
                 break
 
@@ -2113,7 +2160,10 @@ async def run_oob_connect(
     )
     if rc != 0:
         hint = adb_automation_failure_hint(diag)
-        raise OobAdbError(oob_adb_automation_message(rc, diag, hint))
+        message = oob_adb_automation_message(rc, diag, hint)
+        if diag == HEADSET_NOT_AWAKE_DIAGNOSTIC:
+            raise HeadsetNotAwakeError(message)
+        raise OobAdbError(message)
     log.info("ADB: am start completed")
     oob_progress(
         "setup-oob",
@@ -2274,18 +2324,19 @@ async def _monitor_teleop_error_banner(
                 )
                 banner = (r.get("result") or {}).get("value") or ""
                 if banner and banner != last_banner:
-                    log.warning("Teleop client error: %s", banner)
+                    safe_banner = redact_control_token(banner)
+                    log.warning("Teleop client error: %s", safe_banner)
                     extra = _teleop_error_hint(banner)
                     # Mirror to stderr so the operator sees mid-stream errors
                     # in the console, not only in the server log file.
                     print(
-                        f"\n\033[33mTeleop client error: {banner}\033[0m\n"
+                        f"\n\033[33mTeleop client error: {safe_banner}\033[0m\n"
                         + (f"\033[33m  → {extra}\033[0m\n" if extra else ""),
                         file=sys.stderr,
                         flush=True,
                     )
                     if on_terminal_error is not None:
-                        on_terminal_error(banner)
+                        on_terminal_error(safe_banner)
                 last_banner = banner
     except asyncio.CancelledError:
         log.info("monitor: cancelled")
