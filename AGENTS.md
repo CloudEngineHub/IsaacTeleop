@@ -198,6 +198,13 @@ measurement, a trap someone already paid for. They are not a place to narrate.
   inertial frame, so STL axes need `mesh_pos`/`mesh_quat`" beats three
   paragraphs re-deriving why. Keep measured numbers and file/line references;
   cut the prose around them.
+- **No counts that drift.** A comment must not state how many files, rows,
+  components or call sites something currently has. The number is true the day
+  it is written and wrong after the next build or refactor, and nothing fails
+  when it goes stale. State the property instead — "these SDKs share build-ids",
+  not "they share five". A measured number earns its place only when it is a
+  fixed fact about the world (a protocol limit, a benchmark with its date).
+
 - **Do not narrate history.** "An earlier revision did X and it was wrong" is
   what `git log` is for. If the wrong approach is tempting enough to warn
   about, write the warning as a rule — "do not derive this from the mesh" —
@@ -270,6 +277,45 @@ pre-commit install --hook-type commit-msg
   ```
 
 - If a hook failure shows **missing or non-obvious repo policy** (not a one-off typo), you **must** add a **short** reminder under **Mandatory learning loop** rules to the right `AGENTS.md` or adjacent **`//` comments** so the next run does not repeat it—unless it is already documented.
+
+## The wheel SBOM
+
+Published wheels carry a contents SBOM and license evidence derived from the
+build itself. There is **no checked-in dependency registry** and adding one would
+be a second source of truth — declare a dependency the way you already would and
+it appears in the next wheel's inventory.
+
+When the SBOM step stops the Release build, fix the cause; never exclude a file or
+record an assumed license. Remedies: `scripts/sbom/README.md` ('What stops the Release
+build').
+
+The collector is a project of its own: `uv run --project scripts/sbom
+isaaccapture-sbom ...`. Its dependency pins live in `scripts/sbom/pyproject.toml`
+and nowhere else — never restate them as `--with` flags in a workflow or a doc.
+Its tests run the same way, through uv; do not register them with the product's
+CMake or CTest.
+
+**Read [`scripts/sbom/README.md`](scripts/sbom/README.md) first** if you are
+changing anything under `scripts/sbom/`, changing how a dependency reaches a
+wheel, or touching the wheel-packaging steps in `build-ubuntu.yml`.
+
+## A rule changed in one place is changed in none
+
+When a fact is stated in more than one place — a predicate in several modules, a
+claim in both the code and the docs, a heading over the rows it describes — fixing
+one instance and leaving the rest is the most common way a correction fails to
+stick here. It has happened repeatedly: a licence rule enforced in four modules, a
+design doc contradicting its own collector, a per-row reason corrected under a
+heading that still said the opposite.
+
+- **Grep for the claim, not the line you edited.** Search the phrase, the
+  predicate, the constant — across `docs/`, `scripts/`, `tests/` and the code —
+  and fix every hit in the same pass.
+- **Prefer one authority to a swept duplicate.** If the same rule has to hold in
+  several places, give it one definition and call it; the sweep is what you do
+  when you cannot.
+- **Verify against output, not against the test suite.** Several of these passed
+  every test while producing wrong artifacts. Regenerate and look.
 
 ## Mandatory learning loop (AGENTS.md and comments)
 
