@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 """
@@ -12,7 +12,7 @@ import argparse
 import sys
 import numpy as np
 
-from _example_loop import add_duration_argument, run_example_loop
+from ._example_loop import add_duration_argument, run_example_loop
 
 from isaaccapture.cloudxr import CloudXRLauncher
 from isaaccapture.retargeting_engine.deviceio_source_nodes import (

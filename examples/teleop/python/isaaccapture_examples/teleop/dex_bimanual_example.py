@@ -1,10 +1,10 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 """
 Dex BiManual Retargeting Example
 
-Demonstrates using DexBiManualRetargeter to control two hands simultaneously.
+Drives both hands at once with one DexHandRetargeter per hand.
 """
 
 import sys
@@ -22,7 +22,6 @@ from isaaccapture.retargeters import (
 )
 from isaaccapture.retargeting_engine.interface import OutputCombiner
 from isaaccapture.teleop_session_manager import TeleopSession, TeleopSessionConfig
-from isaaccapture.retargeting_engine_ui import MultiRetargeterTuningUIImGui
 
 
 def main():
@@ -50,10 +49,21 @@ def main():
         "--right-params", type=str, help="Path to right hand tunable parameters (JSON)"
     )
     parser.add_argument(
-        "--enable-tuning", action="store_true", help="Enable retargeting tuning UI"
+        "--enable-tuning",
+        action="store_true",
+        help="Enable retargeting tuning UI (needs the ui extra)",
     )
     CloudXRLauncher.add_launcher_arguments(parser)
     args = parser.parse_args()
+    # Before the retargeters load and CloudXR starts: imgui is the optional `ui` extra.
+    if args.enable_tuning:
+        try:
+            from isaaccapture.retargeting_engine_ui import MultiRetargeterTuningUIImGui
+        except ImportError:
+            parser.error(
+                "--enable-tuning needs the ui extra: "
+                "uv pip install -e './examples/teleop[ui]'"
+            )
 
     # Check for config files
     # Note: These paths are placeholders. In a real scenario, you'd point to your robot's config.
