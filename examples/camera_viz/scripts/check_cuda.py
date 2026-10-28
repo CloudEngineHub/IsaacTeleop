@@ -15,10 +15,9 @@ import sys
 import tempfile
 from typing import NamedTuple
 
-# cuda_env sits beside the entry points, one directory up. Appended, so the
-# sample's own modules cannot shadow anything CuPy imports.
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-import cuda_env  # noqa: E402
+# Setup runs this with the system python3, before the sample is installed.
+sys.path.append(str(Path(__file__).resolve().parents[1] / "python"))
+from isaaccapture_examples.camera_viz import cuda_env  # noqa: E402
 
 DEFAULT_ROOT = Path("/usr/local/cuda")
 SUPPORTED_MAJORS = (12, 13)

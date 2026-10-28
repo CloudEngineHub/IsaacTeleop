@@ -2,14 +2,23 @@
 # SPDX-License-Identifier: Apache-2.0
 """Focused setup regressions; keep rendering coverage in the existing GPU suite."""
 
+import importlib.util
 import os
 import sys
 from unittest.mock import MagicMock
 
 import pytest
 
-import cuda_env
-from scripts import check_cuda
+from isaaccapture_examples.camera_viz import cuda_env
+from repo_paths import repo_root
+
+# A setup script, not part of the package: setup runs it with the system python3
+# before the venv exists, so load it by path rather than by import name.
+_spec = importlib.util.spec_from_file_location(
+    "check_cuda", repo_root() / "examples" / "camera_viz" / "scripts" / "check_cuda.py"
+)
+check_cuda = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(check_cuda)
 
 
 def _nvcc(root, release, headers=True):

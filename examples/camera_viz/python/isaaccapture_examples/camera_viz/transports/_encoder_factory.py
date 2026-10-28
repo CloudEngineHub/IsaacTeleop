@@ -4,8 +4,8 @@
 
 Two H.264 encoders share the same ``encode(rgba) -> List[bytes]`` API:
 
-  * :class:`NvH264Encoder` — desktop, native NVENC at
-    ``examples/camera_viz/codec/``. Zero-copy from CuPy into NVENC.
+  * :class:`NvH264Encoder` — desktop, native NVENC in this package's
+    ``codec/``. Zero-copy from CuPy into NVENC.
   * :class:`GstNvH264Encoder` — Jetson / portable, GStreamer's
     ``nvv4l2h264enc`` (or ``nvh264enc`` / ``x264enc`` fallbacks).
     ~1-3 ms D2H download at 720p.
@@ -24,7 +24,7 @@ def _has_native_codec() -> bool:
     # Both ImportError (no package) and RuntimeError (raised by
     # codec/__init__.py on missing .so) fall through to GStreamer.
     try:
-        import codec  # noqa: F401
+        from .. import codec  # noqa: F401
 
         return True
     except (ImportError, RuntimeError):

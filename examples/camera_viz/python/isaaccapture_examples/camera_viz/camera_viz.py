@@ -12,7 +12,7 @@ The same YAML file drives ``camera_streamer.py``, so both ends of an
 RTP-mode deployment share one config.
 
 Usage:
-    python camera_viz.py configs/v4l2.yaml
+    python -m isaaccapture_examples.camera_viz configs/v4l2.yaml
 """
 
 from __future__ import annotations
@@ -30,19 +30,16 @@ import yaml
 from isaaccapture import logging_config
 from isaaccapture.cloudxr import CloudXRLauncher
 
-import cloudxr_env
-import config
-import cuda_env
-import display
-from controls import (
+from . import cloudxr_env, config, cuda_env, display
+from .controls import (
     ControllerControls,
     ControlTarget,
     controls_config_from_yaml,
     make_hud,
 )
-from dashboard import Dashboard
-from pipeline import VizRunner
-from sources import resolve_video_paths, set_notify_sink, set_verbose
+from .dashboard import Dashboard
+from .pipeline import VizRunner
+from .sources import resolve_video_paths, set_notify_sink, set_verbose
 
 
 def _parse_args(argv: Optional[list[str]]):
@@ -392,7 +389,3 @@ def main(argv: Optional[list[str]] = None) -> int:
         # actually in force inspectable while the runtime is up.
         settings_stack.close()
     return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
