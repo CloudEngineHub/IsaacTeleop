@@ -56,6 +56,22 @@ The build downloads the pinned NVIDIA Video Codec SDK. CPU-side Python tests:
 uv run --project tests --extra dev python -m pytest tests/python -q
 ```
 
+## Workstation receiver
+
+Run `ip -brief -4 address` on the robot and choose the address reachable from the
+workstation. From `examples/camera_streamer`, with the decoder already built:
+
+```bash
+export ROBOT_IP="<robot IPv4 address>"
+uv pip install --python .venv/bin/python -r camera_receiver/requirements.txt
+PROFILE=s56-stereo-2560x1984-30 # Choose your resolution
+.venv/bin/python camera_receiver/camera_receiver.py \
+  --config "configs/${PROFILE}.yaml" --host "${ROBOT_IP:?Set ROBOT_IP first}"
+```
+
+Use the same profile on both computers. Decoded GPU frames are published through
+local CUDA IPC; the receiver does not open a window. Stop it with Ctrl+C.
+
 ## Licensing
 
 This example is Apache-2.0 licensed. Existing upstream notices and external SDK
@@ -72,3 +88,9 @@ For opt-in hardware smoke tests, install PyYAML for the Python interpreter selec
 by CMake. Set `ARGUS_SENDER_HARDWARE_CONFIG` to your stereo profile; the smoke receiver
 reads `network.port` from that same file (default 5000), so there is no separate
 receiver-port override.
+
+CUDA IPC protocol 3 requires consumers to hold each slot's shared file lock and
+verify `slot_generation` before reading pixels, then finish GPU reads before
+unlocking. The receiver holds an exclusive lock while writing. Delayed notifications
+are discarded; a slow active read backpressures slot reuse rather than corrupting
+pixels. Update receiver and consumer together; protocol 2 consumers are rejected.
